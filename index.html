@@ -182,6 +182,21 @@ const money = (n) => {
   return Number.isFinite(num) && n !== "" ? `$${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : "—";
 };
 
+// Renders a tracking value as a clickable link when it looks like a URL, otherwise plain text.
+function TrackingCell({ value }) {
+  if (!value) return "—";
+  const isUrl = /^https?:\/\//i.test(value.trim());
+  if (!isUrl) return value;
+  return (
+    <a href={value.trim()} target="_blank" rel="noopener noreferrer"
+      style={{ color: "#3A7CA5", textDecoration: "underline" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      Track
+    </a>
+  );
+}
+
 function escapeICS(s) {
   return String(s || "").replace(/[\\;,]/g, (m) => "\\" + m).replace(/\n/g, "\\n");
 }
@@ -655,11 +670,11 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
       </div>
 
       <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1080 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {["Status", "Brand", "Type", "Colour", "Qty", "ETA", "Tracking", "Customer", "Payment", "Fulfillment", "Received", ""].map((h) => (
-                <th key={h} style={{ padding: "11px 14px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
+                <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -671,14 +686,14 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
             )}
             {filtered.map((o) => (
               <tr key={o.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
-                <td style={{ padding: "10px 14px" }}><StatusBadge label={o.status} color={ORDER_COLORS[o.status]} /></td>
-                <td style={{ padding: "10px 14px", fontWeight: 600 }}>{o.brand}</td>
-                <td style={{ padding: "10px 14px" }}>{o.type}</td>
-                <td style={{ padding: "10px 14px" }}>{o.colour}</td>
-                <td style={{ padding: "10px 14px" }}>{o.qty}</td>
-                <td style={{ padding: "10px 14px" }}>{formatAU(o.eta) || "—"}</td>
-                <td style={{ padding: "10px 14px", fontFamily: "monospace", fontSize: 13 }}>{o.tracking || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px" }}><StatusBadge label={o.status} color={ORDER_COLORS[o.status]} /></td>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{o.brand}</td>
+                <td style={{ padding: "8px 10px" }}>{o.type}</td>
+                <td style={{ padding: "8px 10px" }}>{o.colour}</td>
+                <td style={{ padding: "8px 10px" }}>{o.qty}</td>
+                <td style={{ padding: "8px 10px" }}>{formatAU(o.eta) || "—"}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
+                <td style={{ padding: "8px 10px" }}>
                   <div>{o.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : (o.customer || "—")}</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                     {o.forStock && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
@@ -688,10 +703,10 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
                       : <span style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700 }}>For assembly</span>)}
                   </div>
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 13 }}>{o.payment || "—"}</td>
-                <td style={{ padding: "10px 14px", fontSize: 13 }}>{o.fulfillment || "—"}</td>
-                <td style={{ padding: "10px 14px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.payment || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.fulfillment || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={() => onEdit(o)} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={() => onToggleArchive(o.id)} title={o.archived ? "Restore" : "Archive"}>
@@ -780,11 +795,11 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       </div>
 
       <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1080 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {["Status", "Customer", "Phone", "Bike", "Service type", "Mechanic", "Booked date", "Pickup date", "Notes", ""].map((h) => (
-                <th key={h} style={{ padding: "11px 14px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
+                <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -796,18 +811,18 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
             )}
             {filtered.map((s) => (
               <tr key={s.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
-                <td style={{ padding: "10px 14px" }}><StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} /></td>
-                <td style={{ padding: "10px 14px", fontWeight: 600 }}>{s.customer || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px" }}><StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} /></td>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
-                <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 6 }}><Bike size={14} color="#565C54" />{s.bike || "—"}</td>
-                <td style={{ padding: "10px 14px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>{s.mechanic || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>{formatAU(s.bookedDate) || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>{formatAU(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "10px 14px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px", display: "flex", alignItems: "center", gap: 6 }}><Bike size={14} color="#565C54" />{s.bike || "—"}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{s.mechanic || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{formatAU(s.bookedDate) || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{formatAU(s.pickupDate) || "—"}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={() => onEdit(s)} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={() => onToggleArchive(s.id)} title={s.archived ? "Restore" : "Archive"}>
@@ -855,11 +870,11 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
       </div>
 
       <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {["Brand", "Model / type", "Cost", "RRP", "Margin", "Notes", ""].map((h) => (
-                <th key={h} style={{ padding: "11px 14px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
+                <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -873,13 +888,13 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
                 : "—";
               return (
                 <tr key={p.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
-                  <td style={{ padding: "10px 14px", fontWeight: 600 }}>{p.brand}</td>
-                  <td style={{ padding: "10px 14px" }}>{p.model}</td>
-                  <td style={{ padding: "10px 14px" }}>{money(p.cost)}</td>
-                  <td style={{ padding: "10px 14px", fontWeight: 600 }}>{money(p.rrp)}</td>
-                  <td style={{ padding: "10px 14px", color: "#4C9A6A", fontWeight: 600 }}>{margin}</td>
-                  <td style={{ padding: "10px 14px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
-                  <td style={{ padding: "10px 14px" }}>
+                  <td style={{ padding: "8px 10px", fontWeight: 600 }}>{p.brand}</td>
+                  <td style={{ padding: "8px 10px" }}>{p.model}</td>
+                  <td style={{ padding: "8px 10px" }}>{money(p.cost)}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 600 }}>{money(p.rrp)}</td>
+                  <td style={{ padding: "8px 10px", color: "#4C9A6A", fontWeight: 600 }}>{margin}</td>
+                  <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
+                  <td style={{ padding: "8px 10px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <IconBtn onClick={() => onEdit(p)} title="Edit"><Pencil size={14} /></IconBtn>
                       <IconBtn onClick={() => onDelete(p.id)} title="Delete" danger><Trash2 size={14} /></IconBtn>
@@ -984,11 +999,11 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onToggleArchive,
       </div>
 
       <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {["Status", "Date", "Brand", "Item", "Qty", "ETA", "Tracking", "Customer", "Payment", ""].map((h) => (
-                <th key={h} style={{ padding: "11px 14px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
+                <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1000,19 +1015,19 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onToggleArchive,
             )}
             {filtered.map((a) => (
               <tr key={a.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
-                <td style={{ padding: "10px 14px" }}><StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} /></td>
-                <td style={{ padding: "10px 14px" }}>{formatAU(a.date) || "—"}</td>
-                <td style={{ padding: "10px 14px", fontWeight: 600 }}>{a.brand || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>{a.type || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>{a.qty}</td>
-                <td style={{ padding: "10px 14px" }}>{formatAU(a.eta) || "—"}</td>
-                <td style={{ padding: "10px 14px", fontFamily: "monospace", fontSize: 13 }}>{a.tracking || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px" }}><StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} /></td>
+                <td style={{ padding: "8px 10px" }}>{formatAU(a.date) || "—"}</td>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.brand || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{a.type || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{a.qty}</td>
+                <td style={{ padding: "8px 10px" }}>{formatAU(a.eta) || "—"}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
+                <td style={{ padding: "8px 10px" }}>
                   {a.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : (a.customer || "—")}
                   {a.forStock && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
                 </td>
-                <td style={{ padding: "10px 14px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
-                <td style={{ padding: "10px 14px" }}>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={() => onEdit(a)} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={() => onToggleArchive(a.id)} title={a.archived ? "Restore" : "Archive"}>
@@ -1360,7 +1375,7 @@ function RodiTracker() {
         background: "#191B18", padding: "22px 20px", borderBottom: "4px solid #F6BD1B",
         display: "flex", justifyContent: "center",
       }}>
-        <div style={{ maxWidth: 1100, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
+        <div style={{ maxWidth: 1600, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
           <div>
             <h1 className="rodi-display" style={{
               margin: 0, fontSize: 34, lineHeight: 0.95, color: "#F6BD1B",
@@ -1387,7 +1402,7 @@ function RodiTracker() {
         </div>
       </div>
       <div style={{ padding: "20px 20px 60px", display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 1100, width: "100%" }}>
+      <div style={{ maxWidth: 1600, width: "100%" }}>
         {syncError && (
           <div style={{
             background: "#FBEAE8", border: "1px solid #E3B3AC", color: "#8A2E22", borderRadius: 10,
