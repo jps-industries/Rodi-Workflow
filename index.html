@@ -416,10 +416,12 @@ const ZAPIER_PICKUP_WEBHOOK = "https://hooks.zapier.com/hooks/catch/23390919/4dz
 
 function notifyCustomerReady(form) {
   const message = `Hey ${form.customer || "there"}, your bike is ready for pick up! If you have arranged delivery, we will reach out a day/time that suits. Cheers, Rodi crew.`;
+  const body = new URLSearchParams({ name: form.customer || "", phone: form.phone || "", message }).toString();
   fetch(ZAPIER_PICKUP_WEBHOOK, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: form.customer, phone: form.phone, message }),
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
   }).catch((e) => console.error("Zapier notify failed", e));
 }
 
