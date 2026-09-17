@@ -412,13 +412,28 @@ function Drawer({ title, icon, onClose, children, onSubmit }) {
   );
 }
 
+const ZAPIER_PICKUP_WEBHOOK = "https://hooks.zapier.com/hooks/catch/23390919/4dzyl0m/";
+
+function notifyCustomerReady(form) {
+  const message = `Hey ${form.customer || "there"}, your bike is ready for pick up! If you have arranged delivery, we will reach out a day/time that suits. Cheers, Rodi crew.`;
+  fetch(ZAPIER_PICKUP_WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: form.customer, phone: form.phone, message }),
+  }).catch((e) => console.error("Zapier notify failed", e));
+}
+
 function OrderForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
     <Drawer title={initial.brand || initial.type ? "Edit order" : "New order"} icon={<Package size={17} />} onClose={onClose}
-      onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (form.notified && !initial.notified) notifyCustomerReady(form);
+        onSave(form);
+      }}>
       <Field label="Status">
         <select style={inputStyle} value={form.status} onChange={set("status")}>
           {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -463,7 +478,7 @@ function OrderForm({ initial, onSave, onClose }) {
       </Field>
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, color: "#565C54" }}>
         <input type="checkbox" checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
-        Customer notified it's ready for {form.fulfillment === "Delivery" ? "delivery" : "pickup"}
+        Customer notified
       </label>
       <Field label="Payment status">
         <select style={inputStyle} value={form.payment} onChange={set("payment")}>
