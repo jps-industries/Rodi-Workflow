@@ -414,6 +414,7 @@ function Drawer({ title, icon, onClose, children, onSubmit }) {
 function OrderForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
     <Drawer title={initial.brand || initial.type ? "Edit order" : "New order"} icon={<Package size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
@@ -423,12 +424,12 @@ function OrderForm({ initial, onSave, onClose }) {
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={set("brand")} placeholder="Dirodi" /></Field>
+        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Order date"><input type="date" style={inputStyle} value={form.orderDate} onChange={set("orderDate")} /></Field>
       </div>
-      <Field label="Type / model"><input style={inputStyle} value={form.type} onChange={set("type")} placeholder="Gen 6 SO 1000" /></Field>
+      <Field label="Type / model"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="GEN 6 SO 1000" /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={set("colour")} placeholder="Black" /></Field>
+        <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -443,7 +444,7 @@ function OrderForm({ initial, onSave, onClose }) {
         Shop stock only
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={set("customer")} /></Field>
+        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -482,6 +483,7 @@ function OrderForm({ initial, onSave, onClose }) {
 function ServiceForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
     <Drawer title={initial.customer ? "Edit service" : "New service booking"} icon={<Wrench size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
@@ -491,16 +493,16 @@ function ServiceForm({ initial, onSave, onClose }) {
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={set("customer")} /></Field>
+        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <Field label="Bike / model"><input style={inputStyle} value={form.bike} onChange={set("bike")} placeholder="Dirodi Gen 6 ST" /></Field>
-      <Field label="Service type"><input style={inputStyle} value={form.serviceType} onChange={set("serviceType")} placeholder="Full service, brake adjust..." /></Field>
+      <Field label="Bike / model"><input style={inputStyle} value={form.bike} onChange={upper("bike")} placeholder="DIRODI GEN 6 ST" /></Field>
+      <Field label="Service type"><input style={inputStyle} value={form.serviceType} onChange={upper("serviceType")} placeholder="FULL SERVICE, BRAKE ADJUST..." /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Field label="Booked date"><input type="date" style={inputStyle} value={form.bookedDate} onChange={set("bookedDate")} /></Field>
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
-      <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={set("mechanic")} placeholder="Josh" /></Field>
+      <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
       <button type="submit" className="rodi-btn" style={{
         marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18",
@@ -515,6 +517,7 @@ function ServiceForm({ initial, onSave, onClose }) {
 function PricingForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   const margin = form.cost !== "" && form.rrp !== "" && Number(form.cost) > 0
     ? (((Number(form.rrp) - Number(form.cost)) / Number(form.rrp)) * 100).toFixed(0)
     : null;
@@ -522,8 +525,8 @@ function PricingForm({ initial, onSave, onClose }) {
     <Drawer title={initial.brand ? "Edit price" : "New price entry"} icon={<Tag size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={set("brand")} placeholder="Dirodi" /></Field>
-        <Field label="Model / type"><input style={inputStyle} value={form.model} onChange={set("model")} placeholder="Gen 6 SO 1000" /></Field>
+        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
+        <Field label="Model / type"><input style={inputStyle} value={form.model} onChange={upper("model")} placeholder="GEN 6 SO 1000" /></Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Field label="Cost price"><input type="number" min="0" step="0.01" style={inputStyle} value={form.cost} onChange={set("cost")} placeholder="0.00" /></Field>
@@ -546,6 +549,7 @@ function PricingForm({ initial, onSave, onClose }) {
 function AccessoryForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
     <Drawer title={initial.brand || initial.type ? "Edit accessory order" : "New accessory order"} icon={<Boxes size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
@@ -555,17 +559,17 @@ function AccessoryForm({ initial, onSave, onClose }) {
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={set("brand")} placeholder="Dirodi" /></Field>
+        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Date"><input type="date" style={inputStyle} value={form.date} onChange={set("date")} /></Field>
       </div>
-      <Field label="Type / item"><input style={inputStyle} value={form.type} onChange={set("type")} placeholder="Freewheel, Shimano TZ500..." /></Field>
+      <Field label="Type / item"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="FREEWHEEL, SHIMANO TZ500..." /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
         <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
       </div>
       <Field label="Tracking #"><input style={inputStyle} value={form.tracking} onChange={set("tracking")} /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={set("customer")} /></Field>
+        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <Field label="Payment status">
