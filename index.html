@@ -171,9 +171,9 @@ const emptyService = () => ({
   id: uid(), status: "Booked", customer: "", phone: "", bike: "",
   serviceType: "", bookedDate: "", pickupDate: "", mechanic: "", notes: "", archived: false,
 });
-const PRICING_CATEGORIES = ["Bike", "Moto Bike"];
+const PRICING_CATEGORIES = ["E-Bike", "E-Moto"];
 const emptyPricing = () => ({
-  id: uid(), category: "Bike", brand: "", model: "", cost: "", rrp: "", notes: "",
+  id: uid(), category: "E-Bike", brand: "", model: "", cost: "", rrp: "", notes: "",
 });
 const emptyAccessory = () => ({
   id: uid(), status: "Pre-ordered", date: "", brand: "", type: "",
@@ -480,7 +480,7 @@ function OrderForm({ initial, onSave, onClose }) {
       </Field>
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, color: "#565C54" }}>
         <input type="checkbox" checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
-        Customer notified
+        Text sent to customer
       </label>
       <Field label="Payment status">
         <select style={inputStyle} value={form.payment} onChange={set("payment")}>
@@ -768,7 +768,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
                   <div>{o.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : (o.customer || "—")}</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                     {o.forStock && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
-                    {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Notified</span>}
+                    {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Texted</span>}
                     {o.status === "Received" && (o.assemblyStatus === "Assembled"
                       ? <span style={{ fontSize: 10.5, color: "#4C9A6A", fontWeight: 600 }}>Assembled</span>
                       : <span style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700 }}>For assembly</span>)}
@@ -919,7 +919,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
     const q = search.toLowerCase();
     return pricing.filter((p) => {
       const matchesSearch = !q || [p.brand, p.model].join(" ").toLowerCase().includes(q);
-      const matchesCategory = categoryFilter === "All" || (p.category || "Bike") === categoryFilter;
+      const matchesCategory = categoryFilter === "All" || (p.category || "E-Bike") === categoryFilter;
       return matchesSearch && matchesCategory;
     });
   }, [pricing, search, categoryFilter]);
@@ -928,7 +928,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
     const groups = {};
     PRICING_CATEGORIES.forEach((c) => { groups[c] = []; });
     filtered.forEach((p) => {
-      const cat = p.category || "Bike";
+      const cat = p.category || "E-Bike";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(p);
     });
@@ -1014,7 +1014,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
         .map((cat) => (
           <div key={cat} style={{ marginBottom: 24 }}>
             <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>
-              {cat === "Moto Bike" ? "E-MOTOS" : "E-BIKES"}
+              {cat === "E-Moto" ? "E-MOTOS" : "E-BIKES"}
             </h3>
             {renderTable(grouped[cat] || [])}
           </div>
