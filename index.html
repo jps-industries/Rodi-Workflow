@@ -522,6 +522,9 @@ function PricingForm({ initial, onSave, onClose }) {
   const margin = form.cost !== "" && form.rrp !== "" && Number(form.cost) > 0
     ? (((Number(form.rrp) - Number(form.cost)) / Number(form.rrp)) * 100).toFixed(0)
     : null;
+  const grossProfit = form.cost !== "" && form.rrp !== ""
+    ? (Number(form.rrp) - Number(form.cost))
+    : null;
   return (
     <Drawer title={initial.brand ? "Edit price" : "New price entry"} icon={<Tag size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
@@ -538,8 +541,11 @@ function PricingForm({ initial, onSave, onClose }) {
         <Field label="Cost price"><input type="number" min="0" step="0.01" style={inputStyle} value={form.cost} onChange={set("cost")} placeholder="0.00" /></Field>
         <Field label="RRP"><input type="number" min="0" step="0.01" style={inputStyle} value={form.rrp} onChange={set("rrp")} placeholder="0.00" /></Field>
       </div>
-      {margin !== null && (
-        <div style={{ fontSize: 13, color: "#565C54" }}>Margin: <strong style={{ color: "#191B18" }}>{margin}%</strong></div>
+      {(margin !== null || grossProfit !== null) && (
+        <div style={{ fontSize: 13, color: "#565C54", display: "flex", gap: 16 }}>
+          {margin !== null && <span>Margin: <strong style={{ color: "#191B18" }}>{margin}%</strong></span>}
+          {grossProfit !== null && <span>Gross profit: <strong style={{ color: "#191B18" }}>{money(grossProfit)}</strong></span>}
+        </div>
       )}
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} placeholder="Supplier, freight, bundle details…" /></Field>
       <button type="submit" className="rodi-btn" style={{
@@ -920,19 +926,20 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-            {["Brand", "Model / type", "Cost", "RRP", "Margin", "Notes", ""].map((h) => (
+            {["Brand", "Model / type", "Cost", "RRP", "Margin", "Gross Profit", "Notes", ""].map((h) => (
               <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
-            <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No prices saved yet — add one for reference.</td></tr>
+            <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No prices saved yet — add one for reference.</td></tr>
           )}
           {rows.map((p) => {
             const margin = p.cost !== "" && p.rrp !== "" && Number(p.cost) > 0
               ? (((Number(p.rrp) - Number(p.cost)) / Number(p.rrp)) * 100).toFixed(0) + "%"
               : "—";
+            const grossProfit = p.cost !== "" && p.rrp !== "" ? money(Number(p.rrp) - Number(p.cost)) : "—";
             return (
               <tr key={p.id} className="rodi-row" onClick={() => onEdit(p)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{p.brand}</td>
@@ -940,6 +947,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
                 <td style={{ padding: "8px 10px" }}>{money(p.cost)}</td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{money(p.rrp)}</td>
                 <td style={{ padding: "8px 10px", color: "#4C9A6A", fontWeight: 600 }}>{margin}</td>
+                <td style={{ padding: "8px 10px", color: "#4C9A6A", fontWeight: 600 }}>{grossProfit}</td>
                 <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -989,7 +997,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
         .map((cat) => (
           <div key={cat} style={{ marginBottom: 24 }}>
             <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>
-              {cat === "Moto Bike" ? "🏍 " : "🚲 "}{cat}s
+              {cat === "Moto Bike" ? "E-MOTOS" : "E-BIKES"}
             </h3>
             {renderTable(grouped[cat] || [])}
           </div>
