@@ -171,8 +171,9 @@ const emptyService = () => ({
   id: uid(), status: "Booked", customer: "", phone: "", bike: "",
   serviceType: "", bookedDate: "", pickupDate: "", mechanic: "", notes: "", archived: false,
 });
+const PRICING_CATEGORIES = ["Bike", "Moto Bike"];
 const emptyPricing = () => ({
-  id: uid(), brand: "", model: "", cost: "", rrp: "", notes: "",
+  id: uid(), category: "Bike", brand: "", model: "", cost: "", rrp: "", notes: "",
 });
 const emptyAccessory = () => ({
   id: uid(), status: "Pre-ordered", date: "", brand: "", type: "",
@@ -524,6 +525,11 @@ function PricingForm({ initial, onSave, onClose }) {
   return (
     <Drawer title={initial.brand ? "Edit price" : "New price entry"} icon={<Tag size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+      <Field label="Category">
+        <select style={inputStyle} value={form.category} onChange={set("category")}>
+          {PRICING_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Model / type"><input style={inputStyle} value={form.model} onChange={upper("model")} placeholder="GEN 6 SO 1000" /></Field>
@@ -884,19 +890,86 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
 
 function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return pricing.filter((p) => !q || [p.brand, p.model].join(" ").toLowerCase().includes(q));
-  }, [pricing, search]);
+    return pricing.filter((p) => {
+      const matchesSearch = !q || [p.brand, p.model].join(" ").toLowerCase().includes(q);
+      const matchesCategory = categoryFilter === "All" || (p.category || "Bike") === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [pricing, search, categoryFilter]);
 
-  const sorted = useMemo(
-    () => [...filtered].sort((a, b) => (a.brand + a.model).localeCompare(b.brand + b.model)),
-    [filtered]
+  const grouped = useMemo(() => {
+    const groups = {};
+    PRICING_CATEGORIES.forEach((c) => { groups[c] = []; });
+    filtered.forEach((p) => {
+      const cat = p.category || "Bike";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+    Object.keys(groups).forEach((cat) => {
+      groups[cat].sort((a, b) => (a.brand + a.model).localeCompare(b.brand + b.model));
+    });
+    return groups;
+  }, [filtered]);
+
+  const renderTable = (rows) => (
+    <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
+            {["Brand", "Model / type", "Cost", "RRP", "Margin", "Notes", ""].map((h) => (
+              <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No prices saved yet — add one for reference.</td></tr>
+          )}
+          {rows.map((p) => {
+            const margin = p.cost !== "" && p.rrp !== "" && Number(p.cost) > 0
+              ? (((Number(p.rrp) - Number(p.cost)) / Number(p.rrp)) * 100).toFixed(0) + "%"
+              : "—";
+            return (
+              <tr key={p.id} className="rodi-row" onClick={() => onEdit(p)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{p.brand}</td>
+                <td style={{ padding: "8px 10px" }}>{p.model}</td>
+                <td style={{ padding: "8px 10px" }}>{money(p.cost)}</td>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{money(p.rrp)}</td>
+                <td style={{ padding: "8px 10px", color: "#4C9A6A", fontWeight: 600 }}>{margin}</td>
+                <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(p); }} title="Edit"><Pencil size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 
   return (
     <div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        <button onClick={() => setCategoryFilter("All")} className="rodi-btn" style={{
+          border: categoryFilter === "All" ? "2px solid #191B18" : "1px solid #D8DAD1",
+          background: "#fff", borderRadius: 999, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
+        }}>All</button>
+        {PRICING_CATEGORIES.map((c) => (
+          <button key={c} onClick={() => setCategoryFilter(c)} className="rodi-btn" style={{
+            border: categoryFilter === c ? "2px solid #191B18" : "1px solid #D8DAD1",
+            background: "#fff", borderRadius: 999, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
+          }}>{c}</button>
+        ))}
+      </div>
+
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: "1 1 220px" }}>
           <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
@@ -911,43 +984,16 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
         </button>
       </div>
 
-      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {["Brand", "Model / type", "Cost", "RRP", "Margin", "Notes", ""].map((h) => (
-                <th key={h} style={{ padding: "9px 10px", fontSize: 12.5, color: "#565C54", fontWeight: 600 }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No prices saved yet — add one for reference.</td></tr>
-            )}
-            {sorted.map((p) => {
-              const margin = p.cost !== "" && p.rrp !== "" && Number(p.cost) > 0
-                ? (((Number(p.rrp) - Number(p.cost)) / Number(p.rrp)) * 100).toFixed(0) + "%"
-                : "—";
-              return (
-                <tr key={p.id} className="rodi-row" onClick={() => onEdit(p)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
-                  <td style={{ padding: "8px 10px", fontWeight: 600 }}>{p.brand}</td>
-                  <td style={{ padding: "8px 10px" }}>{p.model}</td>
-                  <td style={{ padding: "8px 10px" }}>{money(p.cost)}</td>
-                  <td style={{ padding: "8px 10px", fontWeight: 600 }}>{money(p.rrp)}</td>
-                  <td style={{ padding: "8px 10px", color: "#4C9A6A", fontWeight: 600 }}>{margin}</td>
-                  <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(p); }} title="Edit"><Pencil size={14} /></IconBtn>
-                      <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {PRICING_CATEGORIES
+        .filter((cat) => categoryFilter === "All" || categoryFilter === cat)
+        .map((cat) => (
+          <div key={cat} style={{ marginBottom: 24 }}>
+            <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>
+              {cat === "Moto Bike" ? "🏍 " : "🚲 "}{cat}s
+            </h3>
+            {renderTable(grouped[cat] || [])}
+          </div>
+        ))}
     </div>
   );
 }
