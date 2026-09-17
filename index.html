@@ -149,13 +149,16 @@ const ACCESSORY_COLORS = {
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
-// Displays a stored ISO date (YYYY-MM-DD) as Australian DD/MM/YYYY. Storage format is unchanged.
+// Displays a stored ISO date (YYYY-MM-DD) as Australian format with weekday, e.g. "Wed 23/09/2026". Storage format is unchanged.
 function formatAU(dateStr) {
   if (!dateStr) return "";
   const parts = dateStr.split("-");
   if (parts.length !== 3) return dateStr;
   const [y, m, d] = parts;
-  return `${d}/${m}/${y}`;
+  const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+  if (isNaN(dateObj.getTime())) return `${d}/${m}/${y}`;
+  const weekday = dateObj.toLocaleDateString("en-AU", { weekday: "short" });
+  return `${weekday} ${d}/${m}/${y}`;
 }
 
 const emptyOrder = () => ({
@@ -182,17 +185,50 @@ const money = (n) => {
   return Number.isFinite(num) && n !== "" ? `$${num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : "—";
 };
 
-// Renders a tracking value as a clickable link when it looks like a URL, otherwise plain text.
+const COURIER_DOMAINS = {
+  "shippit.com": "Shippit",
+  "auspost.com.au": "Australia Post",
+  "startrack.com.au": "StarTrack",
+  "dhl.com": "DHL",
+  "tnt.com": "TNT",
+  "fedex.com": "FedEx",
+  "couriersplease.com.au": "Couriers Please",
+  "aramex.com.au": "Aramex",
+  "aramex.com": "Aramex",
+  "ups.com": "UPS",
+  "sendle.com": "Sendle",
+  "directfreight.com.au": "Direct Freight",
+  "tollgroup.com": "Toll",
+  "allied.com.au": "Allied",
+  "alliedexpress.com.au": "Allied Express",
+};
+
+function getCourierName(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    for (const domain of Object.keys(COURIER_DOMAINS)) {
+      if (host === domain || host.endsWith("." + domain)) return COURIER_DOMAINS[domain];
+    }
+    const parts = host.split(".");
+    const core = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+    return core.charAt(0).toUpperCase() + core.slice(1);
+  } catch (e) {
+    return "Track";
+  }
+}
+
+// Renders a tracking value as a clickable link (showing the courier name) when it looks like a URL, otherwise plain text.
 function TrackingCell({ value }) {
   if (!value) return "—";
   const isUrl = /^https?:\/\//i.test(value.trim());
   if (!isUrl) return value;
+  const trimmed = value.trim();
   return (
-    <a href={value.trim()} target="_blank" rel="noopener noreferrer"
+    <a href={trimmed} target="_blank" rel="noopener noreferrer"
       style={{ color: "#3A7CA5", textDecoration: "underline" }}
       onClick={(e) => e.stopPropagation()}
     >
-      Track
+      {getCourierName(trimmed)} ↗
     </a>
   );
 }
@@ -270,6 +306,8 @@ function GlobalStyle() {
       .rodi-btn:active { transform: scale(0.96); }
       input:focus, select:focus, textarea:focus { outline: 2px solid #191B18; outline-offset: 1px; }
       .rodi-cal-cell { transition: background 0.12s ease; }
+      .rodi-scrollbar table { table-layout: fixed; width: 100%; }
+      .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: break-word; overflow-wrap: anywhere; }
       .rodi-outline { border: 2px solid #191B18 !important; }
     `}</style>
   );
@@ -685,7 +723,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
               </td></tr>
             )}
             {filtered.map((o) => (
-              <tr key={o.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
+              <tr key={o.id} className="rodi-row" onClick={() => onEdit(o)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <td style={{ padding: "8px 10px" }}><StatusBadge label={o.status} color={ORDER_COLORS[o.status]} /></td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{o.brand}</td>
                 <td style={{ padding: "8px 10px" }}>{o.type}</td>
@@ -708,11 +746,11 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onToggleArchive, onArchive
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={() => onEdit(o)} title="Edit"><Pencil size={14} /></IconBtn>
-                    <IconBtn onClick={() => onToggleArchive(o.id)} title={o.archived ? "Restore" : "Archive"}>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(o); }} title="Edit"><Pencil size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
                       {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                     </IconBtn>
-                    <IconBtn onClick={() => onDelete(o.id)} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(o.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
                   </div>
                 </td>
               </tr>
@@ -810,7 +848,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               </td></tr>
             )}
             {filtered.map((s) => (
-              <tr key={s.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
+              <tr key={s.id} className="rodi-row" onClick={() => onEdit(s)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <td style={{ padding: "8px 10px" }}><StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} /></td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
@@ -824,11 +862,11 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={() => onEdit(s)} title="Edit"><Pencil size={14} /></IconBtn>
-                    <IconBtn onClick={() => onToggleArchive(s.id)} title={s.archived ? "Restore" : "Archive"}>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(s); }} title="Edit"><Pencil size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
                       {s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                     </IconBtn>
-                    <IconBtn onClick={() => onDelete(s.id)} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
                   </div>
                 </td>
               </tr>
@@ -887,7 +925,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
                 ? (((Number(p.rrp) - Number(p.cost)) / Number(p.rrp)) * 100).toFixed(0) + "%"
                 : "—";
               return (
-                <tr key={p.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
+                <tr key={p.id} className="rodi-row" onClick={() => onEdit(p)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                   <td style={{ padding: "8px 10px", fontWeight: 600 }}>{p.brand}</td>
                   <td style={{ padding: "8px 10px" }}>{p.model}</td>
                   <td style={{ padding: "8px 10px" }}>{money(p.cost)}</td>
@@ -896,8 +934,8 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
                   <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
                   <td style={{ padding: "8px 10px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <IconBtn onClick={() => onEdit(p)} title="Edit"><Pencil size={14} /></IconBtn>
-                      <IconBtn onClick={() => onDelete(p.id)} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                      <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(p); }} title="Edit"><Pencil size={14} /></IconBtn>
+                      <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
                     </div>
                   </td>
                 </tr>
@@ -1014,7 +1052,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onToggleArchive,
               </td></tr>
             )}
             {filtered.map((a) => (
-              <tr key={a.id} className="rodi-row" style={{ borderBottom: "1px solid #EFEFEA" }}>
+              <tr key={a.id} className="rodi-row" onClick={() => onEdit(a)} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <td style={{ padding: "8px 10px" }}><StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} /></td>
                 <td style={{ padding: "8px 10px" }}>{formatAU(a.date) || "—"}</td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.brand || "—"}</td>
@@ -1029,11 +1067,11 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onToggleArchive,
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={() => onEdit(a)} title="Edit"><Pencil size={14} /></IconBtn>
-                    <IconBtn onClick={() => onToggleArchive(a.id)} title={a.archived ? "Restore" : "Archive"}>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(a); }} title="Edit"><Pencil size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(a.id); }} title={a.archived ? "Restore" : "Archive"}>
                       {a.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                     </IconBtn>
-                    <IconBtn onClick={() => onDelete(a.id)} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(a.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
                   </div>
                 </td>
               </tr>
@@ -1047,10 +1085,11 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onToggleArchive,
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, onDeleteNote }) {
+function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, onDeleteNote, onEditNote }) {
   const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [selected, setSelected] = useState(null);
   const [noteText, setNoteText] = useState("");
+  const [editingNote, setEditingNote] = useState(null); // { id, date, text }
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
   const activeServices = useMemo(() => services.filter((s) => !s.archived), [services]);
@@ -1154,27 +1193,53 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
           </div>
           {(eventsByDate[selected] || []).length === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing scheduled this day.</p>}
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-            {(eventsByDate[selected] || []).map((ev, idx) => (
-              <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14 }}>
-                {ev.kind === "order" ? <Package size={15} color="#33506B" />
-                  : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
-                  : ev.kind === "note" ? <Tag size={15} color="#191B18" />
-                  : <Boxes size={15} color="#7C5CBF" />}
-                <span style={{ fontWeight: 600 }}>{ev.title}</span>
-                <span style={{ color: "#8B9086", fontSize: 12.5 }}>
-                  {ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
-                    : ev.kind === "service" ? ev.ref.serviceType || ""
-                    : ev.kind === "note" ? "note"
-                    : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`}
-                </span>
-                {ev.kind === "note" && (
-                  <button onClick={() => onDeleteNote(ev.ref.id)} title="Delete note"
-                    style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#C1483A" }}>
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
+            {(eventsByDate[selected] || []).map((ev, idx) => {
+              if (ev.kind === "note" && editingNote && editingNote.id === ev.ref.id) {
+                return (
+                  <form
+                    key={idx}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!editingNote.text.trim()) return;
+                      onEditNote(editingNote.id, editingNote.date, editingNote.text.trim());
+                      setEditingNote(null);
+                    }}
+                    style={{ display: "flex", gap: 8, alignItems: "center", background: "#FFF8E1", padding: 8, borderRadius: 8 }}
+                  >
+                    <input type="date" value={editingNote.date} onChange={(e) => setEditingNote({ ...editingNote, date: e.target.value })} style={{ ...inputStyle, width: 150 }} />
+                    <input value={editingNote.text} onChange={(e) => setEditingNote({ ...editingNote, text: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
+                    <button type="submit" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Save</button>
+                    <button type="button" onClick={() => setEditingNote(null)} style={{ background: "#fff", border: "1px solid #D8DAD1", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 13 }}>Cancel</button>
+                  </form>
+                );
+              }
+              return (
+                <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14 }}>
+                  {ev.kind === "order" ? <Package size={15} color="#33506B" />
+                    : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
+                    : ev.kind === "note" ? <Tag size={15} color="#191B18" />
+                    : <Boxes size={15} color="#7C5CBF" />}
+                  <span
+                    style={{ fontWeight: 600, cursor: ev.kind === "note" ? "pointer" : "default" }}
+                    onClick={() => { if (ev.kind === "note") setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); }}
+                  >
+                    {ev.title}
+                  </span>
+                  <span style={{ color: "#8B9086", fontSize: 12.5 }}>
+                    {ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
+                      : ev.kind === "service" ? ev.ref.serviceType || ""
+                      : ev.kind === "note" ? "note — click to edit"
+                      : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`}
+                  </span>
+                  {ev.kind === "note" && (
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                      <IconBtn onClick={() => setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text })} title="Edit note"><Pencil size={13} /></IconBtn>
+                      <IconBtn onClick={() => onDeleteNote(ev.ref.id)} title="Delete note" danger><Trash2 size={13} /></IconBtn>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <form
             onSubmit={(e) => {
@@ -1245,6 +1310,14 @@ function RodiTracker() {
       setCalendarNotes((prev) => [...prev, saved]);
     } catch (e) {
       setSyncError("Couldn't save the note: " + e.message);
+    }
+  }, []);
+  const updateCalendarNote = useCallback(async (id, date, text) => {
+    try {
+      const saved = await sbUpsert("notes", { id, date, text });
+      setCalendarNotes((prev) => prev.map((n) => (n.id === id ? saved : n)));
+    } catch (e) {
+      setSyncError("Couldn't update the note: " + e.message);
     }
   }, []);
   const deleteCalendarNote = useCallback(async (id) => {
@@ -1463,6 +1536,7 @@ function RodiTracker() {
                 accessories={accessories}
                 calendarNotes={calendarNotes}
                 onAddNote={addCalendarNote}
+                onEditNote={updateCalendarNote}
                 onDeleteNote={deleteCalendarNote}
               />
             )}
