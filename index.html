@@ -209,14 +209,14 @@ function SortableHeader({ label, sortKey, activeKey, dir, onSort }) {
     <th
       onClick={() => sortKey && onSort(sortKey)}
       style={{
-        padding: "9px 10px", fontSize: 12.5, color: active ? "#191B18" : "#565C54", fontWeight: 600,
-        cursor: sortKey ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap",
+        padding: "9px 8px", fontSize: 12, color: active ? "#191B18" : "#565C54", fontWeight: 600,
+        cursor: sortKey ? "pointer" : "default", userSelect: "none",
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
         {label}
-        {sortKey && <ArrowUpDown size={11} style={{ opacity: active ? 1 : 0.35 }} />}
-        {active && <span style={{ fontSize: 10 }}>{dir === "asc" ? "▲" : "▼"}</span>}
+        {sortKey && <ArrowUpDown size={10} style={{ opacity: active ? 1 : 0.3, flexShrink: 0 }} />}
+        {active && <span style={{ fontSize: 9 }}>{dir === "asc" ? "▲" : "▼"}</span>}
       </span>
     </th>
   );
@@ -498,8 +498,16 @@ function OrderForm({ initial, onSave, onClose }) {
         onSave(form);
       }}>
       <Field label="Status">
-        <select style={inputStyle} value={form.status} onChange={set("status")}>
-          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select
+          style={{
+            ...inputStyle,
+            background: ORDER_COLORS[form.status], color: "#fff", fontWeight: 700,
+            border: "2px solid #191B18",
+          }}
+          value={form.status}
+          onChange={set("status")}
+        >
+          {ORDER_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -858,7 +866,6 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(o); }} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
                       {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
@@ -994,7 +1001,6 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(s); }} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
                       {s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                     </IconBtn>
@@ -1075,7 +1081,6 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
                 <td style={{ padding: "8px 10px", color: "#565C54", fontSize: 13 }}>{p.notes || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(p); }} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
                   </div>
                 </td>
@@ -1267,7 +1272,6 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onEdit(a); }} title="Edit"><Pencil size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(a); }} title="Duplicate"><Copy size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(a.id); }} title={a.archived ? "Restore" : "Archive"}>
                       {a.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
