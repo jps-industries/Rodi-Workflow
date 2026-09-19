@@ -369,8 +369,11 @@ function GlobalStyle() {
   return (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap');
-      .rodi-root { font-family: 'Inter', system-ui, sans-serif; background: #F3F4EF; color: #191B18; }
+      html, body { overflow-x: hidden; max-width: 100%; }
+      .rodi-root { font-family: 'Inter', system-ui, sans-serif; background: #F3F4EF; color: #191B18; overflow-x: hidden; max-width: 100vw; }
       .rodi-root * { box-sizing: border-box; }
+      .rodi-nav-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; max-width: 100%; }
+      .rodi-nav-scroll::-webkit-scrollbar { display: none; }
       .rodi-display { font-family: 'Anton', 'Barlow Condensed', sans-serif; letter-spacing: 0.01em; }
       .rodi-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
       .rodi-scrollbar::-webkit-scrollbar-thumb { background: #D8DAD1; border-radius: 4px; }
@@ -732,8 +735,16 @@ function AccessoryForm({ initial, onSave, onClose }) {
     <Drawer title={initial.brand || initial.type ? "Edit accessory order" : "New accessory order"} icon={<Boxes size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
       <Field label="Status">
-        <select style={inputStyle} value={form.status} onChange={set("status")}>
-          {ACCESSORY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select
+          style={{
+            ...inputStyle,
+            background: ACCESSORY_COLORS[form.status], color: "#fff", fontWeight: 700,
+            border: "2px solid #191B18",
+          }}
+          value={form.status}
+          onChange={set("status")}
+        >
+          {ACCESSORY_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -2215,22 +2226,24 @@ function RodiTracker() {
             }}>RODI ELECTRIC</h1>
             <span style={{ fontSize: 12.5, color: "#C9CBC3" }}>Inventory, orders & servicing</span>
           </div>
-          <nav style={{ display: "flex", gap: 6, background: "#2A2D28", padding: 5, borderRadius: 11, border: "2px solid #F6BD1B" }}>
-            {tabs.map((t) => {
-              const Icon = t.icon;
-              const active = tab === t.id;
-              return (
-                <button key={t.id} onClick={() => setTab(t.id)} className="rodi-btn"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 7, padding: "8px 14px", borderRadius: 8,
-                    border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 700,
-                    background: active ? "#F6BD1B" : "transparent", color: active ? "#191B18" : "#C9CBC3",
-                  }}>
-                  <Icon size={15} /> {t.label}
-                </button>
-              );
-            })}
-          </nav>
+          <div className="rodi-nav-scroll" style={{ maxWidth: "100%", minWidth: 0 }}>
+            <nav style={{ display: "flex", gap: 6, background: "#2A2D28", padding: 5, borderRadius: 11, border: "2px solid #F6BD1B", width: "max-content" }}>
+              {tabs.map((t) => {
+                const Icon = t.icon;
+                const active = tab === t.id;
+                return (
+                  <button key={t.id} onClick={() => setTab(t.id)} className="rodi-btn"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7, padding: "8px 14px", borderRadius: 8,
+                      border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
+                      background: active ? "#F6BD1B" : "transparent", color: active ? "#191B18" : "#C9CBC3",
+                    }}>
+                    <Icon size={15} /> {t.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
         </div>
       </div>
       <div style={{ padding: "20px 20px 60px", display: "flex", justifyContent: "center" }}>
