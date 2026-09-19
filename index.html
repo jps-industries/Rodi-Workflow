@@ -382,6 +382,8 @@ function GlobalStyle() {
       .rodi-scrollbar table { table-layout: fixed; width: 100%; }
       .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: break-word; overflow-wrap: anywhere; }
       .rodi-outline { border: 2px solid #191B18 !important; }
+      .rodi-half-width { width: 50%; min-width: 320px; }
+      @media (max-width: 720px) { .rodi-half-width { width: 100%; min-width: 0; } }
     `}</style>
   );
 }
@@ -578,6 +580,60 @@ function OrderForm({ initial, onSave, onClose }) {
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save order
+      </button>
+    </Drawer>
+  );
+}
+
+// A pared-down version of OrderForm used only for "Schedule delivery" (from the Calendar).
+// It's a separate component so the full OrderForm (Inventory & Orders tab) is untouched.
+// Status, order date, ETA, tracking and "Shop stock only" are all skipped here — the bike
+// is already on hand, so those fields were already settled when it came in as stock; this
+// form is purely "who's getting it and when", and saves through the same saveOrder path.
+function DeliveryForm({ initial, onSave, onClose }) {
+  const [form, setForm] = useState(initial);
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
+  return (
+    <Drawer title="Schedule delivery" icon={<Truck size={17} />} onClose={onClose}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (form.notified && !initial.notified) notifyCustomerReady(form);
+        onSave(form);
+      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
+        <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Type / model"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="GEN 6 SO 1000" /></Field>
+        <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
+        <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
+      </div>
+      <Field label="Delivery date"><input type="date" style={inputStyle} value={form.deliveryDate} onChange={set("deliveryDate")} /></Field>
+      <Field label="Assembly">
+        <select style={inputStyle} value={form.assemblyStatus} onChange={set("assemblyStatus")}>
+          {ASSEMBLY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Field>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, color: "#565C54" }}>
+        <input type="checkbox" checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
+        Text sent to customer
+      </label>
+      <Field label="Payment status">
+        <select style={inputStyle} value={form.payment} onChange={set("payment")}>
+          {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Field>
+      <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
+      <button type="submit" className="rodi-btn" style={{
+        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18",
+        borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
+      }}>
+        Save delivery
       </button>
     </Drawer>
   );
@@ -1576,9 +1632,6 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                   background: "#fff", border: "2px solid #191B18", borderRadius: 10, padding: 8,
                   boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
                 }}>
-                  <div style={{ fontSize: 11.5, color: "#8B9086", fontWeight: 700, textTransform: "uppercase", padding: "4px 6px" }}>
-                    From shop-floor stock
-                  </div>
                   {floorStock.length === 0 && (
                     <div style={{ fontSize: 13, color: "#8B9086", padding: "4px 6px 10px" }}>No shop-stock bikes on hand right now.</div>
                   )}
@@ -1899,12 +1952,14 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
       </div>
 
       <h3 className="rodi-display" style={{ fontSize: 20, margin: "24px 0 10px 0" }}>NOTES &amp; CHECKLIST</h3>
-      <ChecklistWidget
-        items={checklistItems}
-        onAdd={onAddChecklistItem}
-        onToggle={onToggleChecklistItem}
-        onDelete={onDeleteChecklistItem}
-      />
+      <div className="rodi-half-width">
+        <ChecklistWidget
+          items={checklistItems}
+          onAdd={onAddChecklistItem}
+          onToggle={onToggleChecklistItem}
+          onDelete={onDeleteChecklistItem}
+        />
+      </div>
     </div>
   );
 }
@@ -2152,12 +2207,12 @@ function RodiTracker() {
   const scheduleDeliveryFromCalendar = useCallback((stockOrder, dateStr) => {
     if (stockOrder) {
       setDrawer({
-        type: "order",
+        type: "delivery",
         data: { ...stockOrder, forStock: false, fulfillment: "Delivery", deliveryDate: dateStr || stockOrder.deliveryDate || "" },
       });
     } else {
       setDrawer({
-        type: "order",
+        type: "delivery",
         data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "" },
       });
     }
@@ -2272,7 +2327,7 @@ function RodiTracker() {
                 onArchiveAllReceived={archiveAllReceivedOrders}
                 onAdvanceStatus={advanceOrderStatus}
                 onScheduleDelivery={(o) => setDrawer({
-                  type: "order",
+                  type: "delivery",
                   data: { ...o, forStock: false, fulfillment: "Delivery", deliveryDate: o.deliveryDate || "" },
                 })}
               />
@@ -2332,6 +2387,9 @@ function RodiTracker() {
 
       {drawer?.type === "order" && (
         <OrderForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
+      )}
+      {drawer?.type === "delivery" && (
+        <DeliveryForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
       )}
       {drawer?.type === "service" && (
         <ServiceForm initial={drawer.data} onSave={saveService} onClose={() => setDrawer(null)} />
