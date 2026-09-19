@@ -192,18 +192,28 @@ function nextStatus(current, list) {
 }
 
 // Generic row sorter: sortKey is a field name on each row, sortDir is "asc" or "desc".
-function sortRows(rows, sortKey, sortDir) {
+// statusOrder (optional): when sorting by "status", ranks by position in this array
+// (the real workflow progression, e.g. Pre-ordered → Ordered → In Transit → Received)
+// instead of sorting the status label alphabetically.
+function sortRows(rows, sortKey, sortDir, statusOrder) {
   if (!sortKey) return rows;
   const arr = [...rows];
   arr.sort((a, b) => {
     let av = a[sortKey];
     let bv = b[sortKey];
-    const an = Number(av), bn = Number(bv);
-    if (av !== "" && bv !== "" && !isNaN(an) && !isNaN(bn) && av != null && bv != null) {
-      av = an; bv = bn;
+    if (sortKey === "status" && statusOrder) {
+      av = statusOrder.indexOf(av);
+      bv = statusOrder.indexOf(bv);
+      if (av === -1) av = statusOrder.length;
+      if (bv === -1) bv = statusOrder.length;
     } else {
-      av = (av ?? "").toString().toLowerCase();
-      bv = (bv ?? "").toString().toLowerCase();
+      const an = Number(av), bn = Number(bv);
+      if (av !== "" && bv !== "" && !isNaN(an) && !isNaN(bn) && av != null && bv != null) {
+        av = an; bv = bn;
+      } else {
+        av = (av ?? "").toString().toLowerCase();
+        bv = (bv ?? "").toString().toLowerCase();
+      }
     }
     if (av < bv) return sortDir === "asc" ? -1 : 1;
     if (av > bv) return sortDir === "asc" ? 1 : -1;
@@ -813,7 +823,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   const [stockOnly, setStockOnly] = useState(false);
   const [needsAssembly, setNeedsAssembly] = useState(false);
   const [view, setView] = useState("active");
-  const [sortKey, setSortKey] = useState(null);
+  const [sortKey, setSortKey] = useState("status");
   const [sortDir, setSortDir] = useState("asc");
   const onSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -932,7 +942,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 {view === "archived" ? "No archived orders yet." : "No orders match — add one to get started."}
               </td></tr>
             )}
-            {sortRows(filtered, sortKey, sortDir).map((o) => {
+            {sortRows(filtered, sortKey, sortDir, ORDER_STATUSES).map((o) => {
               const overdue = view === "active" && isPastDate(o.eta) && o.status !== "Received";
               return (
               <tr key={o.id} className="rodi-row" onClick={() => onEdit(o)} style={{
@@ -1002,7 +1012,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [view, setView] = useState("active");
-  const [sortKey, setSortKey] = useState(null);
+  const [sortKey, setSortKey] = useState("status");
   const [sortDir, setSortDir] = useState("asc");
   const onSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -1094,7 +1104,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 {view === "archived" ? "No archived bookings yet." : "No bookings match — add one to get started."}
               </td></tr>
             )}
-            {sortRows(filtered, sortKey, sortDir).map((s) => {
+            {sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES).map((s) => {
               const overdue = view === "active" && isPastDate(s.bookedDate) && s.status !== "Completed";
               return (
               <tr key={s.id} className="rodi-row" onClick={() => onEdit(s)} style={{
@@ -1273,7 +1283,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
   const [view, setView] = useState("active");
-  const [sortKey, setSortKey] = useState(null);
+  const [sortKey, setSortKey] = useState("status");
   const [sortDir, setSortDir] = useState("asc");
   const onSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -1382,7 +1392,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 {view === "archived" ? "No archived accessory orders yet." : "No accessory or parts orders yet — add one to get started."}
               </td></tr>
             )}
-            {sortRows(filtered, sortKey, sortDir).map((a) => {
+            {sortRows(filtered, sortKey, sortDir, ACCESSORY_STATUSES).map((a) => {
               const overdue = view === "active" && isPastDate(a.eta) && a.status !== "Received";
               return (
               <tr key={a.id} className="rodi-row" onClick={() => onEdit(a)} style={{
