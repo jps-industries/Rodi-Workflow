@@ -449,7 +449,7 @@ function IconBtn({ onClick, title, children, danger }) {
 
 function Field({ label, children }) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 13, color: "#565C54", fontWeight: 500 }}>
+    <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 13, color: "#565C54", fontWeight: 500, minWidth: 0 }}>
       {label}
       {children}
     </label>
@@ -464,6 +464,9 @@ const inputStyle = {
   fontFamily: "inherit",
   color: "#191B18",
   background: "#fff",
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 function Drawer({ title, icon, onClose, children, onSubmit }) {
@@ -536,16 +539,16 @@ function OrderForm({ initial, onSave, onClose }) {
           {ORDER_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Order date"><input type="date" style={inputStyle} value={form.orderDate} onChange={set("orderDate")} /></Field>
       </div>
       <Field label="Type / model"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="GEN 6 SO 1000" /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
         <Field label="Tracking #"><input style={inputStyle} value={form.tracking} onChange={set("tracking")} placeholder="ZSO93494" /></Field>
       </div>
@@ -556,11 +559,11 @@ function OrderForm({ initial, onSave, onClose }) {
         <input type="checkbox" checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
         Shop stock only
       </label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Fulfillment">
           <select style={inputStyle} value={form.fulfillment} onChange={set("fulfillment")}>
             {FULFILLMENT_METHODS.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -616,15 +619,15 @@ function DeliveryForm({ initial, onSave, onClose }) {
         if (form.notified && !initial.notified) notifyCustomerReady(form);
         onSave(form);
       }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Type / model"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="GEN 6 SO 1000" /></Field>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
@@ -674,13 +677,13 @@ function ServiceForm({ initial, onSave, onClose }) {
           {SERVICE_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <Field label="Bike / model"><input style={inputStyle} value={form.bike} onChange={upper("bike")} placeholder="DIRODI GEN 6 ST" /></Field>
       <Field label="Service type"><input style={inputStyle} value={form.serviceType} onChange={upper("serviceType")} placeholder="FULL SERVICE, BRAKE ADJUST..." /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Booked date"><input type="date" style={inputStyle} value={form.bookedDate} onChange={set("bookedDate")} /></Field>
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
@@ -714,11 +717,11 @@ function PricingForm({ initial, onSave, onClose }) {
           {PRICING_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Model / type"><input style={inputStyle} value={form.model} onChange={upper("model")} placeholder="GEN 6 SO 1000" /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Cost price"><input type="number" min="0" step="0.01" style={inputStyle} value={form.cost} onChange={set("cost")} placeholder="0.00" /></Field>
         <Field label="RRP"><input type="number" min="0" step="0.01" style={inputStyle} value={form.rrp} onChange={set("rrp")} placeholder="0.00" /></Field>
       </div>
@@ -759,12 +762,12 @@ function AccessoryForm({ initial, onSave, onClose }) {
           {ACCESSORY_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Date"><input type="date" style={inputStyle} value={form.date} onChange={set("date")} /></Field>
       </div>
       <Field label="Type / item"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="FREEWHEEL, SHIMANO TZ500..." /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Colour">
           <select style={inputStyle} value={form.colour} onChange={set("colour")}>
             <option value="">—</option>
@@ -775,7 +778,7 @@ function AccessoryForm({ initial, onSave, onClose }) {
       </div>
       <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
       <Field label="Tracking #"><input style={inputStyle} value={form.tracking} onChange={set("tracking")} /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
@@ -993,7 +996,6 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
                       {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                     </IconBtn>
@@ -1854,7 +1856,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div>
           <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>NEEDS ATTENTION</h3>
           <AttentionList title="Overdue orders" icon={<AlertOctagon size={16} />} color="#C1483A" items={overdueOrders}
@@ -2198,7 +2200,9 @@ function RodiTracker() {
   const scheduleDeliveryFromCalendar = useCallback((dateStr) => {
     setDrawer({
       type: "delivery",
-      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "" },
+      // Scheduled straight from the calendar means it's coming out of floor stock, so
+      // default "Shop stock only" on — the user can untick it if that's ever not the case.
+      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "", forStock: true },
     });
   }, []);
   const scheduleServiceFromCalendar = useCallback((dateStr) => {
