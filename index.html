@@ -566,7 +566,9 @@ function OrderForm({ initial, onSave, onClose }) {
             {FULFILLMENT_METHODS.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </Field>
-        <Field label="Received date"><input type="date" style={inputStyle} value={form.receivedDate} onChange={set("receivedDate")} /></Field>
+        <Field label={form.fulfillment === "Pickup" ? "Pick up date" : "Received date"}>
+          <input type="date" style={inputStyle} value={form.receivedDate} onChange={set("receivedDate")} />
+        </Field>
       </div>
       {form.fulfillment === "Delivery" && (
         <Field label="Delivery date">
@@ -1481,6 +1483,10 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
       if (o.fulfillment !== "Delivery" || !o.deliveryDate) return;
       (map[o.deliveryDate] = map[o.deliveryDate] || []).push({ kind: "delivery", title: `Deliver: ${o.customer || "customer"}`, color: "#2E8B77", ref: o });
     });
+    activeOrders.forEach((o) => {
+      if (o.fulfillment !== "Pickup" || !o.receivedDate) return;
+      (map[o.receivedDate] = map[o.receivedDate] || []).push({ kind: "pickup", title: `Pick up: ${o.customer || "customer"}`, color: "#B5651D", ref: o });
+    });
     (calendarNotes || []).forEach((n) => {
       if (!n.date) return;
       (map[n.date] = map[n.date] || []).push({ kind: "note", title: n.text, color: "#191B18", ref: n });
@@ -1580,17 +1586,17 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                     style={{ display: "flex", gap: 8, alignItems: "center", background: "#FFF8E1", padding: 8, borderRadius: 8 }}
                   >
                     <input type="date" value={editingNote.date} onChange={(e) => setEditingNote({ ...editingNote, date: e.target.value })} style={{ ...inputStyle, width: 150 }} />
-                    <input value={editingNote.text} onChange={(e) => setEditingNote({ ...editingNote, text: e.target.value })} style={{ ...inputStyle, flex: 1 }} />
+                    <input value={editingNote.text} onChange={(e) => setEditingNote({ ...editingNote, text: e.target.value.toUpperCase() })} style={{ ...inputStyle, flex: 1 }} />
                     <button type="submit" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Save</button>
                     <button type="button" onClick={() => setEditingNote(null)} style={{ background: "#fff", border: "1px solid #D8DAD1", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 13 }}>Cancel</button>
                   </form>
                 );
               }
-              const clickable = ev.kind === "order" || ev.kind === "service" || ev.kind === "accessory" || ev.kind === "delivery";
+              const clickable = ev.kind === "order" || ev.kind === "service" || ev.kind === "accessory" || ev.kind === "delivery" || ev.kind === "pickup";
               return (
                 <div
                   key={idx}
-                  onClick={() => { if (clickable) onOpenRecord(ev.kind === "delivery" ? "order" : ev.kind, ev.ref); }}
+                  onClick={() => { if (clickable) onOpenRecord(ev.kind === "delivery" || ev.kind === "pickup" ? "order" : ev.kind, ev.ref); }}
                   style={{
                     display: "flex", gap: 10, alignItems: "center", fontSize: 14,
                     cursor: clickable ? "pointer" : "default",
@@ -1603,6 +1609,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                     : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
                     : ev.kind === "note" ? <Tag size={15} color="#191B18" />
                     : ev.kind === "delivery" ? <Boxes size={15} color="#2E8B77" />
+                    : ev.kind === "pickup" ? <Boxes size={15} color="#B5651D" />
                     : <Boxes size={15} color="#7C5CBF" />}
                   <span
                     style={{ fontWeight: 600, cursor: ev.kind === "note" ? "pointer" : undefined }}
@@ -1615,6 +1622,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                       : ev.kind === "service" ? ev.ref.serviceType || ""
                       : ev.kind === "note" ? "note — click to edit"
                       : ev.kind === "delivery" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
+                      : ev.kind === "pickup" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
                       : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`}
                   </span>
                   {ev.kind === "note" && (
@@ -1664,7 +1672,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
           >
             <input
               value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
+              onChange={(e) => setNoteText(e.target.value.toUpperCase())}
               placeholder="e.g. DECLAN P/UP ORDER — check assembled"
               style={{ ...inputStyle, flex: 1 }}
             />
@@ -1739,7 +1747,7 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
       >
         <input
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value.toUpperCase())}
           placeholder="Add a to-do…"
           style={{ ...inputStyle, flex: 1 }}
         />
