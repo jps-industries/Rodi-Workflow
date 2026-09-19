@@ -796,7 +796,7 @@ function ConfirmDialog({ text, onConfirm, onCancel }) {
   );
 }
 
-function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onScheduleDelivery }) {
+function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
@@ -970,11 +970,6 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    {view === "active" && o.forStock && (
-                      <IconBtn onClick={(e) => { e.stopPropagation(); onScheduleDelivery(o); }} title="Schedule delivery from stock">
-                        <Truck size={14} />
-                      </IconBtn>
-                    )}
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
                       {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
@@ -1442,7 +1437,6 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
   const [selected, setSelected] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [editingNote, setEditingNote] = useState(null); // { id, date, text }
-  const [deliveryPickerOpen, setDeliveryPickerOpen] = useState(false);
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
   const activeServices = useMemo(() => services.filter((s) => !s.archived), [services]);
@@ -1489,7 +1483,6 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
 
   const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
   const todayStr = new Date().toISOString().slice(0, 10);
-  const floorStock = useMemo(() => activeOrders.filter((o) => o.forStock), [activeOrders]);
 
   return (
     <div>
@@ -1613,49 +1606,18 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
             })}
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14, position: "relative" }}>
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                onClick={() => setDeliveryPickerOpen((v) => !v)}
-                className="rodi-btn"
-                style={{
-                  background: "#2E8B77", color: "#fff", border: "2px solid #191B18", borderRadius: 8,
-                  padding: "8px 14px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
-                }}
-              >
-                <Truck size={14} /> Schedule delivery
-              </button>
-              {deliveryPickerOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 10, width: 260,
-                  background: "#fff", border: "2px solid #191B18", borderRadius: 10, padding: 8,
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                }}>
-                  {floorStock.length === 0 && (
-                    <div style={{ fontSize: 13, color: "#8B9086", padding: "4px 6px 10px" }}>No shop-stock bikes on hand right now.</div>
-                  )}
-                  {floorStock.map((o) => (
-                    <div
-                      key={o.id}
-                      onClick={() => { onScheduleDelivery(o, selected); setDeliveryPickerOpen(false); }}
-                      className="rodi-row"
-                      style={{ padding: "7px 6px", borderRadius: 6, cursor: "pointer", fontSize: 13.5 }}
-                    >
-                      <strong>{o.brand} {o.type}</strong>{o.colour ? ` — ${o.colour}` : ""}
-                    </div>
-                  ))}
-                  <div style={{ borderTop: "1px solid #EFEFEA", margin: "6px 0" }} />
-                  <div
-                    onClick={() => { onScheduleDelivery(null, selected); setDeliveryPickerOpen(false); }}
-                    className="rodi-row"
-                    style={{ padding: "7px 6px", borderRadius: 6, cursor: "pointer", fontSize: 13.5, fontWeight: 700, color: "#33506B" }}
-                  >
-                    + New delivery order
-                  </div>
-                </div>
-              )}
-            </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            <button
+              type="button"
+              onClick={() => onScheduleDelivery(selected)}
+              className="rodi-btn"
+              style={{
+                background: "#2E8B77", color: "#fff", border: "2px solid #191B18", borderRadius: 8,
+                padding: "8px 14px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
+              }}
+            >
+              <Truck size={14} /> Schedule delivery
+            </button>
             <button
               type="button"
               onClick={() => onScheduleService(selected)}
@@ -2201,21 +2163,13 @@ function RodiTracker() {
     else if (kind === "accessory") setDrawer({ type: "accessory", data: ref });
   }, []);
 
-  // "Schedule delivery" from the Calendar. Pass an existing shop-stock order to convert
-  // it in place (keeps its id, so saving updates that same record — mirrors the Truck
-  // icon on the Orders table), or null to start a brand new delivery order.
-  const scheduleDeliveryFromCalendar = useCallback((stockOrder, dateStr) => {
-    if (stockOrder) {
-      setDrawer({
-        type: "delivery",
-        data: { ...stockOrder, forStock: false, fulfillment: "Delivery", deliveryDate: dateStr || stockOrder.deliveryDate || "" },
-      });
-    } else {
-      setDrawer({
-        type: "delivery",
-        data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "" },
-      });
-    }
+  // "Schedule delivery" from the Calendar — always starts a fresh delivery order via the
+  // simplified DeliveryForm, pre-dated to whichever day was selected.
+  const scheduleDeliveryFromCalendar = useCallback((dateStr) => {
+    setDrawer({
+      type: "delivery",
+      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "" },
+    });
   }, []);
   const scheduleServiceFromCalendar = useCallback((dateStr) => {
     setDrawer({ type: "service", data: { ...emptyService(), bookedDate: dateStr || todayISO() } });
@@ -2326,10 +2280,6 @@ function RodiTracker() {
                 onToggleArchive={toggleOrderArchive}
                 onArchiveAllReceived={archiveAllReceivedOrders}
                 onAdvanceStatus={advanceOrderStatus}
-                onScheduleDelivery={(o) => setDrawer({
-                  type: "delivery",
-                  data: { ...o, forStock: false, fulfillment: "Delivery", deliveryDate: o.deliveryDate || "" },
-                })}
               />
             )}
             {tab === "services" && (
