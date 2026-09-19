@@ -982,7 +982,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
-                  <div>{o.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : (o.customer || "—")}</div>
+                  <div>{o.customer || (o.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : "—")}</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                     {o.forStock && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
                     {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Texted</span>}
@@ -1432,7 +1432,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
-                  {a.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : (a.customer || "—")}
+                  {a.customer || (a.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : "—")}
                   {a.forStock && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
                 </td>
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
@@ -2200,9 +2200,11 @@ function RodiTracker() {
   const scheduleDeliveryFromCalendar = useCallback((dateStr) => {
     setDrawer({
       type: "delivery",
-      // Scheduled straight from the calendar means it's coming out of floor stock, so
-      // default "Shop stock only" on — the user can untick it if that's ever not the case.
-      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "", forStock: true },
+      // Scheduled straight from the calendar means it's coming out of floor stock, so it's
+      // already physically in the shop — default "Shop stock only" on and the status to
+      // "Received" (the bike isn't "Pre-ordered", it's sitting there ready to go out).
+      // The customer's name is unaffected by "Shop stock only" — that just adds a STOCK tag.
+      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "", forStock: true, status: "Received" },
     });
   }, []);
   const scheduleServiceFromCalendar = useCallback((dateStr) => {
