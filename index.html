@@ -121,6 +121,8 @@ const ArrowUpDown = (p) => <IconBase {...p}><path d="m21 16-4 4-4-4" /><path d="
 const LayoutDashboard = (p) => <IconBase {...p}><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></IconBase>;
 const Users = (p) => <IconBase {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></IconBase>;
 const AlertOctagon = (p) => <IconBase {...p}><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></IconBase>;
+const CheckSquare = (p) => <IconBase {...p}><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></IconBase>;
+const Truck = (p) => <IconBase {...p}><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></IconBase>;
 
 const STORAGE_KEY = "rodi-tracker-data";
 
@@ -182,6 +184,13 @@ function daysFromToday(dateStr) {
   return Math.round((target - today) / 86400000);
 }
 
+// Returns the status that follows `current` in `list`, or null if it's already last (or not found).
+function nextStatus(current, list) {
+  const idx = list.indexOf(current);
+  if (idx === -1 || idx === list.length - 1) return null;
+  return list[idx + 1];
+}
+
 // Generic row sorter: sortKey is a field name on each row, sortDir is "asc" or "desc".
 function sortRows(rows, sortKey, sortDir) {
   if (!sortKey) return rows;
@@ -225,7 +234,7 @@ function SortableHeader({ label, sortKey, activeKey, dir, onSort }) {
 const emptyOrder = () => ({
   id: uid(), status: "Pre-ordered", orderDate: "", brand: "", type: "",
   colour: "", qty: 1, eta: "", tracking: "", customer: "", phone: "",
-  fulfillment: "Pickup", notified: false, receivedDate: "", payment: "Not paid", forStock: false, assemblyStatus: "For Assembly", notes: "",
+  fulfillment: "Pickup", notified: false, receivedDate: "", deliveryDate: "", payment: "Not paid", forStock: false, assemblyStatus: "For Assembly", notes: "",
   archived: false,
 });
 const emptyService = () => ({
@@ -237,10 +246,12 @@ const emptyPricing = () => ({
   id: uid(), category: "E-Bike", brand: "", model: "", cost: "", rrp: "", notes: "",
 });
 const emptyAccessory = () => ({
-  id: uid(), status: "Pre-ordered", date: "", brand: "", type: "",
+  id: uid(), status: "Pre-ordered", date: "", brand: "", type: "", colour: "",
   qty: 1, eta: "", tracking: "", customer: "", phone: "", paymentOwing: "Not paid", forStock: false, notes: "",
   archived: false,
 });
+
+const COLOUR_OPTIONS = ["Black", "White", "Grey", "Silver", "Red", "Blue", "Green", "Yellow", "Orange", "Other"];
 
 const money = (n) => {
   const num = Number(n);
@@ -542,6 +553,11 @@ function OrderForm({ initial, onSave, onClose }) {
         </Field>
         <Field label="Received date"><input type="date" style={inputStyle} value={form.receivedDate} onChange={set("receivedDate")} /></Field>
       </div>
+      {form.fulfillment === "Delivery" && (
+        <Field label="Delivery date">
+          <input type="date" style={inputStyle} value={form.deliveryDate} onChange={set("deliveryDate")} />
+        </Field>
+      )}
       <Field label="Assembly">
         <select style={inputStyle} value={form.assemblyStatus} onChange={set("assemblyStatus")}>
           {ASSEMBLY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -575,8 +591,16 @@ function ServiceForm({ initial, onSave, onClose }) {
     <Drawer title={initial.customer ? "Edit service" : "New service booking"} icon={<Wrench size={17} />} onClose={onClose}
       onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
       <Field label="Status">
-        <select style={inputStyle} value={form.status} onChange={set("status")}>
-          {SERVICE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select
+          style={{
+            ...inputStyle,
+            background: SERVICE_COLORS[form.status], color: "#fff", fontWeight: 700,
+            border: "2px solid #191B18",
+          }}
+          value={form.status}
+          onChange={set("status")}
+        >
+          {SERVICE_STATUSES.map((s) => <option key={s} value={s} style={{ background: "#fff", color: "#191B18", fontWeight: 500 }}>{s}</option>)}
         </select>
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -662,9 +686,15 @@ function AccessoryForm({ initial, onSave, onClose }) {
       </div>
       <Field label="Type / item"><input style={inputStyle} value={form.type} onChange={upper("type")} placeholder="FREEWHEEL, SHIMANO TZ500..." /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Colour">
+          <select style={inputStyle} value={form.colour} onChange={set("colour")}>
+            <option value="">—</option>
+            {COLOUR_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
-        <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
       </div>
+      <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
       <Field label="Tracking #"><input style={inputStyle} value={form.tracking} onChange={set("tracking")} /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
@@ -710,7 +740,7 @@ function ConfirmDialog({ text, onConfirm, onCancel }) {
   );
 }
 
-function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived }) {
+function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onScheduleDelivery }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
@@ -842,7 +872,25 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 borderBottom: "1px solid #EFEFEA", cursor: "pointer",
                 background: overdue ? "#FBEAE8" : undefined,
               }}>
-                <td style={{ padding: "8px 10px" }}><StatusBadge label={o.status} color={ORDER_COLORS[o.status]} /></td>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <StatusBadge label={o.status} color={ORDER_COLORS[o.status]} />
+                    {view === "active" && nextStatus(o.status, ORDER_STATUSES) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(o.id); }}
+                        title={`Advance to ${nextStatus(o.status, ORDER_STATUSES)}`}
+                        className="rodi-btn"
+                        style={{
+                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
+                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", color: "#33506B", flexShrink: 0,
+                        }}
+                      >
+                        <ChevronRight size={13} />
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{o.brand}</td>
                 <td style={{ padding: "8px 10px" }}>{o.type}</td>
                 <td style={{ padding: "8px 10px" }}>{o.colour}</td>
@@ -866,6 +914,11 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
+                    {view === "active" && o.forStock && (
+                      <IconBtn onClick={(e) => { e.stopPropagation(); onScheduleDelivery(o); }} title="Schedule delivery from stock">
+                        <Truck size={14} />
+                      </IconBtn>
+                    )}
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
                       {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
@@ -883,7 +936,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   );
 }
 
-function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted }) {
+function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [view, setView] = useState("active");
@@ -986,7 +1039,25 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 borderBottom: "1px solid #EFEFEA", cursor: "pointer",
                 background: overdue ? "#FBEAE8" : undefined,
               }}>
-                <td style={{ padding: "8px 10px" }}><StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} /></td>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} />
+                    {view === "active" && nextStatus(s.status, SERVICE_STATUSES) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(s.id); }}
+                        title={`Advance to ${nextStatus(s.status, SERVICE_STATUSES)}`}
+                        className="rodi-btn"
+                        style={{
+                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
+                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", color: "#33506B", flexShrink: 0,
+                        }}
+                      >
+                        <ChevronRight size={13} />
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
@@ -1135,7 +1206,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
   );
 }
 
-function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived }) {
+function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
@@ -1235,7 +1306,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {[
                 { label: "Status", key: "status" }, { label: "Date", key: "date" }, { label: "Brand", key: "brand" },
-                { label: "Item", key: "type" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
+                { label: "Item", key: "type" }, { label: "Colour", key: "colour" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
                 { label: "", key: null },
               ].map((h) => (
@@ -1245,7 +1316,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
+              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
                 {view === "archived" ? "No archived accessory orders yet." : "No accessory or parts orders yet — add one to get started."}
               </td></tr>
             )}
@@ -1256,10 +1327,29 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 borderBottom: "1px solid #EFEFEA", cursor: "pointer",
                 background: overdue ? "#FBEAE8" : undefined,
               }}>
-                <td style={{ padding: "8px 10px" }}><StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} /></td>
+                <td style={{ padding: "8px 10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} />
+                    {view === "active" && nextStatus(a.status, ACCESSORY_STATUSES) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(a.id); }}
+                        title={`Advance to ${nextStatus(a.status, ACCESSORY_STATUSES)}`}
+                        className="rodi-btn"
+                        style={{
+                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
+                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", color: "#33506B", flexShrink: 0,
+                        }}
+                      >
+                        <ChevronRight size={13} />
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td style={{ padding: "8px 10px" }}>{formatAU(a.date) || "—"}</td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.brand || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.type || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
                   {formatAU(a.eta) || "—"}{overdue && " ⚠"}
@@ -1291,11 +1381,12 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, onDeleteNote, onEditNote }) {
+function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, onDeleteNote, onEditNote, onOpenRecord, onScheduleDelivery, onScheduleService }) {
   const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [selected, setSelected] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [editingNote, setEditingNote] = useState(null); // { id, date, text }
+  const [deliveryPickerOpen, setDeliveryPickerOpen] = useState(false);
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
   const activeServices = useMemo(() => services.filter((s) => !s.archived), [services]);
@@ -1314,6 +1405,10 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     activeAccessories.forEach((a) => {
       if (!a.eta) return;
       (map[a.eta] = map[a.eta] || []).push({ kind: "accessory", title: `${a.brand || "Order"}: ${a.type || "item"}`, color: "#7C5CBF", ref: a });
+    });
+    activeOrders.forEach((o) => {
+      if (o.fulfillment !== "Delivery" || !o.deliveryDate) return;
+      (map[o.deliveryDate] = map[o.deliveryDate] || []).push({ kind: "delivery", title: `Deliver: ${o.customer || "customer"}`, color: "#2E8B77", ref: o });
     });
     (calendarNotes || []).forEach((n) => {
       if (!n.date) return;
@@ -1338,6 +1433,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
 
   const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
   const todayStr = new Date().toISOString().slice(0, 10);
+  const floorStock = useMemo(() => activeOrders.filter((o) => o.forStock), [activeOrders]);
 
   return (
     <div>
@@ -1419,15 +1515,27 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                   </form>
                 );
               }
+              const clickable = ev.kind === "order" || ev.kind === "service" || ev.kind === "accessory" || ev.kind === "delivery";
               return (
-                <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14 }}>
+                <div
+                  key={idx}
+                  onClick={() => { if (clickable) onOpenRecord(ev.kind === "delivery" ? "order" : ev.kind, ev.ref); }}
+                  style={{
+                    display: "flex", gap: 10, alignItems: "center", fontSize: 14,
+                    cursor: clickable ? "pointer" : "default",
+                    padding: clickable ? "4px 6px" : 0, margin: clickable ? "-4px -6px" : 0,
+                    borderRadius: 8,
+                  }}
+                  className={clickable ? "rodi-row" : undefined}
+                >
                   {ev.kind === "order" ? <Package size={15} color="#33506B" />
                     : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
                     : ev.kind === "note" ? <Tag size={15} color="#191B18" />
+                    : ev.kind === "delivery" ? <Boxes size={15} color="#2E8B77" />
                     : <Boxes size={15} color="#7C5CBF" />}
                   <span
-                    style={{ fontWeight: 600, cursor: ev.kind === "note" ? "pointer" : "default" }}
-                    onClick={() => { if (ev.kind === "note") setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); }}
+                    style={{ fontWeight: 600, cursor: ev.kind === "note" ? "pointer" : undefined }}
+                    onClick={(e) => { if (ev.kind === "note") { e.stopPropagation(); setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); } }}
                   >
                     {ev.title}
                   </span>
@@ -1435,6 +1543,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                     {ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
                       : ev.kind === "service" ? ev.ref.serviceType || ""
                       : ev.kind === "note" ? "note — click to edit"
+                      : ev.kind === "delivery" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
                       : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`}
                   </span>
                   {ev.kind === "note" && (
@@ -1447,6 +1556,66 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               );
             })}
           </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14, position: "relative" }}>
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setDeliveryPickerOpen((v) => !v)}
+                className="rodi-btn"
+                style={{
+                  background: "#2E8B77", color: "#fff", border: "2px solid #191B18", borderRadius: 8,
+                  padding: "8px 14px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
+                }}
+              >
+                <Truck size={14} /> Schedule delivery
+              </button>
+              {deliveryPickerOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 10, width: 260,
+                  background: "#fff", border: "2px solid #191B18", borderRadius: 10, padding: 8,
+                  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                }}>
+                  <div style={{ fontSize: 11.5, color: "#8B9086", fontWeight: 700, textTransform: "uppercase", padding: "4px 6px" }}>
+                    From shop-floor stock
+                  </div>
+                  {floorStock.length === 0 && (
+                    <div style={{ fontSize: 13, color: "#8B9086", padding: "4px 6px 10px" }}>No shop-stock bikes on hand right now.</div>
+                  )}
+                  {floorStock.map((o) => (
+                    <div
+                      key={o.id}
+                      onClick={() => { onScheduleDelivery(o, selected); setDeliveryPickerOpen(false); }}
+                      className="rodi-row"
+                      style={{ padding: "7px 6px", borderRadius: 6, cursor: "pointer", fontSize: 13.5 }}
+                    >
+                      <strong>{o.brand} {o.type}</strong>{o.colour ? ` — ${o.colour}` : ""}
+                    </div>
+                  ))}
+                  <div style={{ borderTop: "1px solid #EFEFEA", margin: "6px 0" }} />
+                  <div
+                    onClick={() => { onScheduleDelivery(null, selected); setDeliveryPickerOpen(false); }}
+                    className="rodi-row"
+                    style={{ padding: "7px 6px", borderRadius: 6, cursor: "pointer", fontSize: 13.5, fontWeight: 700, color: "#33506B" }}
+                  >
+                    + New delivery order
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => onScheduleService(selected)}
+              className="rodi-btn"
+              style={{
+                background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8,
+                padding: "8px 14px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
+              }}
+            >
+              <Wrench size={14} /> Schedule service
+            </button>
+          </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -1510,7 +1679,68 @@ function AttentionList({ title, icon, color, items, renderItem, emptyText }) {
   );
 }
 
-function DashboardTab({ orders, services, accessories, onExport, goTo }) {
+function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
+  const [text, setText] = useState("");
+  const sorted = useMemo(() => {
+    const arr = [...items];
+    arr.sort((a, b) => {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return (a.createdAt || "").localeCompare(b.createdAt || "");
+    });
+    return arr;
+  }, [items]);
+  return (
+    <div style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 12, padding: 14 }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!text.trim()) return;
+          onAdd(text.trim());
+          setText("");
+        }}
+        style={{ display: "flex", gap: 8, marginBottom: sorted.length ? 12 : 0 }}
+      >
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Add a to-do…"
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <button type="submit" className="rodi-btn" style={{
+          background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8,
+          padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
+        }}>
+          <Plus size={15} />
+        </button>
+      </form>
+      {sorted.length === 0 && <p style={{ color: "#8B9086", fontSize: 14, margin: 0 }}>Nothing on the list — add a reminder above.</p>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {sorted.map((item) => (
+          <div key={item.id} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid #EFEFEA",
+          }}>
+            <input
+              type="checkbox"
+              checked={!!item.done}
+              onChange={() => onToggle(item.id)}
+              style={{ width: 16, height: 16, cursor: "pointer", flexShrink: 0 }}
+            />
+            <span style={{
+              flex: 1, fontSize: 13.5,
+              color: item.done ? "#8B9086" : "#191B18",
+              textDecoration: item.done ? "line-through" : "none",
+            }}>
+              {item.text}
+            </span>
+            <IconBtn onClick={() => onDelete(item.id)} title="Delete" danger><Trash2 size={13} /></IconBtn>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onExport, goTo }) {
   const [customerQuery, setCustomerQuery] = useState("");
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
@@ -1530,6 +1760,11 @@ function DashboardTab({ orders, services, accessories, onExport, goTo }) {
   const overdueServices = useMemo(() => activeServices.filter((s) => isPastDate(s.bookedDate) && s.status !== "Completed"), [activeServices]);
   const needsAssembly = useMemo(() => activeOrders.filter((o) => o.status === "Received" && o.assemblyStatus !== "Assembled"), [activeOrders]);
   const overdueAccessories = useMemo(() => activeAccessories.filter((a) => isPastDate(a.eta) && a.status !== "Received"), [activeAccessories]);
+  const deliveriesThisWeek = useMemo(() => activeOrders.filter((o) => {
+    if (o.fulfillment !== "Delivery") return false;
+    const d = daysFromToday(o.deliveryDate);
+    return d !== null && d >= 0 && d <= 7;
+  }), [activeOrders]);
 
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
@@ -1568,6 +1803,9 @@ function DashboardTab({ orders, services, accessories, onExport, goTo }) {
         </div>
         <div onClick={() => goTo("orders")} style={{ cursor: "pointer" }}>
           <StatCard icon={<AlertTriangle size={18} />} label="Needs assembly" value={needsAssembly.length} color="#D98B3D" />
+        </div>
+        <div onClick={() => goTo("calendar")} style={{ cursor: "pointer" }}>
+          <StatCard icon={<Boxes size={18} />} label="Deliveries this week" value={deliveriesThisWeek.length} color="#2E8B77" />
         </div>
       </div>
 
@@ -1659,6 +1897,14 @@ function DashboardTab({ orders, services, accessories, onExport, goTo }) {
           )}
         </div>
       </div>
+
+      <h3 className="rodi-display" style={{ fontSize: 20, margin: "24px 0 10px 0" }}>NOTES &amp; CHECKLIST</h3>
+      <ChecklistWidget
+        items={checklistItems}
+        onAdd={onAddChecklistItem}
+        onToggle={onToggleChecklistItem}
+        onDelete={onDeleteChecklistItem}
+      />
     </div>
   );
 }
@@ -1670,6 +1916,7 @@ function RodiTracker() {
   const [pricing, setPricing] = useState([]);
   const [accessories, setAccessories] = useState([]);
   const [calendarNotes, setCalendarNotes] = useState([]);
+  const [checklistItems, setChecklistItems] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [drawer, setDrawer] = useState(null); // { type: 'order'|'service'|'pricing'|'accessory', data }
   const [confirm, setConfirm] = useState(null); // { type, id }
@@ -1693,6 +1940,13 @@ function RodiTracker() {
         setSyncError("Couldn't load data from the database: " + e.message);
       } finally {
         setLoaded(true);
+      }
+      // Loaded separately so a shop that hasn't yet run the checklist_items
+      // SQL doesn't break the rest of the app's data loading.
+      try {
+        setChecklistItems(await sbList("checklist_items"));
+      } catch (e) {
+        console.error(e);
       }
     })();
   }, []);
@@ -1720,6 +1974,33 @@ function RodiTracker() {
       setCalendarNotes((prev) => prev.filter((n) => n.id !== id));
     } catch (e) {
       setSyncError("Couldn't delete the note: " + e.message);
+    }
+  }, []);
+
+  const addChecklistItem = useCallback(async (text) => {
+    const item = { id: uid(), text, done: false };
+    try {
+      const saved = await sbUpsert("checklist_items", item);
+      setChecklistItems((prev) => [...prev, saved]);
+    } catch (e) {
+      setSyncError("Couldn't save the checklist item — has the checklist_items table been created yet? (" + e.message + ")");
+    }
+  }, []);
+  const toggleChecklistItem = useCallback((id) => {
+    setChecklistItems((prev) => {
+      const target = prev.find((i) => i.id === id);
+      if (!target) return prev;
+      const updated = { ...target, done: !target.done };
+      sbUpsert("checklist_items", updated).catch((e) => setSyncError("Couldn't update the checklist item: " + e.message));
+      return prev.map((i) => (i.id === id ? updated : i));
+    });
+  }, []);
+  const deleteChecklistItem = useCallback(async (id) => {
+    try {
+      await sbDelete("checklist_items", id);
+      setChecklistItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (e) {
+      setSyncError("Couldn't delete the checklist item: " + e.message);
     }
   }, []);
 
@@ -1827,6 +2108,64 @@ function RodiTracker() {
     }
   }, []);
 
+  const advanceOrderStatus = useCallback((id) => {
+    setOrders((prev) => {
+      const target = prev.find((o) => o.id === id);
+      const next = target && nextStatus(target.status, ORDER_STATUSES);
+      if (!target || !next) return prev;
+      const updated = { ...target, status: next };
+      sbUpsert("orders", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
+      return prev.map((o) => (o.id === id ? updated : o));
+    });
+  }, []);
+  const advanceServiceStatus = useCallback((id) => {
+    setServices((prev) => {
+      const target = prev.find((s) => s.id === id);
+      const next = target && nextStatus(target.status, SERVICE_STATUSES);
+      if (!target || !next) return prev;
+      const updated = { ...target, status: next };
+      sbUpsert("services", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
+      return prev.map((s) => (s.id === id ? updated : s));
+    });
+  }, []);
+  const advanceAccessoryStatus = useCallback((id) => {
+    setAccessories((prev) => {
+      const target = prev.find((a) => a.id === id);
+      const next = target && nextStatus(target.status, ACCESSORY_STATUSES);
+      if (!target || !next) return prev;
+      const updated = { ...target, status: next };
+      sbUpsert("accessories", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
+      return prev.map((a) => (a.id === id ? updated : a));
+    });
+  }, []);
+
+  // Opens the edit drawer for a record clicked on the Calendar day panel.
+  const openRecordFromCalendar = useCallback((kind, ref) => {
+    if (kind === "order") setDrawer({ type: "order", data: ref });
+    else if (kind === "service") setDrawer({ type: "service", data: ref });
+    else if (kind === "accessory") setDrawer({ type: "accessory", data: ref });
+  }, []);
+
+  // "Schedule delivery" from the Calendar. Pass an existing shop-stock order to convert
+  // it in place (keeps its id, so saving updates that same record — mirrors the Truck
+  // icon on the Orders table), or null to start a brand new delivery order.
+  const scheduleDeliveryFromCalendar = useCallback((stockOrder, dateStr) => {
+    if (stockOrder) {
+      setDrawer({
+        type: "order",
+        data: { ...stockOrder, forStock: false, fulfillment: "Delivery", deliveryDate: dateStr || stockOrder.deliveryDate || "" },
+      });
+    } else {
+      setDrawer({
+        type: "order",
+        data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "" },
+      });
+    }
+  }, []);
+  const scheduleServiceFromCalendar = useCallback((dateStr) => {
+    setDrawer({ type: "service", data: { ...emptyService(), bookedDate: dateStr || todayISO() } });
+  }, []);
+
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "orders", label: "Inventory & orders", icon: Package },
@@ -1907,6 +2246,10 @@ function RodiTracker() {
                 orders={orders}
                 services={services}
                 accessories={accessories}
+                checklistItems={checklistItems}
+                onAddChecklistItem={addChecklistItem}
+                onToggleChecklistItem={toggleChecklistItem}
+                onDeleteChecklistItem={deleteChecklistItem}
                 onExport={exportAllData}
                 goTo={setTab}
               />
@@ -1927,6 +2270,11 @@ function RodiTracker() {
                 })}
                 onToggleArchive={toggleOrderArchive}
                 onArchiveAllReceived={archiveAllReceivedOrders}
+                onAdvanceStatus={advanceOrderStatus}
+                onScheduleDelivery={(o) => setDrawer({
+                  type: "order",
+                  data: { ...o, forStock: false, fulfillment: "Delivery", deliveryDate: o.deliveryDate || "" },
+                })}
               />
             )}
             {tab === "services" && (
@@ -1937,6 +2285,7 @@ function RodiTracker() {
                 onDelete={(id) => setConfirm({ type: "service", id })}
                 onToggleArchive={toggleServiceArchive}
                 onArchiveAllCompleted={archiveAllCompletedServices}
+                onAdvanceStatus={advanceServiceStatus}
               />
             )}
             {tab === "accessories" && (
@@ -1947,10 +2296,11 @@ function RodiTracker() {
                 onDelete={(id) => setConfirm({ type: "accessory", id })}
                 onDuplicate={(a) => setDrawer({
                   type: "accessory",
-                  data: { ...emptyAccessory(), brand: a.brand, type: a.type, qty: a.qty, forStock: a.forStock },
+                  data: { ...emptyAccessory(), brand: a.brand, type: a.type, colour: a.colour, qty: a.qty, forStock: a.forStock },
                 })}
                 onToggleArchive={toggleAccessoryArchive}
                 onArchiveAllReceived={archiveAllReceivedAccessories}
+                onAdvanceStatus={advanceAccessoryStatus}
               />
             )}
             {tab === "pricing" && (
@@ -1970,6 +2320,9 @@ function RodiTracker() {
                 onAddNote={addCalendarNote}
                 onEditNote={updateCalendarNote}
                 onDeleteNote={deleteCalendarNote}
+                onOpenRecord={openRecordFromCalendar}
+                onScheduleDelivery={scheduleDeliveryFromCalendar}
+                onScheduleService={scheduleServiceFromCalendar}
               />
             )}
           </>
