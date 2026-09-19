@@ -1529,9 +1529,10 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               onClick={() => setSelected(dateStr)}
               className="rodi-cal-cell"
               style={{
-                minHeight: 84, border: isToday ? "2px solid #F6BD1B" : "1px solid #E3E4DD",
+                minHeight: 84, minWidth: 0, border: isToday ? "2px solid #F6BD1B" : "1px solid #E3E4DD",
                 borderRadius: 10, background: selected === dateStr ? "#EFF3EE" : "#fff",
                 padding: 7, cursor: "pointer", display: "flex", flexDirection: "column", gap: 4,
+                overflow: "hidden",
               }}
             >
               <span style={{ fontSize: 12.5, fontWeight: isToday ? 700 : 500, color: isToday ? "#33506B" : "#565C54" }}>{dayNum}</span>
