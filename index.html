@@ -935,7 +935,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 { label: "Status", key: "status" }, { label: "Brand", key: "brand" }, { label: "Type", key: "type" },
                 { label: "Colour", key: "colour" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "payment" },
-                { label: "Fulfillment", key: "fulfillment" }, { label: "Received", key: "receivedDate" }, { label: "", key: null },
+                { label: "Fulfillment", key: "fulfillment" }, { label: "Delivery / Pick up", key: null }, { label: "", key: null },
               ].map((h) => (
                 <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} />
               ))}
@@ -993,7 +993,9 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 </td>
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.payment || "—"}</td>
                 <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.fulfillment || "—"}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(o.receivedDate) || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>
+                  {formatAU(o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) || "—"}
+                </td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
@@ -1109,7 +1111,8 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               </td></tr>
             )}
             {sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES).map((s) => {
-              const overdue = view === "active" && isPastDate(s.bookedDate) && s.status !== "Completed";
+              const overdue = view === "active" && isPastDate(s.bookedDate)
+                && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup");
               return (
               <tr key={s.id} className="rodi-row" onClick={() => onEdit(s)} style={{
                 borderBottom: "1px solid #EFEFEA", cursor: "pointer",
@@ -1381,7 +1384,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
               {[
-                { label: "Status", key: "status" }, { label: "Date", key: "date" }, { label: "Brand", key: "brand" },
+                { label: "Status", key: "status" }, { label: "Brand", key: "brand" },
                 { label: "Item", key: "type" }, { label: "Colour", key: "colour" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
                 { label: "", key: null },
@@ -1392,7 +1395,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
+              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
                 {view === "archived" ? "No archived accessory orders yet." : "No accessory or parts orders yet — add one to get started."}
               </td></tr>
             )}
@@ -1422,7 +1425,6 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px" }}>{formatAU(a.date) || "—"}</td>
                 <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.brand || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.type || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
@@ -1475,7 +1477,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     });
     activeServices.forEach((s) => {
       if (!s.bookedDate) return;
-      (map[s.bookedDate] = map[s.bookedDate] || []).push({ kind: "service", title: `${s.customer || "Service"}`, color: "#F6BD1B", ref: s });
+      (map[s.bookedDate] = map[s.bookedDate] || []).push({ kind: "service", title: `${s.customer || "SERVICE"}`, color: "#F6BD1B", ref: s });
     });
     activeAccessories.forEach((a) => {
       if (!a.eta) return;
@@ -1483,11 +1485,11 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     });
     activeOrders.forEach((o) => {
       if (o.fulfillment !== "Delivery" || !o.deliveryDate) return;
-      (map[o.deliveryDate] = map[o.deliveryDate] || []).push({ kind: "delivery", title: `Deliver: ${o.customer || "customer"}`, color: "#2E8B77", ref: o });
+      (map[o.deliveryDate] = map[o.deliveryDate] || []).push({ kind: "delivery", title: `DELIVER: ${o.customer || "CUSTOMER"}`, color: "#2E8B77", ref: o });
     });
     activeOrders.forEach((o) => {
       if (o.fulfillment !== "Pickup" || !o.receivedDate) return;
-      (map[o.receivedDate] = map[o.receivedDate] || []).push({ kind: "pickup", title: `Pick up: ${o.customer || "customer"}`, color: "#B5651D", ref: o });
+      (map[o.receivedDate] = map[o.receivedDate] || []).push({ kind: "pickup", title: `PICK UP: ${o.customer || "CUSTOMER"}`, color: "#B5651D", ref: o });
     });
     (calendarNotes || []).forEach((n) => {
       if (!n.date) return;
@@ -1550,17 +1552,16 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                 minHeight: 84, minWidth: 0, border: isToday ? "2px solid #F6BD1B" : "1px solid #E3E4DD",
                 borderRadius: 10, background: selected === dateStr ? "#EFF3EE" : "#fff",
                 padding: 7, cursor: "pointer", display: "flex", flexDirection: "column", gap: 4,
-                overflow: "hidden",
+                overflowX: "hidden",
               }}
             >
               <span style={{ fontSize: 12.5, fontWeight: isToday ? 700 : 500, color: isToday ? "#33506B" : "#565C54" }}>{dayNum}</span>
-              {evs.slice(0, 2).map((ev, idx) => (
+              {evs.map((ev, idx) => (
                 <span key={idx} style={{
                   fontSize: 10.5, background: ev.color, color: "#fff", borderRadius: 5,
                   padding: "2px 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                 }}>{ev.title}</span>
               ))}
-              {evs.length > 2 && <span style={{ fontSize: 10, color: "#8B9086" }}>+{evs.length - 2} more</span>}
             </div>
           );
         })}
@@ -1804,7 +1805,9 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     const d = daysFromToday(s.bookedDate);
     return d !== null && d >= 0 && d <= 7;
   }), [activeServices]);
-  const overdueServices = useMemo(() => activeServices.filter((s) => isPastDate(s.bookedDate) && s.status !== "Completed"), [activeServices]);
+  const overdueServices = useMemo(() => activeServices.filter((s) =>
+    isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup")
+  ), [activeServices]);
   const needsAssembly = useMemo(() => activeOrders.filter((o) => o.status === "Received" && o.assemblyStatus !== "Assembled"), [activeOrders]);
   const overdueAccessories = useMemo(() => activeAccessories.filter((a) => isPastDate(a.eta) && a.status !== "Received"), [activeAccessories]);
   const deliveriesThisWeek = useMemo(() => activeOrders.filter((o) => {
