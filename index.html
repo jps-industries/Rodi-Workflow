@@ -131,6 +131,7 @@ const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const SERVICE_STATUSES = ["Booked", "In Progress", "Awaiting Parts", "Ready for Pickup", "Completed"];
 const ACCESSORY_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment"];
+const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A" };
 const FULFILLMENT_METHODS = ["Pickup", "Delivery"];
 const ASSEMBLY_STATUSES = ["For Assembly", "Assembled"];
 
@@ -184,6 +185,16 @@ function daysFromToday(dateStr) {
   return Math.round((target - today) / 86400000);
 }
 
+// Like formatAU, but shows TODAY / TOMORROW / YESTERDAY for those dates.
+function formatAURel(dateStr) {
+  if (!dateStr) return "";
+  const n = daysFromToday(dateStr);
+  if (n === 0) return "TODAY";
+  if (n === 1) return "TOMORROW";
+  if (n === -1) return "YESTERDAY";
+  return formatAU(dateStr);
+}
+
 // Returns the status that follows `current` in `list`, or null if it's already last (or not found).
 function nextStatus(current, list) {
   const idx = list.indexOf(current);
@@ -222,14 +233,14 @@ function sortRows(rows, sortKey, sortDir, statusOrder) {
   return arr;
 }
 // Renders a clickable, sortable table header cell.
-function SortableHeader({ label, sortKey, activeKey, dir, onSort }) {
+function SortableHeader({ label, sortKey, activeKey, dir, onSort, width }) {
   const active = sortKey && activeKey === sortKey;
   return (
     <th
       onClick={() => sortKey && onSort(sortKey)}
       style={{
         padding: "9px 8px", fontSize: 12, color: active ? "#191B18" : "#565C54", fontWeight: 600,
-        cursor: sortKey ? "pointer" : "default", userSelect: "none",
+        cursor: sortKey ? "pointer" : "default", userSelect: "none", width: width || undefined,
       }}
     >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -556,7 +567,7 @@ function OrderForm({ initial, onSave, onClose }) {
         display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "#191B18",
         background: "#EFF3EE", border: "1px solid #D8DAD1", borderRadius: 8, padding: "10px 12px",
       }}>
-        <input type="checkbox" checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
+        <input type="checkbox" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
         Shop stock only
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
@@ -583,8 +594,8 @@ function OrderForm({ initial, onSave, onClose }) {
           {ASSEMBLY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </Field>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, color: "#565C54" }}>
-        <input type="checkbox" checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "#191B18" }}>
+        <input type="checkbox" style={{ width: 22, height: 22, cursor: "pointer", flexShrink: 0 }} checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
         Text sent to customer
       </label>
       <Field label="Payment status">
@@ -637,8 +648,8 @@ function DeliveryForm({ initial, onSave, onClose }) {
           {ASSEMBLY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </Field>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 500, color: "#565C54" }}>
-        <input type="checkbox" checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "#191B18" }}>
+        <input type="checkbox" style={{ width: 22, height: 22, cursor: "pointer", flexShrink: 0 }} checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
         Text sent to customer
       </label>
       <Field label="Payment status">
@@ -791,7 +802,7 @@ function AccessoryForm({ initial, onSave, onClose }) {
         display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "#191B18",
         background: "#EFF3EE", border: "1px solid #D8DAD1", borderRadius: 8, padding: "10px 12px",
       }}>
-        <input type="checkbox" checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
+        <input type="checkbox" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
         For shop stock (not tied to a customer)
       </label>
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
@@ -937,7 +948,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "payment" },
                 { label: "Fulfillment", key: "fulfillment" }, { label: "Delivery / Pick up", key: null }, { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
               ))}
             </tr>
           </thead>
@@ -978,24 +989,35 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px" }}>{o.colour}</td>
                 <td style={{ padding: "8px 10px" }}>{o.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  {formatAU(o.eta) || "—"}{overdue && " ⚠"}
+                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(o.eta) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
-                  <div>{o.customer || (o.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : "—")}</div>
+                  {o.customer
+                    ? <div>{o.customer}</div>
+                    : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                    {o.forStock && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
+                    {o.forStock && o.customer && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
                     {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Texted</span>}
                     {o.status === "Received" && (o.assemblyStatus === "Assembled"
                       ? <span style={{ fontSize: 10.5, color: "#4C9A6A", fontWeight: 600 }}>Assembled</span>
                       : <span style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700 }}>For assembly</span>)}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.payment || "—"}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{o.fulfillment || "—"}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>
-                  {formatAU(o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) || "—"}
-                </td>
+                {(() => {
+                  const stockOnly = o.forStock && !o.customer;
+                  return (
+                    <>
+                      <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 700, color: stockOnly ? undefined : PAYMENT_COLORS[o.payment] }}>
+                        {stockOnly ? "—" : (o.payment || "—")}
+                      </td>
+                      <td style={{ padding: "8px 10px", fontSize: 13 }}>{stockOnly ? "—" : (o.fulfillment || "—")}</td>
+                      <td style={{ padding: "8px 10px", fontSize: 13 }}>
+                        {stockOnly ? "—" : (formatAURel(o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) || "—")}
+                      </td>
+                    </>
+                  );
+                })()}
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
@@ -1100,7 +1122,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Notes", key: null },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
               ))}
             </tr>
           </thead>
@@ -1145,9 +1167,9 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 <td style={{ padding: "8px 10px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{s.mechanic || "—"}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  {formatAU(s.bookedDate) || "—"}{overdue && " ⚠"}
+                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
-                <td style={{ padding: "8px 10px" }}>{formatAU(s.pickupDate) || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
                 <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -1207,7 +1229,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
               { label: "RRP", key: "rrp" }, { label: "Margin", key: null }, { label: "Gross Profit", key: null },
               { label: "Notes", key: null }, { label: "", key: null },
             ].map((h) => (
-              <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} />
+              <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
             ))}
           </tr>
         </thead>
@@ -1389,7 +1411,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
               ))}
             </tr>
           </thead>
@@ -1430,14 +1452,18 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  {formatAU(a.eta) || "—"}{overdue && " ⚠"}
+                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(a.eta) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
-                  {a.customer || (a.forStock ? <span style={{ fontStyle: "italic", color: "#8B9086" }}>Shop stock</span> : "—")}
-                  {a.forStock && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
+                  {a.customer
+                    ? <div>{a.customer}</div>
+                    : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
+                  {a.forStock && a.customer && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
                 </td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{a.paymentOwing || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 700, color: a.forStock && !a.customer ? undefined : PAYMENT_COLORS[a.paymentOwing] }}>
+                  {a.forStock && !a.customer ? "—" : (a.paymentOwing || "—")}
+                </td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(a); }} title="Duplicate"><Copy size={14} /></IconBtn>
@@ -1493,7 +1519,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     });
     (calendarNotes || []).forEach((n) => {
       if (!n.date) return;
-      (map[n.date] = map[n.date] || []).push({ kind: "note", title: n.text, color: "#191B18", ref: n });
+      (map[n.date] = map[n.date] || []).push({ kind: "note", title: n.text, color: "#C2417A", ref: n });
     });
     return map;
   }, [activeOrders, activeServices, activeAccessories, calendarNotes]);
@@ -1568,7 +1594,22 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
       </div>
 
       {selected && (
-        <div style={{ marginTop: 18, background: "#fff", border: "2px solid #191B18", borderRadius: 12, padding: 16 }}>
+        <div
+          data-testid="day-modal"
+          onClick={() => setSelected(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 40, background: "rgba(25,27,24,0.55)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto",
+          }}
+        >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: "#fff", border: "2px solid #191B18", borderRadius: 14, padding: 18,
+            width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+          }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <h3 className="rodi-display" style={{ margin: 0, fontSize: 19, fontWeight: 600 }}>{formatAU(selected)}</h3>
             <IconBtn onClick={() => setSelected(null)} title="Close"><X size={14} /></IconBtn>
@@ -1610,7 +1651,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                 >
                   {ev.kind === "order" ? <Package size={15} color="#33506B" />
                     : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
-                    : ev.kind === "note" ? <Tag size={15} color="#191B18" />
+                    : ev.kind === "note" ? <Tag size={15} color="#C2417A" />
                     : ev.kind === "delivery" ? <Boxes size={15} color="#2E8B77" />
                     : ev.kind === "pickup" ? <Boxes size={15} color="#B5651D" />
                     : <Boxes size={15} color="#7C5CBF" />}
@@ -1686,6 +1727,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               Add note
             </button>
           </form>
+        </div>
         </div>
       )}
     </div>
