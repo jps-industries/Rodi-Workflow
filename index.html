@@ -406,6 +406,13 @@ function GlobalStyle() {
       .rodi-scrollbar table { table-layout: fixed; width: 100%; }
       .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: break-word; overflow-wrap: anywhere; }
       .rodi-outline { border: 2px solid #191B18 !important; }
+      @media print {
+        .rodi-root > *:not(.rodi-print-overlay) { display: none !important; }
+        .rodi-print-overlay { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+        .rodi-noprint { display: none !important; }
+        .rodi-print { border: none !important; padding: 0 !important; }
+        html, body { background: #fff !important; }
+      }
       @media (max-width: 720px) {
         .rodi-scrollbar { overflow-x: visible !important; border: none !important; background: transparent !important; }
         .rodi-scrollbar table, .rodi-scrollbar tbody { display: block; width: 100%; }
@@ -585,6 +592,7 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
+      <CustomerExtras kind="order" form={form} />
       {!hideSale && (<>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Fulfillment">
@@ -665,6 +673,7 @@ function DeliveryForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
+      <CustomerExtras kind="order" form={form} />
       <Field label="Delivery date"><input type="date" style={inputStyle} value={form.deliveryDate} onChange={set("deliveryDate")} /></Field>
       <Field label="Assembly">
         <select style={inputStyle} value={form.assemblyStatus} onChange={set("assemblyStatus")}>
@@ -774,6 +783,7 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
+      <CustomerExtras kind="service" form={form} />
       <Field label="Bike / model"><input style={inputStyle} value={form.bike} onChange={upper("bike")} placeholder="DIRODI GEN 6 ST" /></Field>
       <Field label="Service type"><input style={inputStyle} value={form.serviceType} onChange={upper("serviceType")} placeholder="FULL SERVICE, BRAKE ADJUST..." /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
@@ -782,6 +792,7 @@ function ServiceForm({ initial, onSave, onClose }) {
       </div>
       <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
       <ServiceLog value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
+      <PrintJobButton job={form} />
       <button type="submit" className="rodi-btn" style={{
         marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
@@ -875,6 +886,7 @@ function AccessoryForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
+      <CustomerExtras kind="accessory" form={form} />
       <Field label="Payment status">
         <select style={{ ...inputStyle, color: PAYMENT_COLORS[form.paymentOwing], fontWeight: 700 }} value={form.paymentOwing} onChange={set("paymentOwing")}>
           {PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
@@ -999,7 +1011,17 @@ function GlobalSearch({ orders, services, accessories, onOpen }) {
       accessories: accessories.filter((a) => !a.archived && has([a.brand, a.type, a.colour, a.customer, a.phone, a.tracking])).slice(0, 8),
     };
   }, [query, orders, services, accessories]);
-  const total = results ? results.orders.length + results.services.length + results.accessories.length : 0;
+  const ctx = React.useContext(AppCtx);
+  const customers = useMemo(() => {
+    if (!query) return [];
+    const seen = {};
+    [...orders, ...services, ...accessories].forEach((r) => {
+      const n = (r.customer || "").trim();
+      if (n && n.toLowerCase().includes(query) && !seen[n.toLowerCase()]) seen[n.toLowerCase()] = { name: n, phone: r.phone || "" };
+    });
+    return Object.values(seen).slice(0, 5);
+  }, [query, orders, services, accessories]);
+  const total = results ? results.orders.length + results.services.length + results.accessories.length + customers.length : 0;
   const pick = (kind, rec) => { setQ(""); onOpen(kind, rec); };
   const row = (kind, rec, title, badge) => (
     <div key={kind + rec.id} className="rodi-row" onClick={() => pick(kind, rec)}
@@ -1025,6 +1047,11 @@ function GlobalSearch({ orders, services, accessories, onOpen }) {
           borderRadius: 10, maxHeight: 360, overflowY: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
         }}>
           {total === 0 && <div style={{ padding: 12, fontSize: 13.5, color: "#8B9086" }}>No matches for "{q}".</div>}
+          {customers.length > 0 && head("Customers — full history")}
+          {customers.map((c) => (
+            <div key={"c" + c.name} className="rodi-row" data-testid="search-customer" onClick={() => { setQ(""); ctx.viewCustomer && ctx.viewCustomer(c); }}
+              style={{ padding: "7px 10px", cursor: "pointer", fontSize: 13.5, borderBottom: "1px solid #EFEFEA", fontWeight: 600 }}>{c.name} <span style={{ color: "#3A7CA5", fontWeight: 500, fontSize: 12 }}>view history</span></div>
+          ))}
           {results.orders.length > 0 && head("Orders")}
           {results.orders.map((o) => row("order", o, `${o.brand} ${o.type} — ${o.customer || "STOCK"}`, <StatusBadge label={o.status} color={ORDER_COLORS[o.status]} />))}
           {results.services.length > 0 && head("Services")}
@@ -1104,6 +1131,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
           placeholder="Add log entry — Enter for a new line, then Add" style={{ ...inputStyle, flex: 1, resize: "vertical", minHeight: 44 }} />
         <button type="button" onClick={add} className="rodi-btn" style={{ background: "#F6BD1B", border: "2px solid #191B18", borderRadius: 8, padding: "0 12px", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Add</button>
       </div>
+      <PrintJobButton job={s} />
     </div>
   );
 }
@@ -1168,6 +1196,216 @@ function HistoryTab({ entries }) {
         </table>
       </div>
     </div>
+  );
+}
+
+// ---- Shared context: lets deep components (forms, cards) open the history / job-card popups ----
+const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, viewCustomer: null, printJob: null });
+
+const STALE = { partsDays: 5, progressDays: 7, readyDays: 7, overdueDays: 7, uncollectedDays: 3 };
+function ageDays(dateStr) { const n = daysFromToday(dateStr); return n === null ? null : -n; }
+// Jobs that have been sitting too long and probably need a chase-up.
+function staleItems(orders, services, accessories) {
+  const out = [];
+  services.forEach((s) => {
+    if (s.archived) return;
+    const booked = ageDays(s.bookedDate);
+    if (s.status === "Awaiting Parts" && booked !== null && booked >= STALE.partsDays) out.push({ kind: "service", rec: s, days: booked, reason: `Awaiting parts — booked ${booked} days ago` });
+    else if (s.status === "In Progress" && booked !== null && booked >= STALE.progressDays) out.push({ kind: "service", rec: s, days: booked, reason: `In progress — booked ${booked} days ago` });
+    else if (s.status === "Ready for Pickup") {
+      const d = ageDays(s.pickupDate || s.bookedDate);
+      if (d !== null && d >= STALE.readyDays) out.push({ kind: "service", rec: s, days: d, reason: s.pickupDate ? `Ready for pick-up — pick-up date ${d} days ago` : `Ready for pick-up — booked ${d} days ago` });
+    }
+  });
+  orders.forEach((o) => {
+    if (o.archived) return;
+    if (o.status !== "Received") {
+      const d = ageDays(o.eta);
+      if (d !== null && d >= STALE.overdueDays) out.push({ kind: "order", rec: o, days: d, reason: `ETA ${d} days overdue` });
+    } else if (o.fulfillment === "Pickup" && o.customer && o.assemblyStatus === "Assembled") {
+      const d = ageDays(o.receivedDate);
+      if (d !== null && d >= STALE.uncollectedDays) out.push({ kind: "order", rec: o, days: d, reason: `Pick-up date was ${d} days ago — not collected` });
+    }
+  });
+  accessories.forEach((a) => {
+    if (a.archived || a.status === "Received") return;
+    const d = ageDays(a.eta);
+    if (d !== null && d >= STALE.overdueDays) out.push({ kind: "accessory", rec: a, days: d, reason: `ETA ${d} days overdue` });
+  });
+  return out.sort((x, y) => y.days - x.days);
+}
+
+// Fields that are probably missing for this record's stage. Plain shop stock is skipped.
+function missingDetails(kind, r) {
+  const m = [];
+  if (kind === "order") {
+    if (r.forStock && !r.customer) return m;
+    if (r.customer && !r.phone) m.push("phone");
+    if ((r.status === "Ordered" || r.status === "In Transit") && !r.eta) m.push("ETA");
+    if (r.status === "In Transit" && !r.tracking) m.push("tracking");
+    if (r.customer && r.fulfillment === "Delivery" && !r.deliveryDate) m.push("delivery date");
+  } else if (kind === "service") {
+    if (!r.phone) m.push("phone");
+    if (!r.bookedDate) m.push("booked date");
+    if (!r.serviceType) m.push("service type");
+    if (r.status !== "Booked" && r.status !== "Completed" && !r.mechanic) m.push("mechanic");
+  } else if (kind === "accessory") {
+    if (r.forStock && !r.customer) return m;
+    if (r.customer && !r.phone) m.push("phone");
+    if ((r.status === "Ordered" || r.status === "In Transit") && !r.eta) m.push("ETA");
+    if (r.status === "In Transit" && !r.tracking) m.push("tracking");
+  }
+  return m;
+}
+function MissingTag({ kind, rec }) {
+  const m = rec.archived ? [] : missingDetails(kind, rec);
+  if (!m.length) return null;
+  return <div data-testid="missing-tag" style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700, marginTop: 2 }}>Missing: {m.join(", ")}</div>;
+}
+
+// Possible duplicates of a NEW record (not shown when editing an existing one).
+function findDuplicates(kind, form, records) {
+  const list = kind === "service" ? records.services : kind === "accessory" ? records.accessories : records.orders;
+  if (list.some((r) => r.id === form.id)) return [];
+  const low = (v) => (v || "").toString().trim().toLowerCase();
+  const name = low(form.customer);
+  const phone = (form.phone || "").replace(/\D/g, "");
+  const bike = low(form.bike);
+  return list.filter((r) => {
+    if (r.archived) return false;
+    if (kind === "service" && r.status === "Completed") return false;
+    const sameCust = !!name && low(r.customer) === name;
+    const samePhone = phone.length >= 6 && (r.phone || "").replace(/\D/g, "") === phone;
+    if (kind === "service") return sameCust || samePhone || (!!bike && low(r.bike) === bike);
+    return (sameCust || samePhone) && !!low(form.type) && low(r.brand) === low(form.brand) && low(r.type) === low(form.type);
+  }).slice(0, 3);
+}
+function CustomerExtras({ kind, form }) {
+  const ctx = React.useContext(AppCtx);
+  const dups = findDuplicates(kind, form, ctx.records);
+  const hasName = (form.customer || "").trim() || (form.phone || "").replace(/\D/g, "").length >= 6;
+  return (
+    <>
+      {hasName && ctx.viewCustomer && (
+        <button type="button" data-testid="customer-history-btn" onClick={() => ctx.viewCustomer({ name: form.customer, phone: form.phone })}
+          style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#3A7CA5", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+          View customer history
+        </button>
+      )}
+      {dups.length > 0 && (
+        <div data-testid="duplicate-warning" style={{ background: "#FFF4E0", border: "1px solid #E8C48A", borderRadius: 8, padding: "8px 10px", fontSize: 13, color: "#7A4A0C" }}>
+          ⚠ Possible duplicate — {dups.map((d) => kind === "service"
+            ? `${d.customer || "—"} · ${d.bike || ""} · ${d.serviceType || ""} (${d.status})`
+            : `${d.customer || "—"} · ${d.brand} ${d.type} (${d.status})`).join("; ")}
+        </div>
+      )}
+    </>
+  );
+}
+
+function CustomerHistoryModal({ customer, records, onOpen, onClose }) {
+  const low = (v) => (v || "").toString().trim().toLowerCase();
+  const name = low(customer.name);
+  const phone = (customer.phone || "").replace(/\D/g, "");
+  const match = (r) => (!!name && low(r.customer) === name) || (phone.length >= 6 && (r.phone || "").replace(/\D/g, "") === phone);
+  const newest = (arr, key) => arr.slice().sort((a, b) => String(b[key] || b.createdAt || "").localeCompare(String(a[key] || a.createdAt || "")));
+  const ords = newest(records.orders.filter(match), "orderDate");
+  const svcs = newest(records.services.filter(match), "bookedDate");
+  const accs = newest(records.accessories.filter(match), "eta");
+  const anyPhone = [...ords, ...svcs, ...accs].map((r) => r.phone).find(Boolean) || customer.phone || "";
+  const Row = ({ kind, rec, title, date, color }) => (
+    <div className="rodi-row" onClick={() => onOpen(kind, rec)} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "7px 8px", borderBottom: "1px solid #EFEFEA", cursor: "pointer", fontSize: 13.5, borderRadius: 6 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 600 }}>{title}{rec.archived && <span style={{ marginLeft: 6, fontSize: 10.5, color: "#8B9086", fontWeight: 700 }}>ARCHIVED</span>}</div>
+        <div style={{ fontSize: 12, color: "#8B9086" }}>{formatAU(date) || "No date"}</div>
+      </div>
+      <StatusBadge label={rec.status} color={color} />
+    </div>
+  );
+  const sec = (label, n) => <h4 style={{ fontSize: 12.5, color: "#565C54", margin: "14px 0 4px 0", textTransform: "uppercase" }}>{label} ({n})</h4>;
+  const total = ords.length + svcs.length + accs.length;
+  return (
+    <div data-testid="customer-history" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(25,27,24,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 14, padding: 18, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div>
+            <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{customer.name || anyPhone || "Customer"}</h3>
+            <div style={{ fontSize: 13, color: "#565C54" }}>{anyPhone || "No phone on file"} · {total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
+          </div>
+          <IconBtn onClick={onClose} title="Close history"><X size={14} /></IconBtn>
+        </div>
+        <div style={{ fontSize: 12, color: "#8B9086", marginTop: 6 }}>Includes archived records. Opening a record closes any form you have open.</div>
+        {total === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>No saved records for this customer yet.</p>}
+        {ords.length > 0 && sec("Orders", ords.length)}
+        {ords.map((o) => <Row key={o.id} kind="order" rec={o} title={`${o.brand} ${o.type}`.trim() + (o.colour ? ` — ${o.colour}` : "")} date={o.orderDate || o.eta} color={ORDER_COLORS[o.status]} />)}
+        {svcs.length > 0 && sec("Services", svcs.length)}
+        {svcs.map((x) => <Row key={x.id} kind="service" rec={x} title={`${x.bike || "Bike"} — ${x.serviceType || "service"}`} date={x.bookedDate} color={SERVICE_COLORS[x.status]} />)}
+        {accs.length > 0 && sec("Accessories & parts", accs.length)}
+        {accs.map((a) => <Row key={a.id} kind="accessory" rec={a} title={`${a.brand} ${a.type}`.trim()} date={a.eta} color={ACCESSORY_COLORS[a.status]} />)}
+      </div>
+    </div>
+  );
+}
+
+// Printable one-page job card (prints just the card; the rest of the app is hidden by the print CSS).
+function JobCardModal({ job, onClose }) {
+  const log = parseLog(job.notes);
+  const row = (label, value) => (
+    <div style={{ borderBottom: "1px solid #999", padding: "6px 0", display: "flex", gap: 8 }}>
+      <span style={{ width: 120, fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 14.5, minHeight: 18 }}>{value || ""}</span>
+    </div>
+  );
+  return (
+    <div className="rodi-print-overlay" data-testid="job-card" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(25,27,24,0.55)", overflowY: "auto", padding: 16, display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720 }}>
+        <div className="rodi-noprint" style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginBottom: 8 }}>
+          <button type="button" onClick={() => window.print()} data-testid="job-card-print" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8, padding: "9px 18px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Print</button>
+          <button type="button" onClick={onClose} className="rodi-btn" style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 8, padding: "9px 18px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Close</button>
+        </div>
+        <div className="rodi-print" style={{ background: "#fff", color: "#000", padding: 28, border: "2px solid #191B18", borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "3px solid #000", paddingBottom: 8, marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "0.02em" }}>RODI ELECTRIC</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>WORKSHOP JOB CARD</div>
+            </div>
+            <div style={{ fontSize: 12.5, textAlign: "right" }}>Printed {formatAU(todayISO())}<br />Status: <strong>{job.status}</strong></div>
+          </div>
+          {row("Customer", job.customer)}
+          {row("Phone", job.phone)}
+          {row("Bike / model", job.bike)}
+          {row("Work requested", job.serviceType)}
+          {row("Mechanic", job.mechanic)}
+          {row("Booked in", formatAU(job.bookedDate))}
+          {row("Pick up date", formatAU(job.pickupDate))}
+          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>WORKSHOP NOTES LOG</div>
+          <div style={{ border: "1px solid #999", minHeight: 70, padding: 8, marginTop: 4 }}>
+            {log.length === 0 && <span style={{ fontSize: 13, color: "#777" }}>—</span>}
+            {log.map((e, i) => (
+              <div key={i} style={{ fontSize: 13, marginBottom: 4, whiteSpace: "pre-wrap" }}>{e.stamp && <strong>{e.stamp} </strong>}{e.text}</div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>WORK CARRIED OUT / PARTS USED</div>
+          {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} style={{ borderBottom: "1px solid #999", height: 26 }} />)}
+          <div style={{ display: "flex", gap: 24, marginTop: 28 }}>
+            <div style={{ flex: 1, borderTop: "1px solid #000", paddingTop: 4, fontSize: 12 }}>Customer signature</div>
+            <div style={{ flex: 1, borderTop: "1px solid #000", paddingTop: 4, fontSize: 12 }}>Mechanic signature</div>
+            <div style={{ width: 120, borderTop: "1px solid #000", paddingTop: 4, fontSize: 12 }}>Date</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrintJobButton({ job }) {
+  const ctx = React.useContext(AppCtx);
+  if (!ctx.printJob) return null;
+  return (
+    <button type="button" data-testid="print-job-btn" onClick={() => ctx.printJob(job)} className="rodi-btn" style={{
+      background: "#fff", color: "#191B18", border: "2px solid #191B18", borderRadius: 9, padding: "10px 0",
+      fontWeight: 700, fontSize: 14, cursor: "pointer",
+    }}>Print job card</button>
   );
 }
 
@@ -1372,6 +1610,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                   {o.customer
                     ? <div>{o.customer}</div>
                     : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
+                  <MissingTag kind="order" rec={o} />
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                     {o.forStock && o.customer && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
                     {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Texted</span>}
@@ -1545,7 +1784,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}</td>
+                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
@@ -1847,6 +2086,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                     ? <div>{a.customer}</div>
                     : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
                   {a.forStock && a.customer && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
+                  <MissingTag kind="accessory" rec={a} />
                 </td>
                 <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 700, color: a.forStock && !a.customer ? undefined : PAYMENT_COLORS[a.paymentOwing] }}>
                   {a.forStock && !a.customer ? "—" : (a.paymentOwing || "—")}
@@ -2277,6 +2517,13 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     ...activeOrders.filter((o) => orderQuickMatch(o, "pickup")).map((o) => ({ kind: "order", rec: o })),
   ], [activeServices, activeOrders]);
 
+  const chasing = useMemo(() => staleItems(orders, services, accessories), [orders, services, accessories]);
+  const missingItems = useMemo(() => [
+    ...activeOrders.map((r) => ({ kind: "order", rec: r })),
+    ...activeServices.map((r) => ({ kind: "service", rec: r })),
+    ...activeAccessories.map((r) => ({ kind: "accessory", rec: r })),
+  ].map((it) => ({ ...it, missing: missingDetails(it.kind, it.rec) })).filter((it) => it.missing.length > 0), [activeOrders, activeServices, activeAccessories]);
+
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
     if (!q) return null;
@@ -2331,6 +2578,13 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div>
           <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>NEEDS ATTENTION</h3>
+          <AttentionList title="Chasing needed" icon={<AlertOctagon size={16} />} color="#C1483A" items={chasing}
+            renderItem={(it) => (
+              <div key={it.kind + it.rec.id} data-testid="chasing-item" onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                <strong>{it.kind === "service" ? `${it.rec.customer || "—"} — ${it.rec.bike || ""}` : `${it.rec.brand} ${it.rec.type}${it.rec.customer ? " — " + it.rec.customer : ""}`}</strong>
+                {" "}<span style={{ color: "#C1483A" }}>{it.reason}</span>
+              </div>
+            )} />
           <AttentionList title="Ready for pick-up" icon={<PhoneCall size={16} />} color="#7C5CBF" items={readyForPickup}
             renderItem={(it) => (
               <div key={it.kind + it.rec.id} onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
@@ -2369,7 +2623,14 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <strong>{s.customer}</strong> — {s.bike} — {s.serviceType || "—"}
               </div>
             )} />
-          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && (
+          <AttentionList title="Missing details" icon={<AlertTriangle size={16} />} color="#D98B3D" items={missingItems}
+            renderItem={(it) => (
+              <div key={it.kind + it.rec.id} data-testid="missing-item" onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                <strong>{it.kind === "service" ? `${it.rec.customer || "—"} — ${it.rec.bike || ""}` : `${it.rec.brand} ${it.rec.type}${it.rec.customer ? " — " + it.rec.customer : ""}`}</strong>
+                {" "}<span style={{ color: "#D98B3D" }}>missing {it.missing.join(", ")}</span>
+              </div>
+            )} />
+          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && chasing.length === 0 && missingItems.length === 0 && (
             <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing urgent right now — nice.</p>
           )}
         </div>
@@ -2473,6 +2734,8 @@ function RodiTracker() {
   const [toast, setToast] = useState(null);
   const [preset, setPreset] = useState(null);
   const [showName, setShowName] = useState(false);
+  const [historyFor, setHistoryFor] = useState(null);
+  const [jobCard, setJobCard] = useState(null);
   const [userName, setUserName] = useState(() => { try { return localStorage.getItem("rodi-user") || ""; } catch (e) { return ""; } });
   const userNameRef = useRef(userName);
   userNameRef.current = userName;
@@ -2798,7 +3061,10 @@ function RodiTracker() {
     });
   }, [orders, services, accessories, pricing]);
 
+  const ctxValue = { records: { orders, services, accessories }, viewCustomer: setHistoryFor, printJob: setJobCard };
+
   return (
+    <AppCtx.Provider value={ctxValue}>
     <div className="rodi-root" style={{ minHeight: "100%" }}>
       <GlobalStyle />
       <div style={{
@@ -2987,7 +3253,13 @@ function RodiTracker() {
       )}
       <Toast toast={toast} onClose={() => setToast(null)} />
       {showName && <NameDialog current={userName} onSave={saveName} onClose={() => setShowName(false)} />}
+      {historyFor && (
+        <CustomerHistoryModal customer={historyFor} records={ctxValue.records}
+          onOpen={(kind, rec) => { setHistoryFor(null); openRecordFromCalendar(kind, rec); }} onClose={() => setHistoryFor(null)} />
+      )}
+      {jobCard && <JobCardModal job={jobCard} onClose={() => setJobCard(null)} />}
     </div>
+    </AppCtx.Provider>
   );
 }
 
