@@ -695,7 +695,7 @@ function DeliveryForm({ initial, onSave, onClose }) {
 function parseLog(notes) {
   return (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
     const m = line.match(/^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/);
-    return m ? { stamp: m[1], text: m[2], raw: line } : { stamp: "", text: line, raw: line };
+    return m ? { stamp: m[1], text: m[2].replace(/⏎/g, "\n"), raw: line } : { stamp: "", text: line.replace(/⏎/g, "\n"), raw: line };
   });
 }
 function nowStamp() {
@@ -710,7 +710,7 @@ function ServiceLog({ value, onChange }) {
   const add = () => {
     const t = text.trim();
     if (!t) return;
-    onChange([...entries.map((e) => e.raw), `${nowStamp()} | ${t.replace(/\n/g, " ")}`].join("\n"));
+    onChange([...entries.map((e) => e.raw), `${nowStamp()} | ${t.replace(/\n/g, "⏎")}`].join("\n"));
     setText("");
   };
   return (
@@ -722,7 +722,7 @@ function ServiceLog({ value, onChange }) {
           <div key={e.raw + i} style={{ display: "flex", gap: 8, padding: "8px 10px", borderBottom: "1px solid #EFEFEA", alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
-              <div style={{ fontSize: 14, wordBreak: "break-word" }}>{e.text}</div>
+              <div style={{ fontSize: 14, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{e.text}</div>
             </div>
             <button type="button" title="Delete entry" onClick={() => onChange(entries.filter((x) => x.raw !== e.raw).map((x) => x.raw).join("\n"))}
               style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}>
@@ -731,14 +731,15 @@ function ServiceLog({ value, onChange }) {
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <textarea
           value={text}
+          rows={2}
           onChange={(e) => setText(e.target.value.toUpperCase())}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add(); } }}
           onBlur={add}
-          placeholder="Add log entry — e.g. REPLACED BRAKE PADS"
-          style={{ ...inputStyle, flex: 1 }}
+          placeholder="Add log entry — Enter for a new line, then press Add"
+          style={{ ...inputStyle, flex: 1, resize: "vertical", minHeight: 44 }}
         />
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={add} className="rodi-btn" style={{
           background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8,
@@ -1056,7 +1057,7 @@ function orderQuickMatch(o, quick) {
   if (quick === "week") return inNext7(o.eta);
   if (quick === "assembly") return o.status === "Received" && o.assemblyStatus !== "Assembled";
   if (quick === "deliveries") return o.fulfillment === "Delivery" && inNext7(o.deliveryDate);
-  if (quick === "pickup") return o.status === "Received" && o.fulfillment === "Pickup" && !!o.customer;
+  if (quick === "pickup") return o.status === "Received" && o.fulfillment === "Pickup" && !!o.customer && o.assemblyStatus === "Assembled";
   return true;
 }
 function serviceQuickMatch(s, quick) {
@@ -1093,14 +1094,14 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
         {log.map((e, i) => (
           <div key={i} style={{ padding: "6px 8px", borderBottom: "1px solid #EFEFEA" }}>
             {e.stamp && <div style={{ fontSize: 10.5, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
-            <div style={{ fontSize: 13.5 }}>{e.text}</div>
+            <div style={{ fontSize: 13.5, whiteSpace: "pre-wrap" }}>{e.text}</div>
           </div>
         ))}
       </div>
       <div style={{ display: "flex", gap: 6 }}>
-        <input value={text} onChange={(e) => setText(e.target.value.toUpperCase())}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-          placeholder="Add log entry…" style={{ ...inputStyle, flex: 1 }} />
+        <textarea value={text} rows={2} onChange={(e) => setText(e.target.value.toUpperCase())}
+          onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add(); } }}
+          placeholder="Add log entry — Enter for a new line, then Add" style={{ ...inputStyle, flex: 1, resize: "vertical", minHeight: 44 }} />
         <button type="button" onClick={add} className="rodi-btn" style={{ background: "#F6BD1B", border: "2px solid #191B18", borderRadius: 8, padding: "0 12px", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Add</button>
       </div>
     </div>
@@ -1555,7 +1556,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                   <span style={{ whiteSpace: "nowrap" }}>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{(() => { const log = parseLog(s.notes); const last = log[log.length - 1]; return last ? (<div><div>{last.text}</div><div style={{ fontSize: 10.5, color: "#8B9086" }}>{last.stamp}{log.length > 1 ? ` · ${log.length} entries` : ""}</div></div>) : "—"; })()}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{(() => { const log = parseLog(s.notes); const last = log[log.length - 1]; return last ? (<div><div style={{ whiteSpace: "pre-wrap" }}>{last.text}</div><div style={{ fontSize: 10.5, color: "#8B9086" }}>{last.stamp}{log.length > 1 ? ` · ${log.length} entries` : ""}</div></div>) : "—"; })()}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
@@ -2669,7 +2670,7 @@ function RodiTracker() {
     const t = servicesRef.current.find((r) => r.id === id);
     if (!t) return;
     const lines = parseLog(t.notes).map((e) => e.raw);
-    lines.push(`${nowStamp()} | ${text.replace(/\n/g, " ")}`);
+    lines.push(`${nowStamp()} | ${text.replace(/\n/g, "⏎")}`);
     patchRecord("services", id, { notes: lines.join("\n") }, "edited", "log entry: " + text.slice(0, 40));
   }, []);
 
