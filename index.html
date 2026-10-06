@@ -668,6 +668,64 @@ function DeliveryForm({ initial, onSave, onClose }) {
   );
 }
 
+// ---- Service workshop log: stored as lines "dd/mm/yyyy HH:MM | TEXT" inside the existing `notes` text column ----
+function parseLog(notes) {
+  return (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
+    const m = line.match(/^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/);
+    return m ? { stamp: m[1], text: m[2], raw: line } : { stamp: "", text: line, raw: line };
+  });
+}
+function nowStamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function ServiceLog({ value, onChange }) {
+  const [text, setText] = useState("");
+  const entries = parseLog(value);
+  const add = () => {
+    const t = text.trim();
+    if (!t) return;
+    onChange([...entries.map((e) => e.raw), `${nowStamp()} | ${t.replace(/\n/g, " ")}`].join("\n"));
+    setText("");
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }} data-testid="service-log">
+      <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Workshop notes log</div>
+      <div style={{ border: "1px solid #D8DAD1", borderRadius: 8, background: "#fff", maxHeight: 240, overflowY: "auto" }}>
+        {entries.length === 0 && <div style={{ padding: 10, fontSize: 13, color: "#8B9086" }}>No entries yet.</div>}
+        {entries.slice().reverse().map((e, i) => (
+          <div key={e.raw + i} style={{ display: "flex", gap: 8, padding: "8px 10px", borderBottom: "1px solid #EFEFEA", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
+              <div style={{ fontSize: 14, wordBreak: "break-word" }}>{e.text}</div>
+            </div>
+            <button type="button" title="Delete entry" onClick={() => onChange(entries.filter((x) => x.raw !== e.raw).map((x) => x.raw).join("\n"))}
+              style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}>
+              <X size={13} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value.toUpperCase())}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          onBlur={add}
+          placeholder="Add log entry — e.g. REPLACED BRAKE PADS"
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={add} className="rodi-btn" style={{
+          background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8,
+          padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
+        }}>Add</button>
+      </div>
+    </div>
+  );
+}
+
 function ServiceForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -699,7 +757,7 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
       <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
-      <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
+      <ServiceLog value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <button type="submit" className="rodi-btn" style={{
         marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
@@ -1170,7 +1228,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                   <span style={{ whiteSpace: "nowrap" }}>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{s.notes || "—"}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{(() => { const log = parseLog(s.notes); const last = log[log.length - 1]; return last ? (<div><div>{last.text}</div><div style={{ fontSize: 10.5, color: "#8B9086" }}>{last.stamp}{log.length > 1 ? ` · ${log.length} entries` : ""}</div></div>) : "—"; })()}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
