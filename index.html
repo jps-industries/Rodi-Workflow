@@ -17,7 +17,7 @@
 <body>
 <div id="root"></div>
 <script type="text/plain" id="app-source">
-const { useState, useEffect, useMemo, useCallback } = React;
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
 // ---- Supabase connection (REST API, no SDK needed) ----
 const SUPABASE_URL = "https://dobonmovezqepjgzfwmt.supabase.co";
@@ -406,6 +406,15 @@ function GlobalStyle() {
       .rodi-scrollbar table { table-layout: fixed; width: 100%; }
       .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: break-word; overflow-wrap: anywhere; }
       .rodi-outline { border: 2px solid #191B18 !important; }
+      @media (max-width: 720px) {
+        .rodi-scrollbar { overflow-x: visible !important; border: none !important; background: transparent !important; }
+        .rodi-scrollbar table, .rodi-scrollbar tbody { display: block; width: 100%; }
+        .rodi-scrollbar thead { display: none; }
+        .rodi-scrollbar tbody tr { display: block; background: #fff; border: 2px solid #191B18 !important; border-radius: 12px; margin-bottom: 10px; padding: 6px 12px; }
+        .rodi-scrollbar tbody td { display: flex !important; justify-content: space-between; align-items: center; gap: 12px; padding: 5px 0 !important; text-align: right; max-width: none !important; border: none; }
+        .rodi-scrollbar tbody td::before { content: attr(data-label); font-weight: 600; font-size: 11.5px; color: #565C54; text-align: left; flex-shrink: 0; }
+        .rodi-scrollbar tbody td[colspan] { display: block !important; text-align: center; }
+      }
       .rodi-half-width { width: 50%; min-width: 320px; }
       @media (max-width: 720px) { .rodi-half-width { width: 100%; min-width: 0; } }
     `}</style>
@@ -526,8 +535,10 @@ function notifyCustomerReady(form) {
   }).catch((e) => console.error("Zapier notify failed", e));
 }
 
-function OrderForm({ initial, onSave, onClose }) {
+function OrderForm({ initial, onSave, onClose, onCreateService }) {
   const [form, setForm] = useState(initial);
+  // Plain shop stock (no customer) has no payment/fulfillment — hide those fields.
+  const hideSale = form.forStock && !form.customer;
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
@@ -574,6 +585,7 @@ function OrderForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
+      {!hideSale && (<>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Fulfillment">
           <select style={inputStyle} value={form.fulfillment} onChange={set("fulfillment")}>
@@ -589,21 +601,32 @@ function OrderForm({ initial, onSave, onClose }) {
           <input type="date" style={inputStyle} value={form.deliveryDate} onChange={set("deliveryDate")} />
         </Field>
       )}
+      </>)}
       <Field label="Assembly">
         <select style={inputStyle} value={form.assemblyStatus} onChange={set("assemblyStatus")}>
           {ASSEMBLY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </Field>
+      {!hideSale && (<>
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "#191B18" }}>
         <input type="checkbox" style={{ width: 22, height: 22, cursor: "pointer", flexShrink: 0 }} checked={form.notified} onChange={(e) => setForm({ ...form, notified: e.target.checked })} />
         Text sent to customer
       </label>
       <Field label="Payment status">
-        <select style={inputStyle} value={form.payment} onChange={set("payment")}>
-          {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select style={{ ...inputStyle, color: PAYMENT_COLORS[form.payment], fontWeight: 700 }} value={form.payment} onChange={set("payment")}>
+          {PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
         </select>
       </Field>
+      </>)}
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
+      {onCreateService && (initial.brand || initial.type) && (
+        <button type="button" onClick={() => onCreateService(form)} className="rodi-btn" data-testid="create-service-btn" style={{
+          background: "#fff", color: "#191B18", border: "2px solid #191B18", borderRadius: 9, padding: "10px 0",
+          fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+        }}>
+          <Wrench size={15} /> Save &amp; create service booking
+        </button>
+      )}
       <button type="submit" className="rodi-btn" style={{
         marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
@@ -653,8 +676,8 @@ function DeliveryForm({ initial, onSave, onClose }) {
         Text sent to customer
       </label>
       <Field label="Payment status">
-        <select style={inputStyle} value={form.payment} onChange={set("payment")}>
-          {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select style={{ ...inputStyle, color: PAYMENT_COLORS[form.payment], fontWeight: 700 }} value={form.payment} onChange={set("payment")}>
+          {PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
         </select>
       </Field>
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
@@ -852,8 +875,8 @@ function AccessoryForm({ initial, onSave, onClose }) {
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <Field label="Payment status">
-        <select style={inputStyle} value={form.paymentOwing} onChange={set("paymentOwing")}>
-          {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <select style={{ ...inputStyle, color: PAYMENT_COLORS[form.paymentOwing], fontWeight: 700 }} value={form.paymentOwing} onChange={set("paymentOwing")}>
+          {PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
         </select>
       </Field>
       <label style={{
@@ -874,6 +897,297 @@ function AccessoryForm({ initial, onSave, onClose }) {
   );
 }
 
+// ---- Change history helpers ----
+function recordLabel(table, r) {
+  if (!r) return "";
+  if (table === "orders") return `${r.brand || ""} ${r.type || ""}`.trim() + (r.customer ? ` (${r.customer})` : r.forStock ? " (STOCK)" : "");
+  if (table === "services") return `${r.customer || "SERVICE"}${r.bike ? " — " + r.bike : ""}`;
+  if (table === "accessories") return `${r.brand || ""} ${r.type || ""}`.trim() + (r.customer ? ` (${r.customer})` : "");
+  if (table === "pricing") return `${r.brand || ""} ${r.model || ""}`.trim();
+  return "";
+}
+const TABLE_NOUN = { orders: "Order", services: "Service", accessories: "Accessory", pricing: "Price" };
+function diffRecords(a, b) {
+  const skip = { id: 1, createdAt: 1 };
+  const changes = [];
+  Object.keys(b).forEach((k) => {
+    if (skip[k]) return;
+    const x = a[k] == null ? "" : a[k], y = b[k] == null ? "" : b[k];
+    if (String(x) === String(y)) return;
+    if (k === "notes" && a.notes !== undefined && String(b.notes || "").indexOf("|") > -1 && /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} \|/.test(String(b.notes))) {
+      changes.push("workshop log updated");
+      return;
+    }
+    const cut = (v) => { v = String(v); return v.length > 28 ? v.slice(0, 28) + "…" : (v === "" ? "—" : v); };
+    changes.push(`${k}: ${cut(x)} → ${cut(y)}`);
+  });
+  if (changes.length > 4) return changes.slice(0, 4).join("; ") + `; +${changes.length - 4} more`;
+  return changes.join("; ");
+}
+
+// Status badge that opens a small menu to jump straight to any status.
+function StatusMenu({ label, color, statuses, onPick }) {
+  const [pos, setPos] = useState(null);
+  return (
+    <>
+      <span
+        title="Change status"
+        onClick={(e) => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setPos({ x: r.left, y: r.bottom + 4 }); }}
+        style={{ cursor: "pointer", display: "inline-flex" }}
+      >
+        <StatusBadge label={label} color={color} />
+      </span>
+      {pos && (
+        <div onClick={(e) => { e.stopPropagation(); setPos(null); }} style={{ position: "fixed", inset: 0, zIndex: 45 }}>
+          <div data-testid="status-menu" style={{
+            position: "fixed", left: Math.max(8, Math.min(pos.x, window.innerWidth - 190)), top: Math.max(8, Math.min(pos.y, window.innerHeight - 40 - statuses.length * 38)),
+            background: "#fff", border: "2px solid #191B18", borderRadius: 10, padding: 6, minWidth: 170,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", gap: 2,
+          }}>
+            {statuses.map((st) => (
+              <button key={st} type="button" onClick={(e) => { e.stopPropagation(); setPos(null); if (st !== label) onPick(st); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 6, padding: "8px 10px",
+                  background: st === label ? "#F3F4EF" : "#fff", cursor: "pointer", fontSize: 13.5, fontWeight: st === label ? 700 : 500, textAlign: "left",
+                }}>
+                <span style={{ width: 9, height: 9, borderRadius: 999, background: color && st === label ? color : "#D8DAD1", flexShrink: 0 }} />
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(onClose, 9000);
+    return () => clearTimeout(t);
+  }, [toast]);
+  if (!toast) return null;
+  return (
+    <div data-testid="toast" style={{
+      position: "fixed", left: "50%", bottom: 22, transform: "translateX(-50%)", zIndex: 70,
+      background: "#191B18", color: "#fff", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 14,
+      fontSize: 14, boxShadow: "0 10px 30px rgba(0,0,0,0.3)", maxWidth: "calc(100vw - 24px)",
+    }}>
+      <span>{toast.text}</span>
+      {toast.undo && (
+        <button type="button" onClick={() => { const u = toast.undo; onClose(); u(); }} style={{
+          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 6, padding: "5px 12px", fontWeight: 700, cursor: "pointer", fontSize: 13,
+        }}>Undo</button>
+      )}
+      <button type="button" onClick={onClose} title="Dismiss" style={{ background: "none", border: "none", color: "#C9CBC3", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+    </div>
+  );
+}
+
+// Header search across orders, services and accessories.
+function GlobalSearch({ orders, services, accessories, onOpen }) {
+  const [q, setQ] = useState("");
+  const query = q.trim().toLowerCase();
+  const results = useMemo(() => {
+    if (!query) return null;
+    const has = (arr) => arr.join(" ").toLowerCase().includes(query);
+    return {
+      orders: orders.filter((o) => !o.archived && has([o.brand, o.type, o.colour, o.customer, o.phone, o.tracking])).slice(0, 8),
+      services: services.filter((x) => !x.archived && has([x.customer, x.phone, x.bike, x.serviceType, x.mechanic])).slice(0, 8),
+      accessories: accessories.filter((a) => !a.archived && has([a.brand, a.type, a.colour, a.customer, a.phone, a.tracking])).slice(0, 8),
+    };
+  }, [query, orders, services, accessories]);
+  const total = results ? results.orders.length + results.services.length + results.accessories.length : 0;
+  const pick = (kind, rec) => { setQ(""); onOpen(kind, rec); };
+  const row = (kind, rec, title, badge) => (
+    <div key={kind + rec.id} className="rodi-row" onClick={() => pick(kind, rec)}
+      style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "7px 10px", cursor: "pointer", fontSize: 13.5, borderBottom: "1px solid #EFEFEA", color: "#191B18" }}>
+      <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
+      {badge}
+    </div>
+  );
+  const head = (t) => <div style={{ fontSize: 11, fontWeight: 700, color: "#8B9086", padding: "8px 10px 2px", textTransform: "uppercase" }}>{t}</div>;
+  return (
+    <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 420, minWidth: 0 }}>
+      <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
+      <input
+        data-testid="global-search"
+        placeholder="Search everything — customer, brand, bike, phone…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        style={{ ...inputStyle, paddingLeft: 32, border: "2px solid #F6BD1B", background: "#fff" }}
+      />
+      {results && (
+        <div data-testid="global-search-results" style={{
+          position: "absolute", top: 44, left: 0, right: 0, zIndex: 30, background: "#fff", border: "2px solid #191B18",
+          borderRadius: 10, maxHeight: 360, overflowY: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+        }}>
+          {total === 0 && <div style={{ padding: 12, fontSize: 13.5, color: "#8B9086" }}>No matches for "{q}".</div>}
+          {results.orders.length > 0 && head("Orders")}
+          {results.orders.map((o) => row("order", o, `${o.brand} ${o.type} — ${o.customer || "STOCK"}`, <StatusBadge label={o.status} color={ORDER_COLORS[o.status]} />))}
+          {results.services.length > 0 && head("Services")}
+          {results.services.map((x) => row("service", x, `${x.customer || "—"} — ${x.bike || ""}`, <StatusBadge label={x.status} color={SERVICE_COLORS[x.status]} />))}
+          {results.accessories.length > 0 && head("Accessories")}
+          {results.accessories.map((a) => row("accessory", a, `${a.brand} ${a.type} — ${a.customer || "STOCK"}`, <StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} />))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuickFilterChip({ label, onClear }) {
+  return (
+    <button onClick={onClear} className="rodi-btn" data-testid="quick-filter-chip" title="Clear filter" style={{
+      border: "2px solid #191B18", background: "#F6BD1B", borderRadius: 999, padding: "6px 12px", cursor: "pointer",
+      fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
+    }}>
+      Showing: {label} <X size={12} />
+    </button>
+  );
+}
+
+const ORDER_QUICK_LABELS = { overdue: "Overdue orders", week: "Arriving this week", assembly: "Needs assembly", deliveries: "Deliveries this week", pickup: "Ready for pick-up" };
+const SERVICE_QUICK_LABELS = { today: "Services today", week: "Services this week", overdue: "Overdue services", ready: "Ready for pick-up" };
+function inNext7(dateStr) { const d = daysFromToday(dateStr); return d !== null && d >= 0 && d <= 7; }
+function orderQuickMatch(o, quick) {
+  if (!quick) return true;
+  if (quick === "overdue") return isPastDate(o.eta) && o.status !== "Received";
+  if (quick === "week") return inNext7(o.eta);
+  if (quick === "assembly") return o.status === "Received" && o.assemblyStatus !== "Assembled";
+  if (quick === "deliveries") return o.fulfillment === "Delivery" && inNext7(o.deliveryDate);
+  if (quick === "pickup") return o.status === "Received" && o.fulfillment === "Pickup" && !!o.customer;
+  return true;
+}
+function serviceQuickMatch(s, quick) {
+  if (!quick) return true;
+  if (quick === "today") return s.bookedDate === todayISO();
+  if (quick === "week") return inNext7(s.bookedDate);
+  if (quick === "overdue") return isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup");
+  if (quick === "ready") return s.status === "Ready for Pickup";
+  return true;
+}
+
+// Workshop view: big cards for the jobs on the floor, with the notes log front and centre.
+function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
+  const [text, setText] = useState("");
+  const log = parseLog(s.notes).slice().reverse();
+  const add = () => { const t = text.trim(); if (!t) return; onAppendLog(s.id, t); setText(""); };
+  return (
+    <div data-testid="workshop-card" style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 12, padding: 14, display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ minWidth: 0, cursor: "pointer" }} onClick={() => onEdit(s)}>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>{s.customer || "—"}</div>
+          <div style={{ fontSize: 13.5, color: "#565C54" }}>{s.bike || "—"}</div>
+        </div>
+        <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
+      </div>
+      <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.serviceType || "—"}</div>
+      <div style={{ fontSize: 12.5, color: "#565C54", display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <span>Mechanic: <strong>{s.mechanic || "—"}</strong></span>
+        <span>Booked: <strong>{formatAURel(s.bookedDate) || "—"}</strong></span>
+        {s.pickupDate && <span>Pick up: <strong>{formatAURel(s.pickupDate)}</strong></span>}
+      </div>
+      <div style={{ background: "#FAFAF7", border: "1px solid #E3E4DD", borderRadius: 8, maxHeight: 150, overflowY: "auto" }}>
+        {log.length === 0 && <div style={{ padding: 8, fontSize: 12.5, color: "#8B9086" }}>No log entries yet.</div>}
+        {log.map((e, i) => (
+          <div key={i} style={{ padding: "6px 8px", borderBottom: "1px solid #EFEFEA" }}>
+            {e.stamp && <div style={{ fontSize: 10.5, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
+            <div style={{ fontSize: 13.5 }}>{e.text}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <input value={text} onChange={(e) => setText(e.target.value.toUpperCase())}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          placeholder="Add log entry…" style={{ ...inputStyle, flex: 1 }} />
+        <button type="button" onClick={add} className="rodi-btn" style={{ background: "#F6BD1B", border: "2px solid #191B18", borderRadius: 8, padding: "0 12px", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Add</button>
+      </div>
+    </div>
+  );
+}
+function WorkshopView({ services, onEdit, onSetStatus, onAppendLog }) {
+  const jobs = services.filter((s) => !s.archived && s.status !== "Completed" && (
+    s.bookedDate === todayISO() || ["In Progress", "Awaiting Parts", "Ready for Pickup"].indexOf(s.status) > -1
+    || (isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup"))
+  ));
+  const sorted = sortRows(jobs, "status", "asc", SERVICE_STATUSES);
+  return (
+    <div data-testid="workshop-view">
+      <p style={{ margin: "0 0 12px 0", fontSize: 13.5, color: "#565C54" }}>
+        Today's jobs plus anything in progress, waiting on parts or ready for pick-up. Add log entries straight from here.
+      </p>
+      {sorted.length === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing on the workshop floor right now.</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 12 }}>
+        {sorted.map((s) => <WorkshopCard key={s.id} s={s} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} />)}
+      </div>
+    </div>
+  );
+}
+
+function HistoryTab({ entries }) {
+  const [q, setQ] = useState("");
+  const list = entries.slice().sort((a, b) => (a.at < b.at ? 1 : -1)).filter((e) => {
+    const t = q.trim().toLowerCase();
+    return !t || [e.label, e.summary, e.who, e.action, e.tableName].join(" ").toLowerCase().includes(t);
+  }).slice(0, 300);
+  const fmt = (iso) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso || "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  return (
+    <div data-testid="history-tab">
+      <h2 className="rodi-display" style={{ fontSize: 24, margin: "0 0 6px 0" }}>CHANGE HISTORY</h2>
+      <p style={{ margin: "0 0 12px 0", fontSize: 13.5, color: "#565C54" }}>Who changed what, and when. Set your name with the 👤 button at the top so your changes are tagged.</p>
+      <div style={{ position: "relative", marginBottom: 14, maxWidth: 420 }}>
+        <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
+        <input placeholder="Filter history…" value={q} onChange={(e) => setQ(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+      </div>
+      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
+              {["When", "Who", "What", "Record", "Details"].map((h) => <SortableHeader key={h} label={h} sortKey={null} />)}
+            </tr>
+          </thead>
+          <tbody>
+            {list.length === 0 && <tr><td colSpan={5} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No changes recorded yet — history starts from your next edit.</td></tr>}
+            {list.map((e) => (
+              <tr key={e.id} style={{ borderBottom: "1px solid #EFEFEA" }}>
+                <td style={{ padding: "8px 10px", fontSize: 13, whiteSpace: "nowrap" }}>{fmt(e.at)}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 600 }}>{e.who || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{(TABLE_NOUN[e.tableName] || "") + " " + (e.action || "")}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 600 }}>{e.label || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 12.5, color: "#565C54" }}>{e.summary || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function NameDialog({ current, onSave, onClose }) {
+  const [name, setName] = useState(current || "");
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(25,27,24,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: 16 }} onClick={onClose}>
+      <form onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); onSave(name.trim().toUpperCase()); }}
+        style={{ background: "#fff", borderRadius: 12, padding: 20, width: 320, maxWidth: "100%", boxShadow: "0 12px 30px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 15 }}>Who's using this device?</div>
+        <div style={{ fontSize: 13, color: "#565C54" }}>Your name is saved on this device and tagged on every change you make in the history.</div>
+        <input data-testid="name-input" autoFocus value={name} onChange={(e) => setName(e.target.value.toUpperCase())} placeholder="e.g. JOSH" style={inputStyle} />
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button type="button" onClick={onClose} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D8DAD1", background: "#fff", cursor: "pointer", fontSize: 13.5 }}>Cancel</button>
+          <button type="submit" style={{ padding: "8px 14px", borderRadius: 8, border: "2px solid #191B18", background: "#F6BD1B", cursor: "pointer", fontSize: 13.5, fontWeight: 700 }}>Save</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function ConfirmDialog({ text, onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(25,27,24,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60 }} onClick={onCancel}>
@@ -891,8 +1205,10 @@ function ConfirmDialog({ text, onConfirm, onCancel }) {
   );
 }
 
-function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus }) {
+function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus, preset }) {
   const [search, setSearch] = useState("");
+  const [quick, setQuick] = useState(preset ? preset.quick : null);
+  useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
   const [needsAssembly, setNeedsAssembly] = useState(false);
@@ -915,9 +1231,9 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
       const matchesAssembly = !needsAssembly || (o.assemblyStatus !== "Assembled" && o.status === "Received");
       const q = search.toLowerCase();
       const matchesSearch = !q || [o.brand, o.type, o.customer, o.tracking, o.colour].join(" ").toLowerCase().includes(q);
-      return matchesView && matchesStatus && matchesStock && matchesAssembly && matchesSearch;
+      return matchesView && matchesStatus && matchesStock && matchesAssembly && matchesSearch && orderQuickMatch(o, quick);
     });
-  }, [orders, search, statusFilter, stockOnly, needsAssembly, view]);
+  }, [orders, search, statusFilter, stockOnly, needsAssembly, view, quick]);
 
   const counts = useMemo(() => {
     const c = {};
@@ -980,6 +1296,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
           <span style={{ width: 8, height: 8, borderRadius: 999, background: "#D98B3D" }} />
           Needs assembly
         </button>
+        {quick && <QuickFilterChip label={ORDER_QUICK_LABELS[quick] || quick} onClear={() => setQuick(null)} />}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
@@ -1025,7 +1342,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
               }}>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusBadge label={o.status} color={ORDER_COLORS[o.status]} />
+                    <StatusMenu label={o.status} color={ORDER_COLORS[o.status]} statuses={ORDER_STATUSES} onPick={(st) => onSetStatus(o.id, st)} />
                     {view === "active" && nextStatus(o.status, ORDER_STATUSES) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(o.id); }}
@@ -1094,8 +1411,10 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   );
 }
 
-function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus }) {
+function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, preset }) {
   const [search, setSearch] = useState("");
+  const [quick, setQuick] = useState(preset ? preset.quick : null);
+  useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
   const [statusFilter, setStatusFilter] = useState("All");
   const [view, setView] = useState("active");
   const [sortKey, setSortKey] = useState("status");
@@ -1114,9 +1433,9 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       const matchesStatus = statusFilter === "All" || s.status === statusFilter;
       const q = search.toLowerCase();
       const matchesSearch = !q || [s.customer, s.bike, s.serviceType, s.mechanic].join(" ").toLowerCase().includes(q);
-      return matchesView && matchesStatus && matchesSearch;
+      return matchesView && matchesStatus && matchesSearch && serviceQuickMatch(s, quick);
     });
-  }, [services, search, statusFilter, view]);
+  }, [services, search, statusFilter, view, quick]);
 
   return (
     <div>
@@ -1130,6 +1449,10 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
             border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
             background: view === "archived" ? "#fff" : "transparent", color: view === "archived" ? "#191B18" : "#8B9086",
           }}>Archived</button>
+          <button onClick={() => setView("workshop")} className="rodi-btn" data-testid="workshop-toggle" style={{
+            border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: view === "workshop" ? "#F6BD1B" : "transparent", color: view === "workshop" ? "#191B18" : "#8B9086",
+          }}>Workshop</button>
         </div>
         {view === "active" && eligibleToArchive > 0 && (
           <button onClick={onArchiveAllCompleted} className="rodi-btn" style={{
@@ -1141,6 +1464,9 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
         )}
       </div>
 
+      {view === "workshop" ? (
+        <WorkshopView services={services} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} />
+      ) : (<>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {SERVICE_STATUSES.map((s) => (
           <button key={s} onClick={() => setStatusFilter(statusFilter === s ? "All" : s)}
@@ -1154,6 +1480,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
             {s}
           </button>
         ))}
+        {quick && <QuickFilterChip label={SERVICE_QUICK_LABELS[quick] || quick} onClear={() => setQuick(null)} />}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
@@ -1200,7 +1527,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               }}>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} />
+                    <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
                     {view === "active" && nextStatus(s.status, SERVICE_STATUSES) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(s.id); }}
@@ -1243,6 +1570,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
           </tbody>
         </table>
       </div>
+      </>)}
     </div>
   );
 }
@@ -1365,7 +1693,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
   );
 }
 
-function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus }) {
+function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [stockOnly, setStockOnly] = useState(false);
@@ -1488,7 +1816,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
               }}>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} />
+                    <StatusMenu label={a.status} color={ACCESSORY_COLORS[a.status]} statuses={ACCESSORY_STATUSES} onPick={(st) => onSetStatus(a.id, st)} />
                     {view === "active" && nextStatus(a.status, ACCESSORY_STATUSES) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(a.id); }}
@@ -1553,7 +1881,8 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
   const activeServices = useMemo(() => services.filter((s) => !s.archived), [services]);
   const activeAccessories = useMemo(() => accessories.filter((a) => !a.archived), [accessories]);
 
-  const eventsByDate = useMemo(() => {
+  const [hiddenKinds, setHiddenKinds] = useState({});
+  const allEventsByDate = useMemo(() => {
     const map = {};
     activeOrders.forEach((o) => {
       if (!o.eta) return;
@@ -1581,6 +1910,16 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     });
     return map;
   }, [activeOrders, activeServices, activeAccessories, calendarNotes]);
+  const eventsByDate = useMemo(() => {
+    const out = {};
+    Object.keys(allEventsByDate).forEach((d) => { out[d] = allEventsByDate[d].filter((ev) => !hiddenKinds[ev.kind]); });
+    return out;
+  }, [allEventsByDate, hiddenKinds]);
+  const KIND_FILTERS = [
+    { kind: "order", label: "Orders", color: "#33506B" }, { kind: "accessory", label: "Accessories", color: "#7C5CBF" },
+    { kind: "service", label: "Services", color: "#F6BD1B" }, { kind: "delivery", label: "Deliveries", color: "#2E8B77" },
+    { kind: "pickup", label: "Pick ups", color: "#B5651D" }, { kind: "note", label: "Notes", color: "#C2417A" },
+  ];
 
   const cells = useMemo(() => {
     const year = month.getFullYear(), m = month.getMonth();
@@ -1614,6 +1953,22 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
         >
           <Download size={15} /> Export to calendar (.ics)
         </button>
+      </div>
+
+      <div data-testid="calendar-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+        {KIND_FILTERS.map((f) => {
+          const on = !hiddenKinds[f.kind];
+          return (
+            <button key={f.kind} onClick={() => setHiddenKinds((h) => ({ ...h, [f.kind]: on }))} className="rodi-btn" style={{
+              border: on ? `2px solid ${f.color}` : "1px solid #D8DAD1", background: on ? "#fff" : "#F3F4EF", color: on ? "#191B18" : "#8B9086",
+              borderRadius: 999, padding: "5px 12px", cursor: "pointer", fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6,
+              textDecoration: on ? "none" : "line-through",
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, background: on ? f.color : "#C9CBC3" }} />
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
@@ -1888,7 +2243,7 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
   );
 }
 
-function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onExport, goTo }) {
+function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onExport, onExportCSV, goTo, onOpen }) {
   const [customerQuery, setCustomerQuery] = useState("");
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
@@ -1916,6 +2271,11 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     return d !== null && d >= 0 && d <= 7;
   }), [activeOrders]);
 
+  const readyForPickup = useMemo(() => [
+    ...activeServices.filter((s) => s.status === "Ready for Pickup").map((s) => ({ kind: "service", rec: s })),
+    ...activeOrders.filter((o) => orderQuickMatch(o, "pickup")).map((o) => ({ kind: "order", rec: o })),
+  ], [activeServices, activeOrders]);
+
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
     if (!q) return null;
@@ -1930,31 +2290,39 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <h2 className="rodi-display" style={{ fontSize: 24, margin: 0 }}>TODAY AT A GLANCE</h2>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={onExport} className="rodi-btn" style={{
           background: "#fff", border: "1px solid #D8DAD1", borderRadius: 8, padding: "9px 14px",
           display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize: 13.5,
         }}>
           <Download size={15} /> Export all data
         </button>
+        <button onClick={onExportCSV} className="rodi-btn" data-testid="export-csv" style={{
+          background: "#fff", border: "1px solid #D8DAD1", borderRadius: 8, padding: "9px 14px",
+          display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 600, fontSize: 13.5,
+        }}>
+          <Download size={15} /> Export CSV
+        </button>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <div onClick={() => goTo("orders")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("orders", "week")} style={{ cursor: "pointer" }}>
           <StatCard icon={<Package size={18} />} label="Arriving this week" value={ordersThisWeek.length} color="#33506B" />
         </div>
-        <div onClick={() => goTo("orders")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("orders", "overdue")} style={{ cursor: "pointer" }}>
           <StatCard icon={<AlertOctagon size={18} />} label="Overdue orders" value={overdueOrders.length} color="#C1483A" />
         </div>
-        <div onClick={() => goTo("services")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("services", "today")} style={{ cursor: "pointer" }}>
           <StatCard icon={<Wrench size={18} />} label="Services today" value={servicesToday.length} color="#191B18" />
         </div>
-        <div onClick={() => goTo("services")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("services", "week")} style={{ cursor: "pointer" }}>
           <StatCard icon={<CalendarDays size={18} />} label="Services this week" value={servicesThisWeek.length} color="#3A7CA5" />
         </div>
-        <div onClick={() => goTo("orders")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("orders", "assembly")} style={{ cursor: "pointer" }}>
           <StatCard icon={<AlertTriangle size={18} />} label="Needs assembly" value={needsAssembly.length} color="#D98B3D" />
         </div>
-        <div onClick={() => goTo("calendar")} style={{ cursor: "pointer" }}>
+        <div onClick={() => goTo("orders", "deliveries")} style={{ cursor: "pointer" }}>
           <StatCard icon={<Boxes size={18} />} label="Deliveries this week" value={deliveriesThisWeek.length} color="#2E8B77" />
         </div>
       </div>
@@ -1962,37 +2330,45 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div>
           <h3 className="rodi-display" style={{ fontSize: 20, margin: "0 0 10px 0" }}>NEEDS ATTENTION</h3>
+          <AttentionList title="Ready for pick-up" icon={<PhoneCall size={16} />} color="#7C5CBF" items={readyForPickup}
+            renderItem={(it) => (
+              <div key={it.kind + it.rec.id} onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                <strong>{it.kind === "service" ? `${it.rec.customer || "—"} — ${it.rec.bike || ""}` : `${it.rec.customer} — ${it.rec.brand} ${it.rec.type}`}</strong>
+                {" "}<span style={{ color: "#8B9086" }}>{it.kind === "service" ? "service" : "order"}</span>
+                {it.kind === "order" && it.rec.notified && <span style={{ color: "#3A7CA5", fontSize: 11, fontWeight: 600 }}> · Texted</span>}
+              </div>
+            )} />
           <AttentionList title="Overdue orders" icon={<AlertOctagon size={16} />} color="#C1483A" items={overdueOrders}
             renderItem={(o) => (
-              <div key={o.id} onClick={() => goTo("orders")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+              <div key={o.id} onClick={() => onOpen("order", o)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <strong>{o.brand} {o.type}</strong> — ETA {formatAU(o.eta)} — {o.customer || "shop stock"}
               </div>
             )} />
           <AttentionList title="Overdue services" icon={<AlertOctagon size={16} />} color="#C1483A" items={overdueServices}
             renderItem={(s) => (
-              <div key={s.id} onClick={() => goTo("services")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+              <div key={s.id} onClick={() => onOpen("service", s)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <strong>{s.customer}</strong> — {s.bike} — booked {formatAU(s.bookedDate)}
               </div>
             )} />
           <AttentionList title="Overdue accessory orders" icon={<AlertOctagon size={16} />} color="#C1483A" items={overdueAccessories}
             renderItem={(a) => (
-              <div key={a.id} onClick={() => goTo("accessories")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+              <div key={a.id} onClick={() => onOpen("accessory", a)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <strong>{a.brand} {a.type}</strong> — ETA {formatAU(a.eta)} — {a.customer || "shop stock"}
               </div>
             )} />
           <AttentionList title="Needs assembly" icon={<AlertTriangle size={16} />} color="#D98B3D" items={needsAssembly}
             renderItem={(o) => (
-              <div key={o.id} onClick={() => goTo("orders")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+              <div key={o.id} onClick={() => onOpen("order", o)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <strong>{o.brand} {o.type}</strong> — {o.customer || "shop stock"}
               </div>
             )} />
           <AttentionList title="Booked today" icon={<Wrench size={16} />} color="#191B18" items={servicesToday}
             renderItem={(s) => (
-              <div key={s.id} onClick={() => goTo("services")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+              <div key={s.id} onClick={() => onOpen("service", s)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                 <strong>{s.customer}</strong> — {s.bike} — {s.serviceType || "—"}
               </div>
             )} />
-          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && (
+          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && (
             <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing urgent right now — nice.</p>
           )}
         </div>
@@ -2017,7 +2393,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <div style={{ marginBottom: 12 }}>
                   <h4 style={{ fontSize: 12.5, color: "#565C54", margin: "0 0 6px 0", textTransform: "uppercase" }}>Orders ({customerResults.orders.length})</h4>
                   {customerResults.orders.map((o) => (
-                    <div key={o.id} onClick={() => goTo("orders")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                    <div key={o.id} onClick={() => onOpen("order", o)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                       <strong>{o.brand} {o.type}</strong> — <StatusBadge label={o.status} color={ORDER_COLORS[o.status]} />
                     </div>
                   ))}
@@ -2027,7 +2403,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <div style={{ marginBottom: 12 }}>
                   <h4 style={{ fontSize: 12.5, color: "#565C54", margin: "0 0 6px 0", textTransform: "uppercase" }}>Services ({customerResults.services.length})</h4>
                   {customerResults.services.map((s) => (
-                    <div key={s.id} onClick={() => goTo("services")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                    <div key={s.id} onClick={() => onOpen("service", s)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                       <strong>{s.bike}</strong> — {s.serviceType || "—"} — <StatusBadge label={s.status} color={SERVICE_COLORS[s.status]} />
                     </div>
                   ))}
@@ -2037,7 +2413,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <div>
                   <h4 style={{ fontSize: 12.5, color: "#565C54", margin: "0 0 6px 0", textTransform: "uppercase" }}>Accessories ({customerResults.accessories.length})</h4>
                   {customerResults.accessories.map((a) => (
-                    <div key={a.id} onClick={() => goTo("accessories")} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                    <div key={a.id} onClick={() => onOpen("accessory", a)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
                       <strong>{a.brand} {a.type}</strong> — <StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} />
                     </div>
                   ))}
@@ -2061,6 +2437,24 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
   );
 }
 
+function toCSV(rows) {
+  if (!rows.length) return "";
+  const cols = Array.from(rows.reduce((set, r) => { Object.keys(r).forEach((k) => set.add(k)); return set; }, new Set()));
+  const esc = (v) => { v = v == null ? "" : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+}
+function downloadText(name, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function RodiTracker() {
   const [tab, setTab] = useState("dashboard");
   const [orders, setOrders] = useState([]);
@@ -2074,6 +2468,17 @@ function RodiTracker() {
   const [confirm, setConfirm] = useState(null); // { type, id }
 
   const [syncError, setSyncError] = useState(null);
+  const [changeLog, setChangeLog] = useState([]);
+  const [toast, setToast] = useState(null);
+  const [preset, setPreset] = useState(null);
+  const [showName, setShowName] = useState(false);
+  const [userName, setUserName] = useState(() => { try { return localStorage.getItem("rodi-user") || ""; } catch (e) { return ""; } });
+  const userNameRef = useRef(userName);
+  userNameRef.current = userName;
+  const ordersRef = useRef(orders); ordersRef.current = orders;
+  const servicesRef = useRef(services); servicesRef.current = services;
+  const accessoriesRef = useRef(accessories); accessoriesRef.current = accessories;
+  const pricingRef = useRef(pricing); pricingRef.current = pricing;
 
   useEffect(() => {
     (async () => {
@@ -2097,6 +2502,12 @@ function RodiTracker() {
       // SQL doesn't break the rest of the app's data loading.
       try {
         setChecklistItems(await sbList("checklist_items"));
+      } catch (e) {
+        console.error(e);
+      }
+      // Change history is optional too — if its table doesn't exist yet the app still works.
+      try {
+        setChangeLog(await sbList("change_log"));
       } catch (e) {
         console.error(e);
       }
@@ -2156,139 +2567,178 @@ function RodiTracker() {
     }
   }, []);
 
-  const saveOrder = useCallback(async (form) => {
+  const tableCfg = {
+    orders: { ref: ordersRef, set: setOrders },
+    services: { ref: servicesRef, set: setServices },
+    accessories: { ref: accessoriesRef, set: setAccessories },
+    pricing: { ref: pricingRef, set: setPricing },
+  };
+
+  const logChange = useCallback((table, rec, action, summary) => {
+    const entry = {
+      id: uid(), at: new Date().toISOString(), tableName: table, recordId: rec ? rec.id : "",
+      label: recordLabel(table, rec), action, summary: summary || "", who: userNameRef.current || "",
+    };
+    setChangeLog((prev) => [...prev, entry]);
+    sbUpsert("change_log", entry).catch(() => {});
+  }, []);
+
+  const saveRecord = useCallback(async (table, form, noun) => {
+    const cfg = tableCfg[table];
+    const before = cfg.ref.current.find((r) => r.id === form.id);
     try {
-      const saved = await sbUpsert("orders", form);
-      setOrders((prev) => {
-        const exists = prev.some((o) => o.id === saved.id);
-        return exists ? prev.map((o) => (o.id === saved.id ? saved : o)) : [...prev, saved];
-      });
+      const saved = await sbUpsert(table, form);
+      cfg.set((prev) => (prev.some((r) => r.id === saved.id) ? prev.map((r) => (r.id === saved.id ? saved : r)) : [...prev, saved]));
       setDrawer(null);
+      if (!before) logChange(table, saved, "created", "");
+      else { const sum = diffRecords(before, saved); if (sum) logChange(table, saved, "edited", sum); }
+      return true;
     } catch (e) {
-      setSyncError("Couldn't save the order: " + e.message);
+      setSyncError(`Couldn't save the ${noun}: ` + e.message);
+      return false;
     }
   }, []);
-  const saveService = useCallback(async (form) => {
+  const saveOrder = useCallback((form) => saveRecord("orders", form, "order"), []);
+  const saveService = useCallback((form) => saveRecord("services", form, "booking"), []);
+  const savePricing = useCallback((form) => saveRecord("pricing", form, "price"), []);
+  const saveAccessory = useCallback((form) => saveRecord("accessories", form, "accessory order"), []);
+
+  // Optimistic partial update of one record, logged to the history.
+  const patchRecord = useCallback(async (table, id, patch, action, summary) => {
+    const cfg = tableCfg[table];
+    const target = cfg.ref.current.find((r) => r.id === id);
+    if (!target) return false;
+    const updated = { ...target, ...patch };
+    cfg.set((prev) => prev.map((r) => (r.id === id ? updated : r)));
+    cfg.ref.current = cfg.ref.current.map((r) => (r.id === id ? updated : r));
     try {
-      const saved = await sbUpsert("services", form);
-      setServices((prev) => {
-        const exists = prev.some((s) => s.id === saved.id);
-        return exists ? prev.map((s) => (s.id === saved.id ? saved : s)) : [...prev, saved];
-      });
-      setDrawer(null);
+      await sbUpsert(table, updated);
+      logChange(table, updated, action, summary);
+      return true;
     } catch (e) {
-      setSyncError("Couldn't save the booking: " + e.message);
-    }
-  }, []);
-  const savePricing = useCallback(async (form) => {
-    try {
-      const saved = await sbUpsert("pricing", form);
-      setPricing((prev) => {
-        const exists = prev.some((p) => p.id === saved.id);
-        return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [...prev, saved];
-      });
-      setDrawer(null);
-    } catch (e) {
-      setSyncError("Couldn't save the price: " + e.message);
-    }
-  }, []);
-  const saveAccessory = useCallback(async (form) => {
-    try {
-      const saved = await sbUpsert("accessories", form);
-      setAccessories((prev) => {
-        const exists = prev.some((a) => a.id === saved.id);
-        return exists ? prev.map((a) => (a.id === saved.id ? saved : a)) : [...prev, saved];
-      });
-      setDrawer(null);
-    } catch (e) {
-      setSyncError("Couldn't save the accessory order: " + e.message);
+      cfg.set((prev) => prev.map((r) => (r.id === id ? target : r)));
+      setSyncError("Couldn't update the record: " + e.message);
+      return false;
     }
   }, []);
 
-  const toggleOrderArchive = useCallback((id) => {
-    setOrders((prev) => {
-      const target = prev.find((o) => o.id === id);
-      if (!target) return prev;
-      const updated = { ...target, archived: !target.archived };
-      sbUpsert("orders", updated).catch((e) => setSyncError("Couldn't update archive status: " + e.message));
-      return prev.map((o) => (o.id === id ? updated : o));
-    });
+  const toggleArchive = useCallback(async (table, id, silent) => {
+    const t = tableCfg[table].ref.current.find((r) => r.id === id);
+    if (!t) return;
+    const nowArchived = !t.archived;
+    const ok = await patchRecord(table, id, { archived: nowArchived }, nowArchived ? "archived" : "restored", "");
+    if (ok && !silent) setToast({ id: uid(), text: nowArchived ? "Archived." : "Restored.", undo: () => toggleArchive(table, id, true) });
   }, []);
-  const toggleServiceArchive = useCallback((id) => {
-    setServices((prev) => {
-      const target = prev.find((s) => s.id === id);
-      if (!target) return prev;
-      const updated = { ...target, archived: !target.archived };
-      sbUpsert("services", updated).catch((e) => setSyncError("Couldn't update archive status: " + e.message));
-      return prev.map((s) => (s.id === id ? updated : s));
-    });
-  }, []);
-  const toggleAccessoryArchive = useCallback((id) => {
-    setAccessories((prev) => {
-      const target = prev.find((a) => a.id === id);
-      if (!target) return prev;
-      const updated = { ...target, archived: !target.archived };
-      sbUpsert("accessories", updated).catch((e) => setSyncError("Couldn't update archive status: " + e.message));
-      return prev.map((a) => (a.id === id ? updated : a));
-    });
-  }, []);
-  const archiveAllReceivedOrders = useCallback(async () => {
+  const toggleOrderArchive = useCallback((id) => toggleArchive("orders", id), []);
+  const toggleServiceArchive = useCallback((id) => toggleArchive("services", id), []);
+  const toggleAccessoryArchive = useCallback((id) => toggleArchive("accessories", id), []);
+
+  const bulkArchive = useCallback(async (table, statusValue, noun) => {
     try {
-      const updated = await sbBulkArchive("orders", "Received");
+      const updated = await sbBulkArchive(table, statusValue);
       const ids = new Set(updated.map((r) => r.id));
-      setOrders((prev) => prev.map((o) => (ids.has(o.id) ? { ...o, archived: true } : o)));
+      tableCfg[table].set((prev) => prev.map((r) => (ids.has(r.id) ? { ...r, archived: true } : r)));
+      if (updated.length) logChange(table, null, "archived", `${updated.length} ${noun} archived`);
     } catch (e) {
-      setSyncError("Couldn't archive received orders: " + e.message);
+      setSyncError(`Couldn't archive ${noun}: ` + e.message);
     }
   }, []);
-  const archiveAllCompletedServices = useCallback(async () => {
-    try {
-      const updated = await sbBulkArchive("services", "Completed");
-      const ids = new Set(updated.map((r) => r.id));
-      setServices((prev) => prev.map((s) => (ids.has(s.id) ? { ...s, archived: true } : s)));
-    } catch (e) {
-      setSyncError("Couldn't archive completed services: " + e.message);
-    }
+  const archiveAllReceivedOrders = useCallback(() => bulkArchive("orders", "Received", "received orders"), []);
+  const archiveAllCompletedServices = useCallback(() => bulkArchive("services", "Completed", "completed services"), []);
+  const archiveAllReceivedAccessories = useCallback(() => bulkArchive("accessories", "Received", "received accessories"), []);
+
+  const STATUS_LISTS = { orders: ORDER_STATUSES, services: SERVICE_STATUSES, accessories: ACCESSORY_STATUSES };
+  const setStatus = useCallback((table, id, status) => {
+    const t = tableCfg[table].ref.current.find((r) => r.id === id);
+    if (!t || t.status === status) return;
+    patchRecord(table, id, { status }, "edited", `status: ${t.status} → ${status}`);
   }, []);
-  const archiveAllReceivedAccessories = useCallback(async () => {
+  const advanceStatus = useCallback((table, id) => {
+    const t = tableCfg[table].ref.current.find((r) => r.id === id);
+    const next = t && nextStatus(t.status, STATUS_LISTS[table]);
+    if (next) setStatus(table, id, next);
+  }, []);
+  const advanceOrderStatus = useCallback((id) => advanceStatus("orders", id), []);
+  const advanceServiceStatus = useCallback((id) => advanceStatus("services", id), []);
+  const advanceAccessoryStatus = useCallback((id) => advanceStatus("accessories", id), []);
+  const setOrderStatus = useCallback((id, st) => setStatus("orders", id, st), []);
+  const setServiceStatus = useCallback((id, st) => setStatus("services", id, st), []);
+  const setAccessoryStatus = useCallback((id, st) => setStatus("accessories", id, st), []);
+
+  const appendServiceLog = useCallback((id, text) => {
+    const t = servicesRef.current.find((r) => r.id === id);
+    if (!t) return;
+    const lines = parseLog(t.notes).map((e) => e.raw);
+    lines.push(`${nowStamp()} | ${text.replace(/\n/g, " ")}`);
+    patchRecord("services", id, { notes: lines.join("\n") }, "edited", "log entry: " + text.slice(0, 40));
+  }, []);
+
+  const deleteRecord = useCallback(async (table, id) => {
+    const cfg = tableCfg[table];
+    const rec = cfg.ref.current.find((r) => r.id === id);
     try {
-      const updated = await sbBulkArchive("accessories", "Received");
-      const ids = new Set(updated.map((r) => r.id));
-      setAccessories((prev) => prev.map((a) => (ids.has(a.id) ? { ...a, archived: true } : a)));
+      await sbDelete(table, id);
+      cfg.set((prev) => prev.filter((r) => r.id !== id));
+      cfg.ref.current = cfg.ref.current.filter((r) => r.id !== id);
+      logChange(table, rec, "deleted", "");
+      if (rec) {
+        setToast({
+          id: uid(), text: "Deleted.",
+          undo: async () => {
+            try {
+              const back = await sbUpsert(table, rec);
+              cfg.set((prev) => [...prev, back]);
+              logChange(table, back, "restored", "undo delete");
+            } catch (e) {
+              setSyncError("Couldn't undo the delete: " + e.message);
+            }
+          },
+        });
+      }
     } catch (e) {
-      setSyncError("Couldn't archive received accessories: " + e.message);
+      setSyncError("Couldn't delete: " + e.message);
     }
   }, []);
 
-  const advanceOrderStatus = useCallback((id) => {
-    setOrders((prev) => {
-      const target = prev.find((o) => o.id === id);
-      const next = target && nextStatus(target.status, ORDER_STATUSES);
-      if (!target || !next) return prev;
-      const updated = { ...target, status: next };
-      sbUpsert("orders", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
-      return prev.map((o) => (o.id === id ? updated : o));
+  // "Save & create service booking" from an order's drawer.
+  const createServiceFromOrder = useCallback(async (form) => {
+    const ok = await saveRecord("orders", form, "order");
+    if (!ok) return;
+    setDrawer({
+      type: "service",
+      data: { ...emptyService(), customer: form.customer || "", phone: form.phone || "", bike: `${form.brand} ${form.type}`.trim(), serviceType: "PRE-DELIVERY SERVICE", bookedDate: todayISO() },
     });
   }, []);
-  const advanceServiceStatus = useCallback((id) => {
-    setServices((prev) => {
-      const target = prev.find((s) => s.id === id);
-      const next = target && nextStatus(target.status, SERVICE_STATUSES);
-      if (!target || !next) return prev;
-      const updated = { ...target, status: next };
-      sbUpsert("services", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
-      return prev.map((s) => (s.id === id ? updated : s));
-    });
-  }, []);
-  const advanceAccessoryStatus = useCallback((id) => {
-    setAccessories((prev) => {
-      const target = prev.find((a) => a.id === id);
-      const next = target && nextStatus(target.status, ACCESSORY_STATUSES);
-      if (!target || !next) return prev;
-      const updated = { ...target, status: next };
-      sbUpsert("accessories", updated).catch((e) => setSyncError("Couldn't advance status: " + e.message));
-      return prev.map((a) => (a.id === id ? updated : a));
-    });
+
+  const goTo = useCallback((t, quick) => { setTab(t); setPreset(quick ? { key: Date.now(), quick, tab: t } : null); }, []);
+  const navTo = useCallback((t) => { setTab(t); setPreset(null); }, []);
+  const saveName = (name) => {
+    setUserName(name);
+    try { localStorage.setItem("rodi-user", name); } catch (e) { /* ignore */ }
+    setShowName(false);
+  };
+
+  // Mobile card layout: copy each column header onto its cells as a data-label (used by the CSS).
+  useEffect(() => {
+    const root = document.querySelector(".rodi-root");
+    if (!root || typeof MutationObserver === "undefined") return undefined;
+    let timer = 0;
+    const label = () => {
+      root.querySelectorAll(".rodi-scrollbar table").forEach((tb) => {
+        const heads = Array.from(tb.querySelectorAll("thead th")).map((h) => h.textContent.replace(/[▲▼]/g, "").trim());
+        tb.querySelectorAll("tbody tr").forEach((tr) => {
+          Array.from(tr.children).forEach((td, i) => {
+            if (td.colSpan > 1) return;
+            const l = heads[i];
+            if (l && td.getAttribute("data-label") !== l) td.setAttribute("data-label", l);
+          });
+        });
+      });
+    };
+    const obs = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(label, 0); });
+    obs.observe(root, { childList: true, subtree: true });
+    label();
+    return () => { obs.disconnect(); clearTimeout(timer); };
   }, []);
 
   // Opens the edit drawer for a record clicked on the Calendar day panel.
@@ -2321,12 +2771,13 @@ function RodiTracker() {
     { id: "services", label: "Services", icon: Wrench },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     { id: "pricing", label: "Stock pricing", icon: Tag },
+    { id: "history", label: "History", icon: RotateCcw },
   ];
 
   const exportAllData = useCallback(() => {
     const payload = {
       exportedAt: new Date().toISOString(),
-      orders, services, accessories, pricing, calendarNotes,
+      orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -2337,7 +2788,14 @@ function RodiTracker() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [orders, services, accessories, pricing, calendarNotes]);
+  }, [orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog]);
+
+  const exportCSV = useCallback(() => {
+    const files = [["orders", orders], ["services", services], ["accessories", accessories], ["pricing", pricing]];
+    files.forEach(([name, rows], i) => {
+      setTimeout(() => downloadText(`rodi-${name}-${todayISO()}.csv`, toCSV(rows), "text/csv"), i * 400);
+    });
+  }, [orders, services, accessories, pricing]);
 
   return (
     <div className="rodi-root" style={{ minHeight: "100%" }}>
@@ -2354,13 +2812,22 @@ function RodiTracker() {
             }}>RODI ELECTRIC</h1>
             <span style={{ fontSize: 12.5, color: "#C9CBC3" }}>Inventory, orders & servicing</span>
           </div>
+          <div style={{ display: "flex", gap: 8, flex: "1 1 300px", maxWidth: 520, minWidth: 0, alignItems: "flex-start" }}>
+            <GlobalSearch orders={orders} services={services} accessories={accessories} onOpen={openRecordFromCalendar} />
+            <button onClick={() => setShowName(true)} title="Set your name" data-testid="user-chip" className="rodi-btn" style={{
+              background: "#2A2D28", color: "#F6BD1B", border: "2px solid #F6BD1B", borderRadius: 8, padding: "8px 10px",
+              cursor: "pointer", fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6, height: 40,
+            }}>
+              <Users size={14} /> {userName || "Set name"}
+            </button>
+          </div>
           <div className="rodi-nav-scroll" style={{ maxWidth: "100%", minWidth: 0 }}>
             <nav style={{ display: "flex", gap: 6, background: "#2A2D28", padding: 5, borderRadius: 11, border: "2px solid #F6BD1B", width: "max-content" }}>
               {tabs.map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.id;
                 return (
-                  <button key={t.id} onClick={() => setTab(t.id)} className="rodi-btn"
+                  <button key={t.id} onClick={() => navTo(t.id)} className="rodi-btn"
                     style={{
                       display: "flex", alignItems: "center", gap: 7, padding: "8px 14px", borderRadius: 8,
                       border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
@@ -2401,7 +2868,9 @@ function RodiTracker() {
                 onToggleChecklistItem={toggleChecklistItem}
                 onDeleteChecklistItem={deleteChecklistItem}
                 onExport={exportAllData}
-                goTo={setTab}
+                onExportCSV={exportCSV}
+                goTo={goTo}
+                onOpen={openRecordFromCalendar}
               />
             )}
             {tab === "orders" && (
@@ -2421,6 +2890,8 @@ function RodiTracker() {
                 onToggleArchive={toggleOrderArchive}
                 onArchiveAllReceived={archiveAllReceivedOrders}
                 onAdvanceStatus={advanceOrderStatus}
+                onSetStatus={setOrderStatus}
+                preset={preset && preset.tab === "orders" ? preset : null}
               />
             )}
             {tab === "services" && (
@@ -2432,6 +2903,9 @@ function RodiTracker() {
                 onToggleArchive={toggleServiceArchive}
                 onArchiveAllCompleted={archiveAllCompletedServices}
                 onAdvanceStatus={advanceServiceStatus}
+                onSetStatus={setServiceStatus}
+                onAppendLog={appendServiceLog}
+                preset={preset && preset.tab === "services" ? preset : null}
               />
             )}
             {tab === "accessories" && (
@@ -2447,6 +2921,7 @@ function RodiTracker() {
                 onToggleArchive={toggleAccessoryArchive}
                 onArchiveAllReceived={archiveAllReceivedAccessories}
                 onAdvanceStatus={advanceAccessoryStatus}
+                onSetStatus={setAccessoryStatus}
               />
             )}
             {tab === "pricing" && (
@@ -2457,6 +2932,7 @@ function RodiTracker() {
                 onDelete={(id) => setConfirm({ type: "pricing", id })}
               />
             )}
+            {tab === "history" && <HistoryTab entries={changeLog} />}
             {tab === "calendar" && (
               <CalendarTab
                 orders={orders}
@@ -2477,7 +2953,7 @@ function RodiTracker() {
       </div>
 
       {drawer?.type === "order" && (
-        <OrderForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
+        <OrderForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} onCreateService={createServiceFromOrder} />
       )}
       {drawer?.type === "delivery" && (
         <DeliveryForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
@@ -2502,19 +2978,14 @@ function RodiTracker() {
           onCancel={() => setConfirm(null)}
           onConfirm={async () => {
             const table = confirm.type === "order" ? "orders" : confirm.type === "service" ? "services" : confirm.type === "pricing" ? "pricing" : "accessories";
-            try {
-              await sbDelete(table, confirm.id);
-              if (confirm.type === "order") setOrders((prev) => prev.filter((o) => o.id !== confirm.id));
-              else if (confirm.type === "service") setServices((prev) => prev.filter((s) => s.id !== confirm.id));
-              else if (confirm.type === "pricing") setPricing((prev) => prev.filter((p) => p.id !== confirm.id));
-              else setAccessories((prev) => prev.filter((a) => a.id !== confirm.id));
-            } catch (e) {
-              setSyncError("Couldn't delete: " + e.message);
-            }
+            const id = confirm.id;
             setConfirm(null);
+            await deleteRecord(table, id);
           }}
         />
       )}
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      {showName && <NameDialog current={userName} onSave={saveName} onClose={() => setShowName(false)} />}
     </div>
   );
 }
