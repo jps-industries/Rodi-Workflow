@@ -131,6 +131,8 @@ const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const SERVICE_STATUSES = ["Booked", "In Progress", "Awaiting Parts", "Ready for Pickup", "Completed"];
 const ACCESSORY_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment"];
+// Flip to true to bring the Stock pricing tab back (all code and data are kept).
+const SHOW_STOCK_PRICING = false;
 const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A", "Warranty": "#3A7CA5" };
 const ACCESSORY_PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment", "Warranty"];
 const FULFILLMENT_METHODS = ["Pickup", "Delivery"];
@@ -805,11 +807,13 @@ function ServiceLog({ value, onChange }) {
 }
 
 function JobNote({ value, onChange }) {
+  // Local text so typed spaces / trailing blanks aren't trimmed while typing (the stored value is trimmed).
+  const [text, setText] = useState(splitNotes(value).job);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 5 }} data-testid="job-note">
-      <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Job card note <span style={{ color: "#8B9086", fontWeight: 400 }}>— extra detail about the service (shown on the Services list)</span></div>
-      <textarea rows={2} value={splitNotes(value).job} placeholder="E.G. FULL SERVICE + NEW CHAIN, RIDER WANTS GRIPS CHANGED"
-        onChange={(e) => onChange(joinNotes(e.target.value.toUpperCase(), splitNotes(value).log))}
+      <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Service details <span style={{ color: "#8B9086", fontWeight: 400 }}>— extra detail about the service (shown on the Services list)</span></div>
+      <textarea rows={2} value={text} placeholder="E.G. FULL SERVICE + NEW CHAIN, RIDER WANTS GRIPS CHANGED"
+        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); onChange(joinNotes(v, splitNotes(value).log)); }}
         style={{ ...inputStyle, resize: "vertical", minHeight: 44 }} />
     </div>
   );
@@ -987,7 +991,7 @@ function diffRecords(a, b, table) {
     if (String(x) === String(y)) return;
     if (k === "notes" && table === "services") {
       const x1 = splitNotes(a.notes), y1 = splitNotes(b.notes);
-      if (x1.job !== y1.job) changes.push("job card note updated");
+      if (x1.job !== y1.job) changes.push("service details updated");
       if (x1.log.join("\n") !== y1.log.join("\n")) changes.push("workshop log updated");
       return;
     }
@@ -1601,7 +1605,7 @@ function JobCardModal({ job, onClose }) {
           {row("Mechanic", job.mechanic)}
           {row("Booked in", formatAU(job.bookedDate))}
           {row("Pick up date", formatAU(job.pickupDate))}
-          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>JOB CARD NOTE</div>
+          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>SERVICE DETAILS</div>
           <div style={{ border: "1px solid #999", minHeight: 40, padding: 8, marginTop: 4, fontSize: 14, whiteSpace: "pre-wrap" }}>{jobNoteOf(job.notes)}</div>
           <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>WORKSHOP NOTES LOG</div>
           <div style={{ border: "1px solid #999", minHeight: 70, padding: 8, marginTop: 4 }}>
@@ -1787,7 +1791,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "payment" },
                 { label: "Fulfillment", key: "fulfillment" }, { label: "Delivery / Pick up", key: null }, { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : undefined} />
               ))}
             </tr>
           </thead>
@@ -1831,7 +1835,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                   <span style={{ whiteSpace: "nowrap" }}>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
-                <td style={{ padding: "8px 10px" }}>
+                <td style={{ padding: "8px 14px 8px 10px", minWidth: 170 }}>
                   {o.customer
                     ? <div style={{ whiteSpace: "nowrap" }}>{o.customer}</div>
                     : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
@@ -1969,10 +1973,10 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               {[
                 { label: "Status", key: "status" }, { label: "Customer", key: "customer" }, { label: "Phone", key: null },
                 { label: "Bike", key: "bike" }, { label: "Service type", key: "serviceType" }, { label: "Mechanic", key: "mechanic" },
-                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Job card note", key: null },
+                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Service details", key: null },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : undefined} />
               ))}
             </tr>
           </thead>
@@ -2009,7 +2013,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontWeight: 600, whiteSpace: "nowrap" }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
+                <td style={{ padding: "8px 14px 8px 10px", fontWeight: 600, whiteSpace: "nowrap", minWidth: 170 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
@@ -2262,7 +2266,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : undefined} />
               ))}
             </tr>
           </thead>
@@ -2306,7 +2310,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                   <span style={{ whiteSpace: "nowrap" }}>{formatAURel(a.eta) || (a.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
-                <td style={{ padding: "8px 10px" }}>
+                <td style={{ padding: "8px 14px 8px 10px", minWidth: 170 }}>
                   {a.customer
                     ? <div style={{ whiteSpace: "nowrap" }}>{a.customer}</div>
                     : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
@@ -2516,38 +2520,34 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                 );
               }
               const clickable = ev.kind === "order" || ev.kind === "service" || ev.kind === "accessory" || ev.kind === "delivery" || ev.kind === "pickup";
+              const KIND = { order: ["ORDER ARRIVING", "#33506B"], service: ["SERVICE", "#C99A0A"], accessory: ["ACCESSORY ARRIVING", "#7C5CBF"], delivery: ["DELIVERY", "#2E8B77"], pickup: ["PICK UP", "#B5651D"], note: ["NOTE", "#C2417A"] };
+              const [kindLabel, kindColor] = KIND[ev.kind] || ["EVENT", "#565C54"];
+              const detail = ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
+                : ev.kind === "service" ? ev.ref.serviceType || ""
+                : ev.kind === "note" ? "click to edit"
+                : ev.kind === "delivery" || ev.kind === "pickup" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
+                : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`;
               return (
                 <div
                   key={idx}
+                  data-testid="day-event"
                   onClick={() => { if (clickable) onOpenRecord(ev.kind === "delivery" || ev.kind === "pickup" ? "order" : ev.kind, ev.ref); }}
                   style={{
                     display: "flex", gap: 10, alignItems: "center", fontSize: 14,
                     cursor: clickable ? "pointer" : "default",
-                    padding: clickable ? "4px 6px" : 0, margin: clickable ? "-4px -6px" : 0,
-                    borderRadius: 8,
+                    padding: "9px 12px", border: "1px solid #E3E4DD", borderLeft: `6px solid ${kindColor}`,
+                    borderRadius: 8, background: "#FAFAF7",
                   }}
                   className={clickable ? "rodi-row" : undefined}
                 >
-                  {ev.kind === "order" ? <Package size={15} color="#33506B" />
-                    : ev.kind === "service" ? <Wrench size={15} color="#F6BD1B" />
-                    : ev.kind === "note" ? <Tag size={15} color="#C2417A" />
-                    : ev.kind === "delivery" ? <Boxes size={15} color="#2E8B77" />
-                    : ev.kind === "pickup" ? <Boxes size={15} color="#B5651D" />
-                    : <Boxes size={15} color="#7C5CBF" />}
-                  <span
-                    style={{ fontWeight: 600, cursor: ev.kind === "note" ? "pointer" : undefined }}
-                    onClick={(e) => { if (ev.kind === "note") { e.stopPropagation(); setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); } }}
-                  >
-                    {ev.title}
-                  </span>
-                  <span style={{ color: "#8B9086", fontSize: 12.5 }}>
-                    {ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
-                      : ev.kind === "service" ? ev.ref.serviceType || ""
-                      : ev.kind === "note" ? "note — click to edit"
-                      : ev.kind === "delivery" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
-                      : ev.kind === "pickup" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
-                      : `qty ${ev.ref.qty || "—"} for ${ev.ref.customer || "—"}`}
-                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.06em", color: kindColor }}>{kindLabel}</div>
+                    <div
+                      style={{ fontWeight: 700, cursor: ev.kind === "note" ? "pointer" : undefined, wordBreak: "break-word" }}
+                      onClick={(e) => { if (ev.kind === "note") { e.stopPropagation(); setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); } }}
+                    >{ev.title}</div>
+                    {detail && <div style={{ color: "#565C54", fontSize: 12.5 }}>{detail}</div>}
+                  </div>
                   {ev.kind === "note" && (
                     <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
                       <IconBtn onClick={() => setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text })} title="Edit note"><Pencil size={13} /></IconBtn>
@@ -3314,7 +3314,8 @@ function RodiTracker() {
     { id: "accessories", label: "Accessories & parts", icon: Boxes },
     { id: "services", label: "Services", icon: Wrench },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
-    { id: "pricing", label: "Stock pricing", icon: Tag },
+    // Stock pricing tab is hidden for now. Set SHOW_STOCK_PRICING = true (top of file) to bring it back; data and code are untouched.
+    ...(SHOW_STOCK_PRICING ? [{ id: "pricing", label: "Stock pricing", icon: Tag }] : []),
     { id: "customers", label: "Customers", icon: Users },
     { id: "history", label: "History", icon: RotateCcw },
   ];
