@@ -1458,7 +1458,7 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
   const low = lowTrim;
   const isNew = !!customer.isNew;
   const [nameInput, setNameInput] = useState(customer.name || "");
-  const name = low(isNew ? nameInput : customer.name);
+  const name = low(customer.name);
   const phoneKey = (customer.phone || "").replace(/\D/g, "");
   const match = (r) => (!!name && low(r.customer) === name) || (!isNew && phoneKey.length >= 6 && (r.phone || "").replace(/\D/g, "") === phoneKey);
   const newest = (arr, key) => arr.slice().sort((a, b) => String(b[key] || b.createdAt || "").localeCompare(String(a[key] || a.createdAt || "")));
@@ -1475,9 +1475,9 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
   const setD = (k) => (e) => { setSaved(false); setDetails({ ...details, [k]: e.target.value }); };
   const save = async (e) => {
     e.preventDefault();
-    const nm = (isNew ? nameInput : customer.name).trim().toUpperCase();
+    const nm = nameInput.trim().toUpperCase();
     if (!nm) return;
-    const ok = await onSaveProfile({ id: profile ? profile.id : uid(), name: nm, ...details }, isNew);
+    const ok = await onSaveProfile({ id: profile ? profile.id : uid(), name: nm, ...details }, isNew, customer.name);
     if (ok) setSaved(true);
   };
   const Row = ({ kind, rec, title, date, color }) => (
@@ -1496,11 +1496,7 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 14, padding: 18, width: "100%", maxWidth: 580, maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            {isNew ? (
-              <input data-testid="new-customer-name" autoFocus placeholder="CUSTOMER NAME" value={nameInput} onChange={(e) => setNameInput(e.target.value.toUpperCase())} style={{ ...inputStyle, fontWeight: 700 }} />
-            ) : (
-              <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{customer.name || anyPhone || "Customer"}</h3>
-            )}
+            <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{isNew ? "New customer" : (customer.name || anyPhone || "Customer")}</h3>
             <div style={{ marginTop: 6 }}><CategoryBadges cats={(() => { const c = []; if (svcs.length) c.push("Servicing"); if (ords.some((o) => o.payment !== "WARRANTY") || accs.some((a) => a.paymentOwing !== "WARRANTY")) c.push("Sales"); if (ords.some((o) => o.payment === "WARRANTY") || accs.some((a) => a.paymentOwing === "WARRANTY")) c.push("Warranty"); return c; })()} /></div>
             <div style={{ fontSize: 13, color: "#565C54", marginTop: 4 }}>{total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
           </div>
@@ -1508,7 +1504,13 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
         </div>
 
         <form data-testid="customer-details" onSubmit={save} style={{ marginTop: 12, background: "#FAFAF7", border: "1px solid #E3E4DD", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#565C54", textTransform: "uppercase" }}>Contact details</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#565C54", textTransform: "uppercase" }}>Customer profile</div>
+          <Field label="Name"><input data-testid={isNew ? "new-customer-name" : "cust-name"} autoFocus={isNew} placeholder="CUSTOMER NAME" style={{ ...inputStyle, fontWeight: 700 }} value={nameInput} onChange={(e) => { setSaved(false); setNameInput(e.target.value.toUpperCase()); }} /></Field>
+          {!isNew && lowTrim(nameInput) !== lowTrim(customer.name) && lowTrim(nameInput) !== "" && (
+            <div data-testid="rename-note" style={{ fontSize: 12.5, color: "#7A4A0C", background: "#FFF4E0", border: "1px solid #E8C48A", borderRadius: 8, padding: "6px 9px" }}>
+              Saving will rename this customer on all their orders, services and accessories.
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }}>
             <Field label="Phone"><input data-testid="cust-phone" style={inputStyle} value={details.phone} onChange={setD("phone")} /></Field>
             <Field label="Email"><input data-testid="cust-email" type="email" style={inputStyle} value={details.email} onChange={setD("email")} /></Field>
@@ -3149,14 +3151,28 @@ function RodiTracker() {
     if (t) patchRecord("services", id, { notes: logWithout(t.notes, idx) }, "edited", "log entry deleted");
   }, []);
 
-  const saveCustomer = useCallback(async (profile, isNew) => {
-    const before = customersRef.current.find((c) => c.id === profile.id);
+  const saveCustomer = useCallback(async (profile, isNew, oldName) => {
+    const oldKey = (oldName || "").trim().toLowerCase();
+    const before = customersRef.current.find((c) => c.id === profile.id) || customersRef.current.find((c) => (c.name || "").trim().toLowerCase() === oldKey);
+    const renamed = !isNew && !!oldKey && profile.name.trim().toLowerCase() !== oldKey;
     try {
-      const saved = await sbUpsert("customers", profile);
+      const saved = await sbUpsert("customers", before ? { ...profile, id: before.id } : profile);
       setCustomers((prev) => (prev.some((c) => c.id === saved.id) ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved]));
       if (!before) logChange("customers", saved, "created", "");
       else { const sum = diffRecords(before, saved); if (sum) logChange("customers", saved, "edited", sum); }
-      if (isNew) setHistoryFor({ name: saved.name, phone: saved.phone || "" });
+      // Keep their orders / services / accessories in step with the profile (name, and phone where it was empty or the old number).
+      if (!isNew && oldKey) {
+        const oldPhone = before ? before.phone || "" : "";
+        [["orders", ordersRef], ["services", servicesRef], ["accessories", accessoriesRef]].forEach(([table, ref]) => {
+          ref.current.filter((r) => (r.customer || "").trim().toLowerCase() === oldKey).forEach((r) => {
+            const patch = {};
+            if (renamed) patch.customer = saved.name;
+            if (saved.phone && r.phone !== saved.phone && (!r.phone || r.phone === oldPhone)) patch.phone = saved.phone;
+            if (Object.keys(patch).length) patchRecord(table, r.id, patch, "edited", renamed ? `customer renamed to ${saved.name}` : "phone updated from customer profile");
+          });
+        });
+      }
+      if (isNew || renamed) setHistoryFor({ name: saved.name, phone: saved.phone || "" });
       return true;
     } catch (e) {
       setSyncError("Couldn't save the customer details — has the customers table been created yet? (" + e.message + ")");
