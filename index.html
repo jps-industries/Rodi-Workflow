@@ -1344,6 +1344,17 @@ function CustomerExtras({ kind, form, onFillPhone }) {
 
 const lowTrim = (v) => (v || "").toString().trim().toLowerCase();
 // One row per customer, built from the saved customer profiles plus every name found on orders, services and accessories.
+const CUSTOMER_CATEGORIES = { Servicing: "#3A7CA5", Sales: "#4C9A6A", Warranty: "#7C5CBF" };
+function CategoryBadges({ cats }) {
+  if (!cats || !cats.length) return <span style={{ color: "#8B9086" }}>—</span>;
+  return (
+    <span style={{ display: "inline-flex", gap: 5, flexWrap: "wrap" }}>
+      {cats.map((c) => (
+        <span key={c} data-testid="customer-category" style={{ background: CUSTOMER_CATEGORIES[c], color: "#fff", borderRadius: 999, padding: "2px 9px", fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap" }}>{c}</span>
+      ))}
+    </span>
+  );
+}
 function buildCustomers(records, profiles) {
   const map = {};
   const get = (name) => {
@@ -1368,32 +1379,29 @@ function buildCustomers(records, profiles) {
       ...c.orders.map((o) => o.orderDate || o.eta), ...c.services.map((x) => x.bookedDate), ...c.accessories.map((a) => a.eta || a.date),
     ].filter(Boolean).sort();
     const open = c.orders.filter((o) => !o.archived).length + c.services.filter((x) => !x.archived && x.status !== "Completed").length + c.accessories.filter((a) => !a.archived).length;
-    return { ...c, lastDate: dates.length ? dates[dates.length - 1] : "", open, total: c.orders.length + c.services.length + c.accessories.length };
+    const cats = [];
+    if (c.services.length) cats.push("Servicing");
+    if (c.orders.some((o) => o.payment !== "WARRANTY") || c.accessories.some((a) => a.paymentOwing !== "WARRANTY")) cats.push("Sales");
+    if (c.orders.some((o) => o.payment === "WARRANTY") || c.accessories.some((a) => a.paymentOwing === "WARRANTY")) cats.push("Warranty");
+    return { ...c, categories: cats, lastDate: dates.length ? dates[dates.length - 1] : "", open, total: c.orders.length + c.services.length + c.accessories.length };
   });
 }
 
 function CustomersTab({ customers, onOpen, onAdd }) {
   const [q, setQ] = useState("");
-  const [sortKey, setSortKey] = useState("name");
   const [dir, setDir] = useState("asc");
-  const onSort = (k) => { if (sortKey === k) setDir((d) => (d === "asc" ? "desc" : "asc")); else { setSortKey(k); setDir(k === "name" ? "asc" : "desc"); } };
+  const [catFilter, setCatFilter] = useState({});
+  const activeCats = Object.keys(catFilter).filter((k) => catFilter[k]);
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
-    const arr = customers.filter((c) => !t || [c.name, c.phone, c.email, c.address].join(" ").toLowerCase().includes(t));
-    arr.sort((x, y) => {
-      let a = x[sortKey], b = y[sortKey];
-      if (typeof a === "string") { a = a.toLowerCase(); b = (b || "").toLowerCase(); }
-      if (a < b) return dir === "asc" ? -1 : 1;
-      if (a > b) return dir === "asc" ? 1 : -1;
-      return 0;
+    const arr = customers.filter((c) => {
+      const matchesText = !t || [c.name, c.phone].join(" ").toLowerCase().includes(t);
+      const matchesCat = activeCats.length === 0 || activeCats.some((k) => c.categories.indexOf(k) > -1);
+      return matchesText && matchesCat;
     });
+    arr.sort((x, y) => (x.name.toLowerCase() < y.name.toLowerCase() ? -1 : 1) * (dir === "asc" ? 1 : -1));
     return arr;
-  }, [customers, q, sortKey, dir]);
-  const heads = [
-    { label: "Customer", key: "name" }, { label: "Phone", key: null }, { label: "Email", key: null },
-    { label: "Orders", key: null }, { label: "Services", key: null }, { label: "Accessories", key: null },
-    { label: "Open jobs", key: "open" }, { label: "Last activity", key: "lastDate" },
-  ];
+  }, [customers, q, dir, catFilter]);
   return (
     <div data-testid="customers-tab">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
@@ -1403,32 +1411,39 @@ function CustomersTab({ customers, onOpen, onAdd }) {
           padding: "9px 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}><Plus size={16} /> Add customer</button>
       </div>
-      <p style={{ margin: "0 0 12px 0", fontSize: 13.5, color: "#565C54" }}>
-        Everyone who has an order, service or accessory appears here automatically. Click a customer to see their full history and save contact details.
-      </p>
-      <div style={{ position: "relative", marginBottom: 14, maxWidth: 420 }}>
-        <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
-        <input data-testid="customers-search" placeholder="Search name, phone, email, address…" value={q} onChange={(e) => setQ(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 420 }}>
+          <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
+          <input data-testid="customers-search" placeholder="Search name or phone…" value={q} onChange={(e) => setQ(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+        </div>
+        {Object.keys(CUSTOMER_CATEGORIES).map((k) => {
+          const on = !!catFilter[k];
+          return (
+            <button key={k} data-testid="category-filter" onClick={() => setCatFilter((f) => ({ ...f, [k]: !f[k] }))} className="rodi-btn" style={{
+              border: on ? `2px solid ${CUSTOMER_CATEGORIES[k]}` : "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
+              padding: "6px 12px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 7, fontWeight: 500,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, background: CUSTOMER_CATEGORIES[k] }} />{k}
+            </button>
+          );
+        })}
       </div>
       <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {heads.map((h) => <SortableHeader key={h.label} label={h.label} sortKey={h.key} activeKey={sortKey} dir={dir} onSort={onSort} />)}
+              <SortableHeader label="Customer" sortKey="name" activeKey="name" dir={dir} onSort={() => setDir((d) => (d === "asc" ? "desc" : "asc"))} />
+              <SortableHeader label="Phone" sortKey={null} />
+              <SortableHeader label="Category" sortKey={null} />
             </tr>
           </thead>
           <tbody>
-            {list.length === 0 && <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No customers match.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={3} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No customers match.</td></tr>}
             {list.map((c) => (
               <tr key={c.key} className="rodi-row" data-testid="customer-row" onClick={() => onOpen({ name: c.name, phone: c.phone })} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
-                <td style={{ padding: "8px 10px", fontWeight: 700 }}>{c.name}{c.profile ? "" : <span style={{ marginLeft: 6, fontSize: 10, color: "#8B9086", fontWeight: 600 }}>NO PROFILE YET</span>}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{c.phone || "—"}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13, wordBreak: "break-all" }}>{c.email || "—"}</td>
-                <td style={{ padding: "8px 10px" }}>{c.orders.length}</td>
-                <td style={{ padding: "8px 10px" }}>{c.services.length}</td>
-                <td style={{ padding: "8px 10px" }}>{c.accessories.length}</td>
-                <td style={{ padding: "8px 10px", fontWeight: c.open ? 700 : 400, color: c.open ? "#D98B3D" : undefined }}>{c.open}</td>
-                <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(c.lastDate) || "—"}</td>
+                <td style={{ padding: "9px 10px", fontWeight: 700 }}>{c.name}</td>
+                <td style={{ padding: "9px 10px", fontSize: 13 }}>{c.phone || "—"}</td>
+                <td style={{ padding: "9px 10px" }}><CategoryBadges cats={c.categories} /></td>
               </tr>
             ))}
           </tbody>
@@ -1485,6 +1500,7 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
             ) : (
               <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{customer.name || anyPhone || "Customer"}</h3>
             )}
+            <div style={{ marginTop: 6 }}><CategoryBadges cats={(() => { const c = []; if (svcs.length) c.push("Servicing"); if (ords.some((o) => o.payment !== "WARRANTY") || accs.some((a) => a.paymentOwing !== "WARRANTY")) c.push("Sales"); if (ords.some((o) => o.payment === "WARRANTY") || accs.some((a) => a.paymentOwing === "WARRANTY")) c.push("Warranty"); return c; })()} /></div>
             <div style={{ fontSize: 13, color: "#565C54", marginTop: 4 }}>{total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
           </div>
           <IconBtn onClick={onClose} title="Close history"><X size={14} /></IconBtn>
