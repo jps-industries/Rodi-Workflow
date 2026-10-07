@@ -501,16 +501,17 @@ function Drawer({ title, icon, onClose, children, onSubmit }) {
   return (
     <div
       style={{
-        position: "fixed", inset: 0, background: "rgba(25,27,24,0.35)",
-        display: "flex", justifyContent: "flex-end", zIndex: 50,
+        position: "fixed", inset: 0, background: "rgba(25,27,24,0.55)",
+        display: "flex", justifyContent: "center", alignItems: "center", padding: 16, zIndex: 50,
       }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(440px, 100%)", background: "#F3F4EF", height: "100%",
-          padding: "22px 22px 90px 22px", overflowY: "auto", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)",
+          width: "min(560px, 100%)", background: "#F3F4EF", maxHeight: "92vh", boxSizing: "border-box",
+          border: "2px solid #191B18", borderRadius: 14,
+          padding: 22, overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
