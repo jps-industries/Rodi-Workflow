@@ -131,7 +131,8 @@ const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const SERVICE_STATUSES = ["Booked", "In Progress", "Awaiting Parts", "Ready for Pickup", "Completed"];
 const ACCESSORY_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment"];
-const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A" };
+const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A", "WARRANTY": "#3A7CA5" };
+const ACCESSORY_PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment", "WARRANTY"];
 const FULFILLMENT_METHODS = ["Pickup", "Delivery"];
 const ASSEMBLY_STATUSES = ["For Assembly", "Assembled"];
 
@@ -592,7 +593,7 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <CustomerExtras kind="order" form={form} />
+      <CustomerExtras kind="order" form={form} onFillPhone={(ph) => setForm({ ...form, phone: ph })} />
       {!hideSale && (<>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Fulfillment">
@@ -673,7 +674,7 @@ function DeliveryForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <CustomerExtras kind="order" form={form} />
+      <CustomerExtras kind="order" form={form} onFillPhone={(ph) => setForm({ ...form, phone: ph })} />
       <Field label="Delivery date"><input type="date" style={inputStyle} value={form.deliveryDate} onChange={set("deliveryDate")} /></Field>
       <Field label="Assembly">
         <select style={inputStyle} value={form.assemblyStatus} onChange={set("assemblyStatus")}>
@@ -707,6 +708,45 @@ function parseLog(notes) {
     return m ? { stamp: m[1], text: m[2].replace(/⏎/g, "\n"), raw: line } : { stamp: "", text: line.replace(/⏎/g, "\n"), raw: line };
   });
 }
+function logWithEdit(notes, idx, text) {
+  const t = text.trim().replace(/\n/g, "⏎");
+  return parseLog(notes).map((e, j) => (j === idx ? (e.stamp ? `${e.stamp} | ${t}` : t) : e.raw)).join("\n");
+}
+function logWithout(notes, idx) { return parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw).join("\n"); }
+
+// List of log entries (newest first). Click an entry (or its pencil) to edit it in place.
+function LogEntries({ entries, onEdit, onDelete, fontSize }) {
+  const [editing, setEditing] = useState(null); // { idx, text }
+  const save = () => { if (editing && editing.text.trim()) onEdit(editing.idx, editing.text); setEditing(null); };
+  return entries.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => (
+    editing && editing.idx === i ? (
+      <div key={"edit" + i} data-testid="log-entry-editor" style={{ padding: "8px 10px", borderBottom: "1px solid #EFEFEA", background: "#FFF8E1" }}>
+        {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
+        <textarea autoFocus rows={2} value={editing.text}
+          onChange={(ev) => setEditing({ idx: i, text: ev.target.value.toUpperCase() })}
+          onKeyDown={(ev) => { if (ev.key === "Escape") setEditing(null); if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save(); } }}
+          style={{ ...inputStyle, resize: "vertical", marginTop: 4 }} />
+        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+          <button type="button" data-testid="log-entry-save" onClick={save} className="rodi-btn" style={{ background: "#F6BD1B", border: "2px solid #191B18", borderRadius: 7, padding: "4px 12px", fontWeight: 700, cursor: "pointer", fontSize: 12.5 }}>Save</button>
+          <button type="button" onClick={() => setEditing(null)} style={{ background: "#fff", border: "1px solid #D8DAD1", borderRadius: 7, padding: "4px 12px", cursor: "pointer", fontSize: 12.5 }}>Cancel</button>
+        </div>
+      </div>
+    ) : (
+      <div key={e.raw + i} data-testid="log-entry" title="Click to edit" onClick={() => setEditing({ idx: i, text: e.text })}
+        style={{ display: "flex", gap: 8, padding: "7px 10px", borderBottom: "1px solid #EFEFEA", alignItems: "flex-start", cursor: "pointer" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
+          <div style={{ fontSize: fontSize || 14, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{e.text}</div>
+        </div>
+        <button type="button" title="Edit entry" onClick={(ev) => { ev.stopPropagation(); setEditing({ idx: i, text: e.text }); }}
+          style={{ border: "none", background: "transparent", color: "#33506B", cursor: "pointer", padding: 2 }}><Pencil size={13} /></button>
+        <button type="button" title="Delete entry" onClick={(ev) => { ev.stopPropagation(); onDelete(i); }}
+          style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}><X size={13} /></button>
+      </div>
+    )
+  ));
+}
+
 function nowStamp() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, "0");
@@ -727,18 +767,7 @@ function ServiceLog({ value, onChange }) {
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Workshop notes log</div>
       <div style={{ border: "1px solid #D8DAD1", borderRadius: 8, background: "#fff", maxHeight: 240, overflowY: "auto" }}>
         {entries.length === 0 && <div style={{ padding: 10, fontSize: 13, color: "#8B9086" }}>No entries yet.</div>}
-        {entries.slice().reverse().map((e, i) => (
-          <div key={e.raw + i} style={{ display: "flex", gap: 8, padding: "8px 10px", borderBottom: "1px solid #EFEFEA", alignItems: "flex-start" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
-              <div style={{ fontSize: 14, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{e.text}</div>
-            </div>
-            <button type="button" title="Delete entry" onClick={() => onChange(entries.filter((x) => x.raw !== e.raw).map((x) => x.raw).join("\n"))}
-              style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}>
-              <X size={13} />
-            </button>
-          </div>
-        ))}
+        <LogEntries entries={entries} onEdit={(idx, t) => onChange(logWithEdit(value, idx, t))} onDelete={(idx) => onChange(logWithout(value, idx))} />
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <textarea
@@ -783,7 +812,7 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <CustomerExtras kind="service" form={form} />
+      <CustomerExtras kind="service" form={form} onFillPhone={(ph) => setForm({ ...form, phone: ph })} />
       <Field label="Bike / model"><input style={inputStyle} value={form.bike} onChange={upper("bike")} placeholder="DIRODI GEN 6 ST" /></Field>
       <Field label="Service type"><input style={inputStyle} value={form.serviceType} onChange={upper("serviceType")} placeholder="FULL SERVICE, BRAKE ADJUST..." /></Field>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
@@ -886,10 +915,10 @@ function AccessoryForm({ initial, onSave, onClose }) {
         <Field label="Customer"><input style={inputStyle} value={form.customer} onChange={upper("customer")} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
-      <CustomerExtras kind="accessory" form={form} />
+      <CustomerExtras kind="accessory" form={form} onFillPhone={(ph) => setForm({ ...form, phone: ph })} />
       <Field label="Payment status">
         <select style={{ ...inputStyle, color: PAYMENT_COLORS[form.paymentOwing], fontWeight: 700 }} value={form.paymentOwing} onChange={set("paymentOwing")}>
-          {PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
+          {ACCESSORY_PAYMENT_STATUSES.map((s) => <option key={s} value={s} style={{ color: PAYMENT_COLORS[s], fontWeight: 600 }}>{s}</option>)}
         </select>
       </Field>
       <label style={{
@@ -917,9 +946,10 @@ function recordLabel(table, r) {
   if (table === "services") return `${r.customer || "SERVICE"}${r.bike ? " — " + r.bike : ""}`;
   if (table === "accessories") return `${r.brand || ""} ${r.type || ""}`.trim() + (r.customer ? ` (${r.customer})` : "");
   if (table === "pricing") return `${r.brand || ""} ${r.model || ""}`.trim();
+  if (table === "customers") return r.name || "";
   return "";
 }
-const TABLE_NOUN = { orders: "Order", services: "Service", accessories: "Accessory", pricing: "Price" };
+const TABLE_NOUN = { orders: "Order", services: "Service", accessories: "Accessory", pricing: "Price", customers: "Customer" };
 function diffRecords(a, b) {
   const skip = { id: 1, createdAt: 1 };
   const changes = [];
@@ -1015,12 +1045,12 @@ function GlobalSearch({ orders, services, accessories, onOpen }) {
   const customers = useMemo(() => {
     if (!query) return [];
     const seen = {};
-    [...orders, ...services, ...accessories].forEach((r) => {
+    [...orders, ...services, ...accessories, ...(ctx.profiles || []).map((p) => ({ customer: p.name, phone: p.phone }))].forEach((r) => {
       const n = (r.customer || "").trim();
       if (n && n.toLowerCase().includes(query) && !seen[n.toLowerCase()]) seen[n.toLowerCase()] = { name: n, phone: r.phone || "" };
     });
     return Object.values(seen).slice(0, 5);
-  }, [query, orders, services, accessories]);
+  }, [query, orders, services, accessories, ctx.profiles]);
   const total = results ? results.orders.length + results.services.length + results.accessories.length + customers.length : 0;
   const pick = (kind, rec) => { setQ(""); onOpen(kind, rec); };
   const row = (kind, rec, title, badge) => (
@@ -1091,13 +1121,13 @@ function serviceQuickMatch(s, quick) {
   if (!quick) return true;
   if (quick === "today") return s.bookedDate === todayISO();
   if (quick === "week") return inNext7(s.bookedDate);
-  if (quick === "overdue") return isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup");
+  if (quick === "overdue") return isPastDate(s.bookedDate) && s.status === "Booked";
   if (quick === "ready") return s.status === "Ready for Pickup";
   return true;
 }
 
 // Workshop view: big cards for the jobs on the floor, with the notes log front and centre.
-function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
+function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry }) {
   const [text, setText] = useState("");
   const log = parseLog(s.notes).slice().reverse();
   const add = () => { const t = text.trim(); if (!t) return; onAppendLog(s.id, t); setText(""); };
@@ -1118,12 +1148,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
       </div>
       <div style={{ background: "#FAFAF7", border: "1px solid #E3E4DD", borderRadius: 8, maxHeight: 150, overflowY: "auto" }}>
         {log.length === 0 && <div style={{ padding: 8, fontSize: 12.5, color: "#8B9086" }}>No log entries yet.</div>}
-        {log.map((e, i) => (
-          <div key={i} style={{ padding: "6px 8px", borderBottom: "1px solid #EFEFEA" }}>
-            {e.stamp && <div style={{ fontSize: 10.5, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
-            <div style={{ fontSize: 13.5, whiteSpace: "pre-wrap" }}>{e.text}</div>
-          </div>
-        ))}
+        <LogEntries entries={parseLog(s.notes)} fontSize={13.5} onEdit={(idx, t) => onEditLogEntry(s.id, idx, t)} onDelete={(idx) => onDeleteLogEntry(s.id, idx)} />
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         <textarea value={text} rows={2} onChange={(e) => setText(e.target.value.toUpperCase())}
@@ -1135,10 +1160,10 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog }) {
     </div>
   );
 }
-function WorkshopView({ services, onEdit, onSetStatus, onAppendLog }) {
+function WorkshopView({ services, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry }) {
   const jobs = services.filter((s) => !s.archived && s.status !== "Completed" && (
     s.bookedDate === todayISO() || ["In Progress", "Awaiting Parts", "Ready for Pickup"].indexOf(s.status) > -1
-    || (isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup"))
+    || (isPastDate(s.bookedDate) && s.status === "Booked")
   ));
   const sorted = sortRows(jobs, "status", "asc", SERVICE_STATUSES);
   return (
@@ -1148,7 +1173,7 @@ function WorkshopView({ services, onEdit, onSetStatus, onAppendLog }) {
       </p>
       {sorted.length === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing on the workshop floor right now.</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 12 }}>
-        {sorted.map((s) => <WorkshopCard key={s.id} s={s} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} />)}
+        {sorted.map((s) => <WorkshopCard key={s.id} s={s} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} />)}
       </div>
     </div>
   );
@@ -1200,7 +1225,7 @@ function HistoryTab({ entries }) {
 }
 
 // ---- Shared context: lets deep components (forms, cards) open the history / job-card popups ----
-const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, viewCustomer: null, printJob: null });
+const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, profiles: [], viewCustomer: null, printJob: null });
 
 const STALE = { partsDays: 5, progressDays: 7, readyDays: 7, overdueDays: 7, uncollectedDays: 3 };
 function ageDays(dateStr) { const n = daysFromToday(dateStr); return n === null ? null : -n; }
@@ -1241,7 +1266,6 @@ function missingDetails(kind, r) {
   if (kind === "order") {
     if (r.forStock && !r.customer) return m;
     if (r.customer && !r.phone) m.push("phone");
-    if ((r.status === "Ordered" || r.status === "In Transit") && !r.eta) m.push("ETA");
     if (r.status === "In Transit" && !r.tracking) m.push("tracking");
     if (r.customer && r.fulfillment === "Delivery" && !r.deliveryDate) m.push("delivery date");
   } else if (kind === "service") {
@@ -1252,11 +1276,12 @@ function missingDetails(kind, r) {
   } else if (kind === "accessory") {
     if (r.forStock && !r.customer) return m;
     if (r.customer && !r.phone) m.push("phone");
-    if ((r.status === "Ordered" || r.status === "In Transit") && !r.eta) m.push("ETA");
     if (r.status === "In Transit" && !r.tracking) m.push("tracking");
   }
   return m;
 }
+// Amber "Missing" shown in an ETA cell when a tracking number exists but no ETA has been entered.
+function EtaMissing() { return <span data-testid="eta-missing" style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700 }}>Missing</span>; }
 function MissingTag({ kind, rec }) {
   const m = rec.archived ? [] : missingDetails(kind, rec);
   if (!m.length) return null;
@@ -1280,8 +1305,16 @@ function findDuplicates(kind, form, records) {
     return (sameCust || samePhone) && !!low(form.type) && low(r.brand) === low(form.brand) && low(r.type) === low(form.type);
   }).slice(0, 3);
 }
-function CustomerExtras({ kind, form }) {
+function CustomerExtras({ kind, form, onFillPhone }) {
   const ctx = React.useContext(AppCtx);
+  const knownPhone = (() => {
+    const nm = (form.customer || "").trim().toLowerCase();
+    if (!nm || (form.phone || "").trim()) return "";
+    const prof = (ctx.profiles || []).find((p) => (p.name || "").trim().toLowerCase() === nm && p.phone);
+    if (prof) return prof.phone;
+    const rec = [...ctx.records.orders, ...ctx.records.services, ...ctx.records.accessories].find((r) => (r.customer || "").trim().toLowerCase() === nm && r.phone);
+    return rec ? rec.phone : "";
+  })();
   const dups = findDuplicates(kind, form, ctx.records);
   const hasName = (form.customer || "").trim() || (form.phone || "").replace(/\D/g, "").length >= 6;
   return (
@@ -1290,6 +1323,12 @@ function CustomerExtras({ kind, form }) {
         <button type="button" data-testid="customer-history-btn" onClick={() => ctx.viewCustomer({ name: form.customer, phone: form.phone })}
           style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#3A7CA5", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
           View customer history
+        </button>
+      )}
+      {knownPhone && onFillPhone && (
+        <button type="button" data-testid="fill-phone-btn" onClick={() => onFillPhone(knownPhone)}
+          style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#3A7CA5", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+          Use saved phone {knownPhone}
         </button>
       )}
       {dups.length > 0 && (
@@ -1303,16 +1342,128 @@ function CustomerExtras({ kind, form }) {
   );
 }
 
-function CustomerHistoryModal({ customer, records, onOpen, onClose }) {
-  const low = (v) => (v || "").toString().trim().toLowerCase();
-  const name = low(customer.name);
-  const phone = (customer.phone || "").replace(/\D/g, "");
-  const match = (r) => (!!name && low(r.customer) === name) || (phone.length >= 6 && (r.phone || "").replace(/\D/g, "") === phone);
+const lowTrim = (v) => (v || "").toString().trim().toLowerCase();
+// One row per customer, built from the saved customer profiles plus every name found on orders, services and accessories.
+function buildCustomers(records, profiles) {
+  const map = {};
+  const get = (name) => {
+    const k = lowTrim(name);
+    if (!k) return null;
+    return map[k] || (map[k] = { key: k, name: name.trim(), phone: "", email: "", address: "", notes: "", profile: null, orders: [], services: [], accessories: [] });
+  };
+  profiles.forEach((p) => {
+    const c = get(p.name || "");
+    if (c) { c.profile = p; c.name = p.name.trim(); c.phone = p.phone || ""; c.email = p.email || ""; c.address = p.address || ""; c.notes = p.notes || ""; }
+  });
+  [["orders", records.orders], ["services", records.services], ["accessories", records.accessories]].forEach(([k, list]) => {
+    list.forEach((r) => {
+      const c = get(r.customer || "");
+      if (!c) return;
+      c[k].push(r);
+      if (!c.phone && r.phone) c.phone = r.phone;
+    });
+  });
+  return Object.values(map).map((c) => {
+    const dates = [
+      ...c.orders.map((o) => o.orderDate || o.eta), ...c.services.map((x) => x.bookedDate), ...c.accessories.map((a) => a.eta || a.date),
+    ].filter(Boolean).sort();
+    const open = c.orders.filter((o) => !o.archived).length + c.services.filter((x) => !x.archived && x.status !== "Completed").length + c.accessories.filter((a) => !a.archived).length;
+    return { ...c, lastDate: dates.length ? dates[dates.length - 1] : "", open, total: c.orders.length + c.services.length + c.accessories.length };
+  });
+}
+
+function CustomersTab({ customers, onOpen, onAdd }) {
+  const [q, setQ] = useState("");
+  const [sortKey, setSortKey] = useState("name");
+  const [dir, setDir] = useState("asc");
+  const onSort = (k) => { if (sortKey === k) setDir((d) => (d === "asc" ? "desc" : "asc")); else { setSortKey(k); setDir(k === "name" ? "asc" : "desc"); } };
+  const list = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    const arr = customers.filter((c) => !t || [c.name, c.phone, c.email, c.address].join(" ").toLowerCase().includes(t));
+    arr.sort((x, y) => {
+      let a = x[sortKey], b = y[sortKey];
+      if (typeof a === "string") { a = a.toLowerCase(); b = (b || "").toLowerCase(); }
+      if (a < b) return dir === "asc" ? -1 : 1;
+      if (a > b) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [customers, q, sortKey, dir]);
+  const heads = [
+    { label: "Customer", key: "name" }, { label: "Phone", key: null }, { label: "Email", key: null },
+    { label: "Orders", key: null }, { label: "Services", key: null }, { label: "Accessories", key: null },
+    { label: "Open jobs", key: "open" }, { label: "Last activity", key: "lastDate" },
+  ];
+  return (
+    <div data-testid="customers-tab">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+        <h2 className="rodi-display" style={{ fontSize: 24, margin: 0 }}>CUSTOMERS <span style={{ fontSize: 15, color: "#8B9086" }}>({customers.length})</span></h2>
+        <button onClick={onAdd} data-testid="add-customer" className="rodi-btn" style={{
+          background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8,
+          padding: "9px 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
+        }}><Plus size={16} /> Add customer</button>
+      </div>
+      <p style={{ margin: "0 0 12px 0", fontSize: 13.5, color: "#565C54" }}>
+        Everyone who has an order, service or accessory appears here automatically. Click a customer to see their full history and save contact details.
+      </p>
+      <div style={{ position: "relative", marginBottom: 14, maxWidth: 420 }}>
+        <Search size={15} style={{ position: "absolute", left: 10, top: 11, color: "#8B9086" }} />
+        <input data-testid="customers-search" placeholder="Search name, phone, email, address…" value={q} onChange={(e) => setQ(e.target.value)} style={{ ...inputStyle, paddingLeft: 32 }} />
+      </div>
+      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "2px solid #191B18", borderRadius: 12, background: "#fff" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
+              {heads.map((h) => <SortableHeader key={h.label} label={h.label} sortKey={h.key} activeKey={sortKey} dir={dir} onSort={onSort} />)}
+            </tr>
+          </thead>
+          <tbody>
+            {list.length === 0 && <tr><td colSpan={8} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>No customers match.</td></tr>}
+            {list.map((c) => (
+              <tr key={c.key} className="rodi-row" data-testid="customer-row" onClick={() => onOpen({ name: c.name, phone: c.phone })} style={{ borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
+                <td style={{ padding: "8px 10px", fontWeight: 700 }}>{c.name}{c.profile ? "" : <span style={{ marginLeft: 6, fontSize: 10, color: "#8B9086", fontWeight: 600 }}>NO PROFILE YET</span>}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{c.phone || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13, wordBreak: "break-all" }}>{c.email || "—"}</td>
+                <td style={{ padding: "8px 10px" }}>{c.orders.length}</td>
+                <td style={{ padding: "8px 10px" }}>{c.services.length}</td>
+                <td style={{ padding: "8px 10px" }}>{c.accessories.length}</td>
+                <td style={{ padding: "8px 10px", fontWeight: c.open ? 700 : 400, color: c.open ? "#D98B3D" : undefined }}>{c.open}</td>
+                <td style={{ padding: "8px 10px", fontSize: 13 }}>{formatAU(c.lastDate) || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOpen, onClose }) {
+  const low = lowTrim;
+  const isNew = !!customer.isNew;
+  const [nameInput, setNameInput] = useState(customer.name || "");
+  const name = low(isNew ? nameInput : customer.name);
+  const phoneKey = (customer.phone || "").replace(/\D/g, "");
+  const match = (r) => (!!name && low(r.customer) === name) || (!isNew && phoneKey.length >= 6 && (r.phone || "").replace(/\D/g, "") === phoneKey);
   const newest = (arr, key) => arr.slice().sort((a, b) => String(b[key] || b.createdAt || "").localeCompare(String(a[key] || a.createdAt || "")));
   const ords = newest(records.orders.filter(match), "orderDate");
   const svcs = newest(records.services.filter(match), "bookedDate");
   const accs = newest(records.accessories.filter(match), "eta");
+  const profile = (profiles || []).find((p) => low(p.name) === name) || null;
   const anyPhone = [...ords, ...svcs, ...accs].map((r) => r.phone).find(Boolean) || customer.phone || "";
+  const [details, setDetails] = useState({
+    phone: (profile && profile.phone) || anyPhone || "", email: (profile && profile.email) || "",
+    address: (profile && profile.address) || "", notes: (profile && profile.notes) || "",
+  });
+  const [saved, setSaved] = useState(false);
+  const setD = (k) => (e) => { setSaved(false); setDetails({ ...details, [k]: e.target.value }); };
+  const save = async (e) => {
+    e.preventDefault();
+    const nm = (isNew ? nameInput : customer.name).trim().toUpperCase();
+    if (!nm) return;
+    const ok = await onSaveProfile({ id: profile ? profile.id : uid(), name: nm, ...details }, isNew);
+    if (ok) setSaved(true);
+  };
   const Row = ({ kind, rec, title, date, color }) => (
     <div className="rodi-row" onClick={() => onOpen(kind, rec)} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "7px 8px", borderBottom: "1px solid #EFEFEA", cursor: "pointer", fontSize: 13.5, borderRadius: 6 }}>
       <div style={{ minWidth: 0 }}>
@@ -1326,16 +1477,35 @@ function CustomerHistoryModal({ customer, records, onOpen, onClose }) {
   const total = ords.length + svcs.length + accs.length;
   return (
     <div data-testid="customer-history" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 55, background: "rgba(25,27,24,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflowY: "auto" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 14, padding: 18, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "2px solid #191B18", borderRadius: 14, padding: 18, width: "100%", maxWidth: 580, maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box", boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-          <div>
-            <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{customer.name || anyPhone || "Customer"}</h3>
-            <div style={{ fontSize: 13, color: "#565C54" }}>{anyPhone || "No phone on file"} · {total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {isNew ? (
+              <input data-testid="new-customer-name" autoFocus placeholder="CUSTOMER NAME" value={nameInput} onChange={(e) => setNameInput(e.target.value.toUpperCase())} style={{ ...inputStyle, fontWeight: 700 }} />
+            ) : (
+              <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{customer.name || anyPhone || "Customer"}</h3>
+            )}
+            <div style={{ fontSize: 13, color: "#565C54", marginTop: 4 }}>{total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
           </div>
           <IconBtn onClick={onClose} title="Close history"><X size={14} /></IconBtn>
         </div>
-        <div style={{ fontSize: 12, color: "#8B9086", marginTop: 6 }}>Includes archived records. Opening a record closes any form you have open.</div>
-        {total === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>No saved records for this customer yet.</p>}
+
+        <form data-testid="customer-details" onSubmit={save} style={{ marginTop: 12, background: "#FAFAF7", border: "1px solid #E3E4DD", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#565C54", textTransform: "uppercase" }}>Contact details</div>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }}>
+            <Field label="Phone"><input data-testid="cust-phone" style={inputStyle} value={details.phone} onChange={setD("phone")} /></Field>
+            <Field label="Email"><input data-testid="cust-email" type="email" style={inputStyle} value={details.email} onChange={setD("email")} /></Field>
+          </div>
+          <Field label="Address"><input data-testid="cust-address" style={inputStyle} value={details.address} onChange={setD("address")} /></Field>
+          <Field label="Customer notes"><textarea data-testid="cust-notes" style={{ ...inputStyle, minHeight: 56, resize: "vertical" }} value={details.notes} onChange={setD("notes")} placeholder="Preferences, bike details, anything useful…" /></Field>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button type="submit" data-testid="cust-save" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "2px solid #191B18", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer", fontSize: 13.5 }}>Save details</button>
+            {saved && <span data-testid="cust-saved" style={{ fontSize: 13, color: "#4C9A6A", fontWeight: 700 }}>Saved ✓</span>}
+          </div>
+        </form>
+
+        <div style={{ fontSize: 12, color: "#8B9086", marginTop: 10 }}>History includes archived records. Opening a record closes any form you have open.</div>
+        {total === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>No orders or services for this customer yet.</p>}
         {ords.length > 0 && sec("Orders", ords.length)}
         {ords.map((o) => <Row key={o.id} kind="order" rec={o} title={`${o.brand} ${o.type}`.trim() + (o.colour ? ` — ${o.colour}` : "")} date={o.orderDate || o.eta} color={ORDER_COLORS[o.status]} />)}
         {svcs.length > 0 && sec("Services", svcs.length)}
@@ -1603,7 +1773,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px" }}>{o.colour}</td>
                 <td style={{ padding: "8px 10px" }}>{o.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(o.eta) || "—"}{overdue && " ⚠"}</span>
+                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
@@ -1651,7 +1821,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   );
 }
 
-function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, preset }) {
+function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, preset }) {
   const [search, setSearch] = useState("");
   const [quick, setQuick] = useState(preset ? preset.quick : null);
   useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
@@ -1705,7 +1875,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       </div>
 
       {view === "workshop" ? (
-        <WorkshopView services={services} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} />
+        <WorkshopView services={services} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} />
       ) : (<>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {SERVICE_STATUSES.map((s) => (
@@ -1759,7 +1929,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
             )}
             {sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES).map((s) => {
               const overdue = view === "active" && isPastDate(s.bookedDate)
-                && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup");
+                && s.status === "Booked";
               return (
               <tr key={s.id} className="rodi-row" onClick={() => onEdit(s)} style={{
                 borderBottom: "1px solid #EFEFEA", cursor: "pointer",
@@ -2078,7 +2248,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(a.eta) || "—"}{overdue && " ⚠"}</span>
+                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(a.eta) || (a.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
@@ -2423,8 +2593,10 @@ function AttentionList({ title, icon, color, items, renderItem, emptyText }) {
   );
 }
 
-function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
+function ChecklistWidget({ items, onAdd, onToggle, onDelete, onEdit }) {
   const [text, setText] = useState("");
+  const [editing, setEditing] = useState(null); // { id, text }
+  const saveEdit = () => { if (editing && editing.text.trim() && onEdit) onEdit(editing.id, editing.text.trim()); setEditing(null); };
   const sorted = useMemo(() => {
     const arr = [...items];
     arr.sort((a, b) => {
@@ -2469,13 +2641,22 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
               onChange={() => onToggle(item.id)}
               style={{ width: 16, height: 16, cursor: "pointer", flexShrink: 0 }}
             />
-            <span style={{
-              flex: 1, fontSize: 13.5,
-              color: item.done ? "#8B9086" : "#191B18",
-              textDecoration: item.done ? "line-through" : "none",
-            }}>
-              {item.text}
-            </span>
+            {editing && editing.id === item.id ? (
+              <input data-testid="checklist-edit-input" autoFocus value={editing.text}
+                onChange={(e) => setEditing({ id: item.id, text: e.target.value.toUpperCase() })}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditing(null); }}
+                onBlur={saveEdit}
+                style={{ ...inputStyle, flex: 1, padding: "5px 8px", fontSize: 13.5 }} />
+            ) : (
+              <span data-testid="checklist-text" title="Click to edit" onClick={() => setEditing({ id: item.id, text: item.text })} style={{
+                flex: 1, fontSize: 13.5, cursor: "text",
+                color: item.done ? "#8B9086" : "#191B18",
+                textDecoration: item.done ? "line-through" : "none",
+              }}>
+                {item.text}
+              </span>
+            )}
+            <IconBtn onClick={() => setEditing({ id: item.id, text: item.text })} title="Edit"><Pencil size={13} /></IconBtn>
             <IconBtn onClick={() => onDelete(item.id)} title="Delete" danger><Trash2 size={13} /></IconBtn>
           </div>
         ))}
@@ -2484,7 +2665,7 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete }) {
   );
 }
 
-function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onExport, onExportCSV, goTo, onOpen }) {
+function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onEditChecklistItem, onExport, onExportCSV, goTo, onOpen }) {
   const [customerQuery, setCustomerQuery] = useState("");
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
@@ -2502,7 +2683,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     return d !== null && d >= 0 && d <= 7;
   }), [activeServices]);
   const overdueServices = useMemo(() => activeServices.filter((s) =>
-    isPastDate(s.bookedDate) && SERVICE_STATUSES.indexOf(s.status) < SERVICE_STATUSES.indexOf("Ready for Pickup")
+    isPastDate(s.bookedDate) && s.status === "Booked"
   ), [activeServices]);
   const needsAssembly = useMemo(() => activeOrders.filter((o) => o.status === "Received" && o.assemblyStatus !== "Assembled"), [activeOrders]);
   const overdueAccessories = useMemo(() => activeAccessories.filter((a) => isPastDate(a.eta) && a.status !== "Received"), [activeAccessories]);
@@ -2518,11 +2699,6 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
   ], [activeServices, activeOrders]);
 
   const chasing = useMemo(() => staleItems(orders, services, accessories), [orders, services, accessories]);
-  const missingItems = useMemo(() => [
-    ...activeOrders.map((r) => ({ kind: "order", rec: r })),
-    ...activeServices.map((r) => ({ kind: "service", rec: r })),
-    ...activeAccessories.map((r) => ({ kind: "accessory", rec: r })),
-  ].map((it) => ({ ...it, missing: missingDetails(it.kind, it.rec) })).filter((it) => it.missing.length > 0), [activeOrders, activeServices, activeAccessories]);
 
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
@@ -2623,14 +2799,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <strong>{s.customer}</strong> — {s.bike} — {s.serviceType || "—"}
               </div>
             )} />
-          <AttentionList title="Missing details" icon={<AlertTriangle size={16} />} color="#D98B3D" items={missingItems}
-            renderItem={(it) => (
-              <div key={it.kind + it.rec.id} data-testid="missing-item" onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
-                <strong>{it.kind === "service" ? `${it.rec.customer || "—"} — ${it.rec.bike || ""}` : `${it.rec.brand} ${it.rec.type}${it.rec.customer ? " — " + it.rec.customer : ""}`}</strong>
-                {" "}<span style={{ color: "#D98B3D" }}>missing {it.missing.join(", ")}</span>
-              </div>
-            )} />
-          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && chasing.length === 0 && missingItems.length === 0 && (
+          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && chasing.length === 0 && (
             <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing urgent right now — nice.</p>
           )}
         </div>
@@ -2683,18 +2852,18 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
               )}
             </div>
           )}
+
+          <h3 className="rodi-display" style={{ fontSize: 20, margin: "22px 0 10px 0" }}>NOTES &amp; CHECKLIST</h3>
+          <ChecklistWidget
+            items={checklistItems}
+            onAdd={onAddChecklistItem}
+            onToggle={onToggleChecklistItem}
+            onDelete={onDeleteChecklistItem}
+            onEdit={onEditChecklistItem}
+          />
         </div>
       </div>
 
-      <h3 className="rodi-display" style={{ fontSize: 20, margin: "24px 0 10px 0" }}>NOTES &amp; CHECKLIST</h3>
-      <div className="rodi-half-width">
-        <ChecklistWidget
-          items={checklistItems}
-          onAdd={onAddChecklistItem}
-          onToggle={onToggleChecklistItem}
-          onDelete={onDeleteChecklistItem}
-        />
-      </div>
     </div>
   );
 }
@@ -2735,6 +2904,7 @@ function RodiTracker() {
   const [preset, setPreset] = useState(null);
   const [showName, setShowName] = useState(false);
   const [historyFor, setHistoryFor] = useState(null);
+  const [customers, setCustomers] = useState([]);
   const [jobCard, setJobCard] = useState(null);
   const [userName, setUserName] = useState(() => { try { return localStorage.getItem("rodi-user") || ""; } catch (e) { return ""; } });
   const userNameRef = useRef(userName);
@@ -2743,6 +2913,7 @@ function RodiTracker() {
   const servicesRef = useRef(services); servicesRef.current = services;
   const accessoriesRef = useRef(accessories); accessoriesRef.current = accessories;
   const pricingRef = useRef(pricing); pricingRef.current = pricing;
+  const customersRef = useRef(customers); customersRef.current = customers;
 
   useEffect(() => {
     (async () => {
@@ -2766,6 +2937,12 @@ function RodiTracker() {
       // SQL doesn't break the rest of the app's data loading.
       try {
         setChecklistItems(await sbList("checklist_items"));
+      } catch (e) {
+        console.error(e);
+      }
+      // Saved customer details are optional too (needs the customers table).
+      try {
+        setCustomers(await sbList("customers"));
       } catch (e) {
         console.error(e);
       }
@@ -2818,6 +2995,15 @@ function RodiTracker() {
       const target = prev.find((i) => i.id === id);
       if (!target) return prev;
       const updated = { ...target, done: !target.done };
+      sbUpsert("checklist_items", updated).catch((e) => setSyncError("Couldn't update the checklist item: " + e.message));
+      return prev.map((i) => (i.id === id ? updated : i));
+    });
+  }, []);
+  const editChecklistItem = useCallback((id, text) => {
+    setChecklistItems((prev) => {
+      const target = prev.find((i) => i.id === id);
+      if (!target) return prev;
+      const updated = { ...target, text };
       sbUpsert("checklist_items", updated).catch((e) => setSyncError("Couldn't update the checklist item: " + e.message));
       return prev.map((i) => (i.id === id ? updated : i));
     });
@@ -2937,6 +3123,30 @@ function RodiTracker() {
     patchRecord("services", id, { notes: lines.join("\n") }, "edited", "log entry: " + text.slice(0, 40));
   }, []);
 
+  const editServiceLogEntry = useCallback((id, idx, text) => {
+    const t = servicesRef.current.find((r) => r.id === id);
+    if (t) patchRecord("services", id, { notes: logWithEdit(t.notes, idx, text) }, "edited", "log entry edited");
+  }, []);
+  const deleteServiceLogEntry = useCallback((id, idx) => {
+    const t = servicesRef.current.find((r) => r.id === id);
+    if (t) patchRecord("services", id, { notes: logWithout(t.notes, idx) }, "edited", "log entry deleted");
+  }, []);
+
+  const saveCustomer = useCallback(async (profile, isNew) => {
+    const before = customersRef.current.find((c) => c.id === profile.id);
+    try {
+      const saved = await sbUpsert("customers", profile);
+      setCustomers((prev) => (prev.some((c) => c.id === saved.id) ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved]));
+      if (!before) logChange("customers", saved, "created", "");
+      else { const sum = diffRecords(before, saved); if (sum) logChange("customers", saved, "edited", sum); }
+      if (isNew) setHistoryFor({ name: saved.name, phone: saved.phone || "" });
+      return true;
+    } catch (e) {
+      setSyncError("Couldn't save the customer details — has the customers table been created yet? (" + e.message + ")");
+      return false;
+    }
+  }, []);
+
   const deleteRecord = useCallback(async (table, id) => {
     const cfg = tableCfg[table];
     const rec = cfg.ref.current.find((r) => r.id === id);
@@ -3035,13 +3245,14 @@ function RodiTracker() {
     { id: "services", label: "Services", icon: Wrench },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     { id: "pricing", label: "Stock pricing", icon: Tag },
+    { id: "customers", label: "Customers", icon: Users },
     { id: "history", label: "History", icon: RotateCcw },
   ];
 
   const exportAllData = useCallback(() => {
     const payload = {
       exportedAt: new Date().toISOString(),
-      orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog,
+      orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog, customers,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -3052,7 +3263,7 @@ function RodiTracker() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog]);
+  }, [orders, services, accessories, pricing, calendarNotes, checklistItems, changeLog, customers]);
 
   const exportCSV = useCallback(() => {
     const files = [["orders", orders], ["services", services], ["accessories", accessories], ["pricing", pricing]];
@@ -3061,7 +3272,7 @@ function RodiTracker() {
     });
   }, [orders, services, accessories, pricing]);
 
-  const ctxValue = { records: { orders, services, accessories }, viewCustomer: setHistoryFor, printJob: setJobCard };
+  const ctxValue = { records: { orders, services, accessories }, profiles: customers, viewCustomer: setHistoryFor, printJob: setJobCard };
 
   return (
     <AppCtx.Provider value={ctxValue}>
@@ -3134,6 +3345,7 @@ function RodiTracker() {
                 onAddChecklistItem={addChecklistItem}
                 onToggleChecklistItem={toggleChecklistItem}
                 onDeleteChecklistItem={deleteChecklistItem}
+                onEditChecklistItem={editChecklistItem}
                 onExport={exportAllData}
                 onExportCSV={exportCSV}
                 goTo={goTo}
@@ -3172,6 +3384,8 @@ function RodiTracker() {
                 onAdvanceStatus={advanceServiceStatus}
                 onSetStatus={setServiceStatus}
                 onAppendLog={appendServiceLog}
+                onEditLogEntry={editServiceLogEntry}
+                onDeleteLogEntry={deleteServiceLogEntry}
                 preset={preset && preset.tab === "services" ? preset : null}
               />
             )}
@@ -3197,6 +3411,13 @@ function RodiTracker() {
                 onAdd={() => setDrawer({ type: "pricing", data: emptyPricing() })}
                 onEdit={(p) => setDrawer({ type: "pricing", data: p })}
                 onDelete={(id) => setConfirm({ type: "pricing", id })}
+              />
+            )}
+            {tab === "customers" && (
+              <CustomersTab
+                customers={buildCustomers(ctxValue.records, customers)}
+                onOpen={(c) => setHistoryFor(c)}
+                onAdd={() => setHistoryFor({ name: "", phone: "", isNew: true })}
               />
             )}
             {tab === "history" && <HistoryTab entries={changeLog} />}
@@ -3254,7 +3475,7 @@ function RodiTracker() {
       <Toast toast={toast} onClose={() => setToast(null)} />
       {showName && <NameDialog current={userName} onSave={saveName} onClose={() => setShowName(false)} />}
       {historyFor && (
-        <CustomerHistoryModal customer={historyFor} records={ctxValue.records}
+        <CustomerHistoryModal key={historyFor.isNew ? "new" : historyFor.name} customer={historyFor} records={ctxValue.records} profiles={customers} onSaveProfile={saveCustomer}
           onOpen={(kind, rec) => { setHistoryFor(null); openRecordFromCalendar(kind, rec); }} onClose={() => setHistoryFor(null)} />
       )}
       {jobCard && <JobCardModal job={jobCard} onClose={() => setJobCard(null)} />}
