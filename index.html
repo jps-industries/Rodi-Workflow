@@ -131,8 +131,8 @@ const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const SERVICE_STATUSES = ["Booked", "In Progress", "Awaiting Parts", "Ready for Pickup", "Completed"];
 const ACCESSORY_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment"];
-const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A", "WARRANTY": "#3A7CA5" };
-const ACCESSORY_PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment", "WARRANTY"];
+const PAYMENT_COLORS = { "Not paid": "#C1483A", "Deposit only": "#D98B3D", "Full Payment": "#4C9A6A", "Warranty": "#3A7CA5" };
+const ACCESSORY_PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment", "Warranty"];
 const FULFILLMENT_METHODS = ["Pickup", "Delivery"];
 const ASSEMBLY_STATUSES = ["For Assembly", "Assembled"];
 
@@ -703,17 +703,32 @@ function DeliveryForm({ initial, onSave, onClose }) {
 }
 
 // ---- Service workshop log: stored as lines "dd/mm/yyyy HH:MM | TEXT" inside the existing `notes` text column ----
-function parseLog(notes) {
-  return (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
-    const m = line.match(/^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/);
-    return m ? { stamp: m[1], text: m[2].replace(/⏎/g, "\n"), raw: line } : { stamp: "", text: line.replace(/⏎/g, "\n"), raw: line };
+const STAMP_RE = /^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/;
+// notes column = optional "JOB | text" line (job card note) + timestamped log lines. Legacy untimestamped lines count as job note.
+function splitNotes(notes) {
+  const jobParts = [], log = [];
+  (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).forEach((line) => {
+    if (STAMP_RE.test(line)) log.push(line);
+    else if (line.startsWith("JOB | ")) jobParts.push(line.slice(6).replace(/⏎/g, "\n"));
+    else jobParts.push(line.replace(/⏎/g, "\n"));
   });
+  return { job: jobParts.join("\n"), log };
+}
+function joinNotes(job, logRaws) {
+  const j = (job || "").trim();
+  return [...(j ? ["JOB | " + j.replace(/\n/g, "⏎")] : []), ...logRaws].join("\n");
+}
+function jobNoteOf(notes) { return splitNotes(notes).job; }
+function parseLog(notes) {
+  return splitNotes(notes).log.map((line) => { const m = line.match(STAMP_RE); return { stamp: m[1], text: m[2].replace(/⏎/g, "\n"), raw: line }; });
 }
 function logWithEdit(notes, idx, text) {
   const t = text.trim().replace(/\n/g, "⏎");
-  return parseLog(notes).map((e, j) => (j === idx ? (e.stamp ? `${e.stamp} | ${t}` : t) : e.raw)).join("\n");
+  const { job } = splitNotes(notes);
+  return joinNotes(job, parseLog(notes).map((e, j) => (j === idx ? `${e.stamp} | ${t}` : e.raw)));
 }
-function logWithout(notes, idx) { return parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw).join("\n"); }
+function logWithout(notes, idx) { return joinNotes(jobNoteOf(notes), parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw)); }
+function logWithAdd(notes, text) { return joinNotes(jobNoteOf(notes), [...parseLog(notes).map((e) => e.raw), `${nowStamp()} | ${text.trim().replace(/\n/g, "⏎")}`]); }
 
 // List of log entries (newest first). Click an entry (or its pencil) to edit it in place.
 function LogEntries({ entries, onEdit, onDelete, fontSize }) {
@@ -760,7 +775,7 @@ function ServiceLog({ value, onChange }) {
   const add = () => {
     const t = text.trim();
     if (!t) return;
-    onChange([...entries.map((e) => e.raw), `${nowStamp()} | ${t.replace(/\n/g, "⏎")}`].join("\n"));
+    onChange(logWithAdd(value, t));
     setText("");
   };
   return (
@@ -785,6 +800,17 @@ function ServiceLog({ value, onChange }) {
           padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
         }}>Add</button>
       </div>
+    </div>
+  );
+}
+
+function JobNote({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5 }} data-testid="job-note">
+      <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Job card note <span style={{ color: "#8B9086", fontWeight: 400 }}>— extra detail about the service (shown on the Services list)</span></div>
+      <textarea rows={2} value={splitNotes(value).job} placeholder="E.G. FULL SERVICE + NEW CHAIN, RIDER WANTS GRIPS CHANGED"
+        onChange={(e) => onChange(joinNotes(e.target.value.toUpperCase(), splitNotes(value).log))}
+        style={{ ...inputStyle, resize: "vertical", minHeight: 44 }} />
     </div>
   );
 }
@@ -821,6 +847,7 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
       <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
+      <JobNote value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <ServiceLog value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <PrintJobButton job={form} />
       <button type="submit" className="rodi-btn" style={{
@@ -951,13 +978,19 @@ function recordLabel(table, r) {
   return "";
 }
 const TABLE_NOUN = { orders: "Order", services: "Service", accessories: "Accessory", pricing: "Price", customers: "Customer" };
-function diffRecords(a, b) {
+function diffRecords(a, b, table) {
   const skip = { id: 1, createdAt: 1 };
   const changes = [];
   Object.keys(b).forEach((k) => {
     if (skip[k]) return;
     const x = a[k] == null ? "" : a[k], y = b[k] == null ? "" : b[k];
     if (String(x) === String(y)) return;
+    if (k === "notes" && table === "services") {
+      const x1 = splitNotes(a.notes), y1 = splitNotes(b.notes);
+      if (x1.job !== y1.job) changes.push("job card note updated");
+      if (x1.log.join("\n") !== y1.log.join("\n")) changes.push("workshop log updated");
+      return;
+    }
     if (k === "notes" && a.notes !== undefined && String(b.notes || "").indexOf("|") > -1 && /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} \|/.test(String(b.notes))) {
       changes.push("workshop log updated");
       return;
@@ -1142,6 +1175,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
         <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
       </div>
       <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.serviceType || "—"}</div>
+      {jobNoteOf(s.notes) && <div data-testid="workshop-job-note" style={{ fontSize: 13, background: "#FFF8E1", border: "1px solid #F0DFA0", borderRadius: 7, padding: "5px 8px", whiteSpace: "pre-wrap" }}>{jobNoteOf(s.notes)}</div>}
       <div style={{ fontSize: 12.5, color: "#565C54", display: "flex", gap: 12, flexWrap: "wrap" }}>
         <span>Mechanic: <strong>{s.mechanic || "—"}</strong></span>
         <span>Booked: <strong>{formatAURel(s.bookedDate) || "—"}</strong></span>
@@ -1382,8 +1416,8 @@ function buildCustomers(records, profiles) {
     const open = c.orders.filter((o) => !o.archived).length + c.services.filter((x) => !x.archived && x.status !== "Completed").length + c.accessories.filter((a) => !a.archived).length;
     const cats = [];
     if (c.services.length) cats.push("Servicing");
-    if (c.orders.some((o) => o.payment !== "WARRANTY") || c.accessories.some((a) => a.paymentOwing !== "WARRANTY")) cats.push("Sales");
-    if (c.orders.some((o) => o.payment === "WARRANTY") || c.accessories.some((a) => a.paymentOwing === "WARRANTY")) cats.push("Warranty");
+    if (c.orders.some((o) => o.payment !== "Warranty") || c.accessories.some((a) => a.paymentOwing !== "Warranty")) cats.push("Sales");
+    if (c.orders.some((o) => o.payment === "Warranty") || c.accessories.some((a) => a.paymentOwing === "Warranty")) cats.push("Warranty");
     return { ...c, categories: cats, lastDate: dates.length ? dates[dates.length - 1] : "", open, total: c.orders.length + c.services.length + c.accessories.length };
   });
 }
@@ -1497,7 +1531,7 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <h3 className="rodi-display" style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{isNew ? "New customer" : (customer.name || anyPhone || "Customer")}</h3>
-            <div style={{ marginTop: 6 }}><CategoryBadges cats={(() => { const c = []; if (svcs.length) c.push("Servicing"); if (ords.some((o) => o.payment !== "WARRANTY") || accs.some((a) => a.paymentOwing !== "WARRANTY")) c.push("Sales"); if (ords.some((o) => o.payment === "WARRANTY") || accs.some((a) => a.paymentOwing === "WARRANTY")) c.push("Warranty"); return c; })()} /></div>
+            <div style={{ marginTop: 6 }}><CategoryBadges cats={(() => { const c = []; if (svcs.length) c.push("Servicing"); if (ords.some((o) => o.payment !== "Warranty") || accs.some((a) => a.paymentOwing !== "Warranty")) c.push("Sales"); if (ords.some((o) => o.payment === "Warranty") || accs.some((a) => a.paymentOwing === "Warranty")) c.push("Warranty"); return c; })()} /></div>
             <div style={{ fontSize: 13, color: "#565C54", marginTop: 4 }}>{total} record{total === 1 ? "" : "s"} in total ({ords.length} orders, {svcs.length} services, {accs.length} accessories)</div>
           </div>
           <IconBtn onClick={onClose} title="Close history"><X size={14} /></IconBtn>
@@ -1567,6 +1601,8 @@ function JobCardModal({ job, onClose }) {
           {row("Mechanic", job.mechanic)}
           {row("Booked in", formatAU(job.bookedDate))}
           {row("Pick up date", formatAU(job.pickupDate))}
+          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>JOB CARD NOTE</div>
+          <div style={{ border: "1px solid #999", minHeight: 40, padding: 8, marginTop: 4, fontSize: 14, whiteSpace: "pre-wrap" }}>{jobNoteOf(job.notes)}</div>
           <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>WORKSHOP NOTES LOG</div>
           <div style={{ border: "1px solid #999", minHeight: 70, padding: 8, marginTop: 4 }}>
             {log.length === 0 && <span style={{ fontSize: 13, color: "#777" }}>—</span>}
@@ -1797,7 +1833,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {o.customer
-                    ? <div>{o.customer}</div>
+                    ? <div style={{ whiteSpace: "nowrap" }}>{o.customer}</div>
                     : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
                   <MissingTag kind="order" rec={o} />
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
@@ -1933,7 +1969,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               {[
                 { label: "Status", key: "status" }, { label: "Customer", key: "customer" }, { label: "Phone", key: null },
                 { label: "Bike", key: "bike" }, { label: "Service type", key: "serviceType" }, { label: "Mechanic", key: "mechanic" },
-                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Notes", key: null },
+                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Job card note", key: null },
                 { label: "", key: null },
               ].map((h) => (
                 <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : undefined} />
@@ -1973,7 +2009,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
+                <td style={{ padding: "8px 10px", fontWeight: 600, whiteSpace: "nowrap" }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
@@ -1984,7 +2020,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                   <span style={{ whiteSpace: "nowrap" }}>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{(() => { const log = parseLog(s.notes); const last = log[log.length - 1]; return last ? (<div><div style={{ whiteSpace: "pre-wrap" }}>{last.text}</div><div style={{ fontSize: 10.5, color: "#8B9086" }}>{last.stamp}{log.length > 1 ? ` · ${log.length} entries` : ""}</div></div>) : "—"; })()}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : "—"}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
@@ -2272,7 +2308,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {a.customer
-                    ? <div>{a.customer}</div>
+                    ? <div style={{ whiteSpace: "nowrap" }}>{a.customer}</div>
                     : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
                   {a.forStock && a.customer && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
                   <MissingTag kind="accessory" rec={a} />
@@ -2937,9 +2973,12 @@ function RodiTracker() {
   useEffect(() => {
     (async () => {
       try {
-        const [o, s, p, a, n] = await Promise.all([
+        let [o, s, p, a, n] = await Promise.all([
           sbList("orders"), sbList("services"), sbList("pricing"), sbList("accessories"), sbList("notes"),
         ]);
+        // legacy upper-case WARRANTY value -> Warranty
+        const fixW = (r) => (r.payment === "WARRANTY" ? { ...r, payment: "Warranty" } : r.paymentOwing === "WARRANTY" ? { ...r, paymentOwing: "Warranty" } : r);
+        o = o.map(fixW); a = a.map(fixW);
         setOrders(o);
         setServices(s);
         setPricing(p);
@@ -3060,7 +3099,7 @@ function RodiTracker() {
       cfg.set((prev) => (prev.some((r) => r.id === saved.id) ? prev.map((r) => (r.id === saved.id ? saved : r)) : [...prev, saved]));
       setDrawer(null);
       if (!before) logChange(table, saved, "created", "");
-      else { const sum = diffRecords(before, saved); if (sum) logChange(table, saved, "edited", sum); }
+      else { const sum = diffRecords(before, saved, table); if (sum) logChange(table, saved, "edited", sum); }
       return true;
     } catch (e) {
       setSyncError(`Couldn't save the ${noun}: ` + e.message);
@@ -3137,9 +3176,7 @@ function RodiTracker() {
   const appendServiceLog = useCallback((id, text) => {
     const t = servicesRef.current.find((r) => r.id === id);
     if (!t) return;
-    const lines = parseLog(t.notes).map((e) => e.raw);
-    lines.push(`${nowStamp()} | ${text.replace(/\n/g, "⏎")}`);
-    patchRecord("services", id, { notes: lines.join("\n") }, "edited", "log entry: " + text.slice(0, 40));
+    patchRecord("services", id, { notes: logWithAdd(t.notes, text) }, "edited", "log entry: " + text.slice(0, 40));
   }, []);
 
   const editServiceLogEntry = useCallback((id, idx, text) => {
