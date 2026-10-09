@@ -2,14 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#121311" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="RODI" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACE0lEQVR42u3duw3CQBBAwbPliBZMXRRJD+6GGhyTEiALkdx+5pVgRnvLAWI5j31I31o9AsEhOASH4BAcgkNwCA7BITgkOASH4BAcgkNwCA7BITgEhwSH4BAcgkNwCA7BITgEh+CQ4BAcgkNwCA7BEbz744RDZMAhOIwNOMiAY56M1/MGhwSHAwUOMuAgAw7BYWzAQQYc+WW0veSAQ3A4UOAgAw4y4BAcxgYcZMBRS0bnSw47h+BwoMBBBhxkwCE4jA04yICDDDg61PwGrD4OYwMOMuAgAw7BYWzAQQYcZMDRJZcc1XAYG3CQAQcZs9s8ggjaYq44qxfS8lsWhwMFjrIyIr9nds9BRkUcVg04rBpwWDXg0MjzwU0+HFYNOKwacFg14NBI+B2RNDisGnBYNeCwasChkfnrqNFxWDXgsGrAYdWAQ6PEL1+C4rBqRGjzcC03jhVjAw4y4CADDgsHHMYGHGTAQQYcsnOo59iAgww4yIDjj1xywGFswEEGHGTAITiMDTjIgIMMOARH7X6/Aev5DxsmBxlwkAGH4DA24CADDjLgEBxJurjkMDZMDjLgIAMOwWFswEEGHGTAITjy9HnJYWzA4UCBgww4BIexMbPlPHZPQSaH4BAcgkNwCA7BITgEh+CQ4BAcgkNwCA7BITgEh+AQHBIcgkNwCA7BITgEh+AQHIJDcEhwCA7BITgEhwL2BgPFqG8RtrGgAAAAAElFTkSuQmCC" />
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlJPREkgRWxlY3RyaWMiLCAic2hvcnRfbmFtZSI6ICJST0RJIiwgInN0YXJ0X3VybCI6ICJodHRwczovL2pwcy1pbmR1c3RyaWVzLmdpdGh1Yi5pby9Sb2RpLVdvcmtmbG93LyIsICJzY29wZSI6ICJodHRwczovL2pwcy1pbmR1c3RyaWVzLmdpdGh1Yi5pby9Sb2RpLVdvcmtmbG93LyIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTIxMzExIiwgInRoZW1lX2NvbG9yIjogIiMxMjEzMTEiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FJQUFBRGR2dnRRQUFBQ00wbEVRVlI0MnUzZHNaWENRQkJFUWJRbUtZaTRDSkljbEEweHlDWUJMQXcwTTEwL0JGNjkzaFVjeDNZZSswMzZ0ZVVsRUVBQ1NBQUpJQWtnQVNTQUJKQUVrQUFTUUFKSUFrZ0FDU0FCSkFFa2dBU1FBQkpBRWtBQ1NBQUpJQWtnQVNTQUJKQUVrQUFTUUFKSUFrZ0FDU0FCSklBa2dQN2M0M2w2RVFDaUJ5QUJaSDRBaXRQemZ0MjlHZ0RaSG9BRWtQa0JpQjZBUkE5QUFxakIvSGlHQjhqaEJSQTlBQWtnOHdPUTZBR0lIb0FFVU1EOGVCTUlJSWNYUVBRQUpJRE1EMEQwMEFNUVBRRDF5RE04UU9ZSElIb0FvZ2NnS1JLUStRR0lIb0FhNnZFTWI0RUVrTU1MSUhvQW9rZnVRQUxJL0FCRUQwQUJlcndKNUE0a2dCeGV4ZHJPWTZlbmJQWFB6VVVQUFFBSklQUFQ4NkZ2MFVNUFFQUUFKSGNnODVNMlAwTUEwUU1RUFYwL2EzTUhVakFnOHdNUVBiMy9VR1RSUTQ4N2tBQXlQd0RSazZhbkh5QjZBSkk3a1BreFArMEEwUU1RUFFPL1hPWU9wT21BekUvbFpuNHZyS0RhcWQrTWRvVFpIb0FFME9EemEvYS85UURJNFFVUVBRQUpJTVhORDBEMEFFUVBRQUpvVG43UkJ5Q0hGMEQwQUNTQVpINEFvZ2NnZWdDS2VJWUhTT1lISUhvQW9nY2dBU1R6QXhBOUFCVjZocWNISUFIazhBS0lIb0RvRVVBQ3lQd0FSQTlBemZ2NkpoQTlBQWtnaHhkQTlBQkVqd0FTUU9ZSG9MclA4UFFBWkhzQUVrRG1KeVMvbFNFTEpJQUVrQUNTQUJKQUFrZ0FTUUFKSUFFa2dDU0FCSkFBRWtBU1FBSklBQWtnQVNRQkpJQUVrQUNTQUJKQUFrZ0FTUUFKSUFFa2dDU0FCSkFBRWtBQ1NBSkkxL1FCRS9xMUhaclVNUklBQUFBQVNVVk9SSzVDWUlJPSIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiwgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIn0sIHsic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBZ0FBQUFJQUNBSUFBQUI3R2tPdEFBQUgwa2xFUVZSNDJ1M2JzVlhEVUJSRVFjc2hMY2gxVWFSN1VEZlU4R015TWg4a2tHV3RkNllFQlh1ZjRmeHBMUE1GZ0Q1WG53QkFBQUFRQUFBRUFBQUJBRUFBQUJBQUFBUUFBQUVBUUFBQUVBQUFCQUFBQVFCQUFBQVFBQUFFQUFBQkFFQUFBQkFBQUFRQUFBRUFRQUFBRUFBQUJBQkFBQUFRQUFBRUFBQUJBRUFBQUJBQUFBUUFBQUVBUUFBQUVBQUFCQUFBQVFCQUFBQVFBQUFFQUFBQkFFQUFBQkFBQUFRQUFBRUFRQUFBRUFBQUJBQkFBQUFRQUFBRUFBQUJBRUFBQUJBQUFBUUFBQUVBUUFBQUVBQUFCQUFBQVFCQUFBQVFBQUFFQUFBQkFFQUFBQkFBQUFRQUFBRUFRQUFBRUFBQUJBQUFBUUFRQUFBRUFBQUJBRUFBQUJBQUFBUUFBQUVBUUFBQUVBQUFCQUFBQVFCQUFBQVFBQUFFQUFBQkFFQUFBQkFBQUFRQUFBRUFRQUFBRUFBQUJBQUFBUUFRQUFBRUFBQUJBRUFBQUJBQUFBUUFBQUVBUUFBQUVBQUFCQUFBQVFCQUFBQVFBRWgxK3h3K0FnSUExaDhFQUt3L0NBQUFBZ0J2ZVA1LzNUOThEUVFBNnRZZkJBQ3NQd2dBQUFJQXpuOFFBTEQrSUFCZy9VRUFBQkFBaUR6L1BRSkFBS0J4L1VFQXdQcURBQUFnQU9EOEJ3RUE2dzhDQU5ZZkJBQUFBWURJODk4akFBUUFHdGNmQkFDc1B3Z0FBQUlBem44UUFMRCtJQUJnL1VFQUFCQUFpRHovUFFKQUFLQngvVUVBd1BxREFBQWdBT0Q4QndFQTZ3OENBTllmQkFBQUFZREk4OThqQUFRQUd0Y2ZCQUNzUHdnQUFBSUF6bjhRQUxEK0lBQmcvVUVBQUJBQWlEei9QUUpBQUtCeC9VRUF3UHFEQUFBZ0FPRDhCd0VBNnc4Q0FOWWZCQUFBQVlESTg5OGpBQVFBR3RjZkJBQ3NQd2dBQUFJQXpuOFFBTEQrSUFCZy9VRUFBQkFBaUR6L1BRSkFBS0J4L1VFQXdQcURBQUFnQU9EOEJ3RUE2dzhDQU5ZZkJBQUFBWURJODk4akFBUUFHdGNmQkFDc1B3Z0FBQUlBem44UUFMRCtJQUJnL1VFQUFCQUFpRHovUFFKQUFLQngvVUVBd1BxREFBQWdBT0Q4QndFQTZ3OENBTllmQkFBQUFZREk4OThqQUFRQUd0Y2ZCQUNzUHdnQUFBSUF6bjhRQUxEK0lBQmcvVUVBd1BxREFFQWtqd0FRQUhEK2d3Q0E5UWNCQU9zUEFnQ0FBSUR6SHdRQXJEOElBTllmRUFBSTRSRUFBZ0RPZnhBQXNQNGdBR0Q5UVFBQUVBQncvb01BWVAwQkFjRDZBd0lBSVR3Q1FBREErUThDQU5ZZkJBQ3NQd2dBQUFLQTh4OFFBS3cvSUFCWWYwQUFJSVJIQUFnQU9QOUJBTUQ2dzN1WnhqTDdDbGgvZHVGUFozNEJBTllmQWNENWovVkhBTEQrZ0FCZy9YSCtJd0NBOVVjQWNQNWovUkVBckQ4Z0FGaC9uUDhJQUdEOUVRQ2MvMWgvQkFEckR3Z0ExaC9uUHdJQVdIOEVBT2MvMWg4QndQb0RBb0QxeC9rdkFBRFdYd0J3L3ZzSVdIOEJ3UG9EQW9EMXgvbVBBQURXSHdIQStZLzFSd0N3L29BQVlQMXgvaU1BZ1BWSEFIRCtZLzBSQUt3L0lBQllmNXovQ0FCZy9SRUFuUDlZZndRQTZ3OElBTllmNXo4Q0FGaC9CQURuUDlZZkFjRDZBd0tBOWNmNWp3QUExaDhCY1A2RDlVY0FyRCtBQUZoL25QOElBR0Q5RVFDYy8xaC9CQURyRHdnQTFoL25Qd0lBV0g4RUFPYy8xaDhCd1BvREFvRDF4L21QQUFEV0h3SEErWS8xUndDdy9vQUFZUDF4L2lNQWdQVkhBSEQrWS8wUkFLdy9JQUJZZjV6L0NBQmcvUkVBNXo5WWZ3VEErZ09zTm8xbDloVVFUdWMvZmdFQTFoOEJBS3cvQWdEUi9PTUVCQUNjL3lBQVlQMFJBSjhBckQ4Q0FJQUFBTTUvQkFDdy9nZ0FZUDBSQUFqaEVRQUlBRGovUVFEQStvTUFnUFZIQUFBUUFNRDVqd0FBMWg4QkFLdy9BZ0FoUEFJQUFRRG5Qd2dBV0g4UUFMRCtDQUFBQWdBNC94RUF3UG9qQUlEMVJ3QWdoRWNBSUFEZy9BY0JBT3NQQWdEV0h3RUFyRDhDQUlBQUFNNS9CQUN3L2dnQWhEajVJd0RyandBQUlBQlF3L21QQUlEMUJ3RUE2dzhDQUlBQWdQTWZCQUNzUHdnQS9PcHNqd0NzUHdJQWdBQkFEZWMvQWdEV0h3UUFyRDhJQUFBQ0FNNS9FQUN3L2lBQXNOWExId0ZZZndRQUFBR0FHczUvQkFDc1B3Z0FXSDhRQUFBRUFKei9JQUJnL1VFQTRKK09md1JnL1JFQUFBUUFhamovRVFDdy9pQUFZUDFCQUFBUUFIRCtnd0NBOVFjQmdIMGQ4QWpBK2lNQUFBZ0ExSEQrSXdCZy9VRUF3UHFEQUFBZ0FPRDhCd0VBNnc4Q0FFLzFqRWNBMWg4QkFFQUFvSWJ6SHdFQTZ3OENBTllmQkFBQUFRRG5Qd2dBV0g4UUFEalNMbzhBckQ4Q0FJQUFRQTNuUHdJQTFoOEVBS3cvQ0FBQUFnRE9meEFBc1A0Z0FQQkNmM3NFWVAxQkFBQUVBR280LzBFQXNQNGdBR0Q5UVFBQUVBQncvb01BZ1BVSEFZRHpXUGtJd1BxREFBQWdBTlJ3L29NQVlQMEJBY0Q2Z3dENEJBQUNBTTUvRUFDdy9pQUFjRnFQSGdGWWZ4QUFBQVNBR3M1L0VBQ3NQeUFBV0g5QUFBQVFBSnovSUFCZy9VRUFJTVhQSXdEckR3SUFnQUJRdy9rUEFvRDFCN2FaeGpMN0NnQitBUUFnQUFBSUFBQUNBSUFBQUNBQUFBZ0FBQUlBZ0FBQUlBQUFDQUFBQWdDQUFBQWdBQUFJQUFBQ0FJQUFBQ0FBQUFnQUFBSUFnQUFBSUFBQUNBQ0FBQUFnQUFBSUFBQUNBSUFBQUNBQUFBZ0FBQUlBZ0FBQUlBQUFDQUFBQWdDQUFBQWdBQUFJQUFBQ0FJQUFBQ0FBQUFnQUFBSUFnQUFBSUFBQUNBQ0FBQUFnQUFBSUFBQUNBSUFBQUNBQUFBZ0FBQUlBZ0FBQUlBQUFDQUFBQWdDQUFBQWdBQUFJQUFBQ0FJQUFBQ0FBQUFnQUFBSUFnQUFBSUFBQUNBQUFBZ0FnQUFBSUFBQUNBSUFBQUNBQUFBZ0FBQUlBZ0FBQUlBQUFDQUFBQWdDQUFBQWdBQUFJQUFBQ0FJQUFBQ0FBQUFnQUFBSUFnQUFBSUFBQUNBQUFBZ0FnQUFBSUFBQUNBSUFBQUNBQUFBZ0FBQUlBZ0FBQUlBQUFDQUFBQWdDQUFBQWdBQUFjNmh1MTNjNnNsWnNuY0FBQUFBQkpSVTVFcmtKZ2dnPT0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=" />
 <title>RODI — Inventory, Orders &amp; Servicing</title>
-<link rel="icon" href="data:," />
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACM0lEQVR42u3dsZXCQBBEQbQmKYi4CJIclA0xyCYBLAw0M10/BF693hUcx3Ye+036teUlEEACSAAJIAkgASSABJAEkAASQAJIAkgACSABJAEkgASQABJAEkACSAAJIAkgASSABJAEkAASQAJIAkgACSABJIAkgP7c43l6EQCiByABZH4AitPzft29GgDZHoAEkPkBiB6ARA9AAqjB/HiGB8jhBRA9AAkg8wOQ6AGIHoAEUMD8eBMIIIcXQPQAJIDMD0D00AMQPQD1yDM8QOYHIHoAogcgKRKQ+QGIHoAa6vEMb4EEkMMLIHoAokfuQALI/ABED0ABerwJ5A4kgBxexdrOY6enbPXPzUUPPQAJIPPT86Fv0UMPQPQAJHcg85M2P0MA0QMQPV0/a3MHUjAg8wMQPb3/UGTRQ487kAAyPwDRk6anHyB6AJI7kPkxP+0A0QMQPQO/XOYOpOmAzE/lZn4vrKDaqd+MdoTZHoAE0ODza/a/9QDI4QUQPQAJIMXND0D0AEQPQAJoTn7RByCHF0D0ACSAZH4AogcgegCKeIYHSOYHIHoAogcgASTzAxA9ABV6hqcHIAHk8AKIHoDoEUACyPwARA9Azfv6JhA9AAkghxdA9ABEjwASQOYHoLrP8PQAZHsAEkDmJyS/lSELJIAEkACSABJAAkgASQAJIAEkgCSABJAAEkASQAJIAAkgASQBJIAEkACSABJAAkgASQAJIAEkgCSABJAAEkACSAJI1/QBE/q1HZrUMRIAAAAASUVORK5CYII=" />
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  html, body { margin: 0; padding: 0; background: #F3F4EF; min-height: 100vh; }
+  html, body { margin: 0; padding: 0; background: #F4F2ED; min-height: 100vh; }
   #root { min-height: 100vh; }
   #boot-error { font-family: monospace; white-space: pre-wrap; padding: 24px; color: #C1483A; }
 </style>
@@ -424,17 +431,42 @@ function GlobalStyle() {
       .rodi-userchip { margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #1A1B18; border: none; cursor: pointer; font: inherit; width: 100%; }
       .rodi-avatar { width: 34px; height: 34px; border-radius: 50%; background: #2A2B26; color: #F6BD1B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
       .rodi-content { flex: 1 1 0; min-width: 0; }
-      .rodi-topbar { display: flex; justify-content: flex-end; padding: 28px 44px 8px; }
-      .rodi-topbar > * { width: 100%; max-width: 440px; }
+      .rodi-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 28px 44px 8px; }
+      .rodi-gs { width: 100%; max-width: 440px; }
+      .rodi-mbrand, .rodi-mchip { display: none; }
+      .rodi-lbl::after { content: none; }
+      button, a, select { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
       @media (max-width: 900px) {
         .rodi-shell { flex-direction: column; }
-        .rodi-side { position: static; width: 100%; flex: none; height: auto; flex-direction: row; align-items: center; padding: 12px 14px; gap: 12px; overflow-x: auto; overflow-y: hidden; }
-        .rodi-brand-text, .rodi-userchip > span:last-child { display: none; }
-        .rodi-nav { flex-direction: row; }
-        .rodi-userchip { margin-top: 0; width: auto; padding: 6px; flex-shrink: 0; }
-        .rodi-topbar { padding: 14px 16px 0; }
-        .rodi-page { padding: 8px 16px 48px !important; }
+        /* phone: bottom tab bar like a native app */
+        .rodi-side { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%; height: auto; flex: none; z-index: 40; flex-direction: row; align-items: stretch; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); gap: 0; overflow: hidden; border-top: 1px solid #2A2B26; }
+        .rodi-brand, .rodi-userchip { display: none; }
+        .rodi-nav { flex-direction: row; flex: 1; justify-content: space-around; gap: 0; }
+        .rodi-navbtn { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 2px; border-radius: 10px; font-size: 0; box-shadow: none !important; }
+        .rodi-navbtn.active { background: #1E1F1B; }
+        .rodi-lbl { font-size: 0; }
+        .rodi-lbl::after { content: attr(data-short); font-size: 10px; font-weight: 600; letter-spacing: -0.01em; }
+        .rodi-topbar { justify-content: flex-start; padding: calc(12px + env(safe-area-inset-top)) 14px 0; }
+        .rodi-mbrand { display: flex; width: 40px; height: 40px; border-radius: 11px; background: #F6BD1B; align-items: center; justify-content: center; flex-shrink: 0; }
+        .rodi-mchip { display: flex; background: transparent; border: none; padding: 0; flex-shrink: 0; cursor: pointer; }
+        .rodi-mchip .rodi-avatar { background: #121311; width: 40px; height: 40px; }
+        .rodi-gs { flex: 1; min-width: 0; max-width: none; }
+        .rodi-page { padding: 8px 14px calc(96px + env(safe-area-inset-bottom)) !important; }
         .rodi-two-col { grid-template-columns: minmax(0, 1fr) !important; }
+        .rodi-toast { bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
+      }
+      @media (max-width: 720px) {
+        .rodi-root input, .rodi-root select, .rodi-root textarea { font-size: 16px !important; }
+        .rodi-btn { min-height: 42px; }
+        .rodi-iconbtn { width: 40px !important; height: 40px !important; }
+        .rodi-advance { width: 36px !important; height: 36px !important; }
+        .rodi-sheet-wrap { align-items: flex-end !important; padding: 0 !important; }
+        .rodi-sheet { width: 100% !important; max-height: 94vh !important; border-radius: 22px 22px 0 0 !important; padding: 18px 16px calc(24px + env(safe-area-inset-bottom)) !important; }
+        .rodi-cal-grid { gap: 4px !important; }
+        .rodi-cal-cell { min-height: 58px !important; padding: 5px !important; border-radius: 10px !important; flex-direction: row !important; flex-wrap: wrap !important; align-content: flex-start; gap: 3px !important; }
+        .rodi-cal-num { flex-basis: 100%; }
+        .rodi-cal-chip { padding: 0 !important; background: transparent !important; width: 8px; height: 8px; }
+        .rodi-cal-chiptext { display: none; }
       }
       @media print {
         .rodi-root > *:not(.rodi-print-overlay) { display: none !important; }
@@ -496,7 +528,7 @@ function IconBtn({ onClick, title, children, danger }) {
     <button
       onClick={onClick}
       title={title}
-      className="rodi-btn"
+      className="rodi-btn rodi-iconbtn"
       style={{
         border: "1px solid #D8DAD1",
         background: "#fff",
@@ -567,6 +599,7 @@ const inputStyle = {
 function Drawer({ title, icon, onClose, children, onSubmit }) {
   return (
     <div
+      className="rodi-sheet-wrap"
       style={{
         position: "fixed", inset: 0, background: "rgba(25,27,24,0.55)",
         display: "flex", justifyContent: "center", alignItems: "center", padding: 16, zIndex: 50,
@@ -574,6 +607,7 @@ function Drawer({ title, icon, onClose, children, onSubmit }) {
       onClick={onClose}
     >
       <div
+        className="rodi-sheet"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(560px, 100%)", background: "#F3F4EF", maxHeight: "92vh", boxSizing: "border-box",
@@ -1160,7 +1194,7 @@ function Toast({ toast, onClose }) {
   }, [toast]);
   if (!toast) return null;
   return (
-    <div data-testid="toast" style={{
+    <div data-testid="toast" className="rodi-toast" style={{
       position: "fixed", left: "50%", bottom: 22, transform: "translateX(-50%)", zIndex: 70,
       background: "#191B18", color: "#fff", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 14,
       fontSize: 14, boxShadow: "0 10px 30px rgba(0,0,0,0.3)", maxWidth: "calc(100vw - 24px)",
@@ -1950,7 +1984,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(o.id); }}
                         title={`Advance to ${nextStatus(o.status, ORDER_STATUSES)}`}
-                        className="rodi-btn"
+                        className="rodi-btn rodi-advance"
                         style={{
                           border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
                           width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -2137,7 +2171,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(s.id); }}
                         title={`Advance to ${nextStatus(s.status, SERVICE_STATUSES)}`}
-                        className="rodi-btn"
+                        className="rodi-btn rodi-advance"
                         style={{
                           border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
                           width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -2426,7 +2460,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                       <button
                         onClick={(e) => { e.stopPropagation(); onAdvanceStatus(a.id); }}
                         title={`Advance to ${nextStatus(a.status, ACCESSORY_STATUSES)}`}
-                        className="rodi-btn"
+                        className="rodi-btn rodi-advance"
                         style={{
                           border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
                           width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -2577,12 +2611,12 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
         })}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+      <div className="rodi-cal-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
         {WEEKDAYS.map((d) => (
           <div key={d} style={{ textAlign: "center", fontSize: 12, color: "#8B9086", fontWeight: 600, padding: "4px 0" }}>{d}</div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
+      <div className="rodi-cal-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
         {cells.map((dateStr, i) => {
           if (!dateStr) return <div key={i} />;
           const evs = eventsByDate[dateStr] || [];
@@ -2600,12 +2634,12 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                 overflowX: "hidden",
               }}
             >
-              <span style={{ alignSelf: "flex-start", minWidth: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", fontSize: 13, fontWeight: 700, background: isToday ? "#F6BD1B" : "transparent", color: "#16171A" }}>{dayNum}</span>
+              <span className="rodi-cal-num" style={{ alignSelf: "flex-start", minWidth: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", fontSize: 13, fontWeight: 700, background: isToday ? "#F6BD1B" : "transparent", color: "#16171A" }}>{dayNum}</span>
               {evs.map((ev, idx) => (
-                <span key={idx} style={{
+                <span key={idx} className="rodi-cal-chip" style={{
                   display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, background: tintOf(ev.color, "22"), color: "#16171A", borderRadius: 7,
                   padding: "4px 8px", overflow: "hidden", whiteSpace: "nowrap",
-                }}><span style={{ flex: "0 0 7px", height: 7, borderRadius: 999, background: ev.color }} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{ev.title}</span></span>
+                }}><span style={{ flex: "0 0 7px", height: 7, borderRadius: 999, background: ev.color }} /><span className="rodi-cal-chiptext" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{ev.title}</span></span>
               ))}
             </div>
           );
@@ -3442,6 +3476,7 @@ function RodiTracker() {
     setDrawer({ type: "service", data: { ...emptyService(), bookedDate: dateStr || todayISO() } });
   }, []);
 
+  const TAB_SHORT = { dashboard: "Home", orders: "Orders", accessories: "Parts", services: "Services", calendar: "Calendar", customers: "Clients", history: "History", pricing: "Pricing" };
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "orders", label: "Inventory & orders", icon: Package },
@@ -3500,7 +3535,7 @@ function RodiTracker() {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => navTo(t.id)} className={"rodi-btn rodi-navbtn" + (active ? " active" : "")} data-active={active ? "1" : "0"}>
-                <Icon size={19} color={active ? "#F6BD1B" : "currentColor"} /> <span>{t.label}</span>
+                <Icon size={19} color={active ? "#F6BD1B" : "currentColor"} /> <span className="rodi-lbl" data-short={TAB_SHORT[t.id] || t.label}>{t.label}</span>
               </button>
             );
           })}
@@ -3515,7 +3550,11 @@ function RodiTracker() {
       </aside>
       <div className="rodi-content">
       <div className="rodi-topbar">
-        <GlobalSearch orders={orders} services={services} accessories={accessories} onOpen={openRecordFromCalendar} />
+        <div className="rodi-mbrand"><Zap size={18} color="#121311" /></div>
+        <div className="rodi-gs"><GlobalSearch orders={orders} services={services} accessories={accessories} onOpen={openRecordFromCalendar} /></div>
+        <button onClick={() => setShowName(true)} title="Set your name" className="rodi-btn rodi-mchip" data-testid="user-chip-mobile">
+          <span className="rodi-avatar">{(userName || "?").trim().charAt(0).toUpperCase() || "?"}</span>
+        </button>
       </div>
       <div style={{ padding: "8px 44px 60px", display: "flex", justifyContent: "center" }} className="rodi-page">
       <div style={{ maxWidth: 1500, width: "100%" }}>
