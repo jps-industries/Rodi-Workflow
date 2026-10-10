@@ -254,7 +254,7 @@ function SortableHeader({ label, sortKey, activeKey, dir, onSort, width }) {
         cursor: sortKey ? "pointer" : "default", userSelect: "none", width: width || undefined,
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
         {label}
         {sortKey && <ArrowUpDown size={10} style={{ opacity: active ? 1 : 0.3, flexShrink: 0 }} />}
         {active && <span style={{ fontSize: 9 }}>{dir === "asc" ? "▲" : "▼"}</span>}
@@ -411,10 +411,12 @@ function GlobalStyle() {
       .rodi-btn { transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease; }
       .rodi-btn:active { transform: scale(0.97); }
       .rodi-cal-cell { transition: background 0.12s ease; }
-      .rodi-scrollbar table { table-layout: fixed; width: 100%; min-width: 1480px; border-collapse: collapse; }
-      .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: break-word; overflow-wrap: anywhere; }
-      .rodi-scrollbar table th { font-size: 11.5px !important; letter-spacing: 0.06em; text-transform: uppercase; color: #8A8C82 !important; padding: 15px 10px !important; background: #fff; white-space: nowrap; word-break: normal !important; overflow-wrap: normal !important; }
-      .rodi-scrollbar table td { padding-top: 14px !important; padding-bottom: 14px !important; border-bottom: 1px solid #F1EFE8; }
+      .rodi-scrollbar table { table-layout: auto; width: 100%; border-collapse: collapse; }
+      .rodi-scrollbar table td, .rodi-scrollbar table th { word-break: normal; overflow-wrap: normal; }
+      .rodi-scrollbar table th { font-size: 11px !important; letter-spacing: 0.02em; text-transform: uppercase; color: #8A8C82 !important; padding: 13px 5px !important; background: #fff; white-space: normal; line-height: 1.25; vertical-align: bottom; word-break: normal !important; overflow-wrap: normal !important; }
+      .rodi-scrollbar table td { padding: 12px 6px !important; font-size: 12.5px; border-bottom: 1px solid #F1EFE8; vertical-align: middle; }
+      .rodi-scrollbar table td:first-child, .rodi-scrollbar table th:first-child { padding-left: 14px !important; }
+      .rodi-scrollbar table td:last-child, .rodi-scrollbar table th:last-child { padding-right: 14px !important; }
       .rodi-scrollbar table thead tr { background: #fff !important; }
       .rodi-outline { border: 1px solid #D9D6CC !important; }
       input:focus, select:focus, textarea:focus { outline: 2px solid #F6BD1B; outline-offset: 1px; }
@@ -426,11 +428,17 @@ function GlobalStyle() {
       .rodi-brand-text { display: flex; flex-direction: column; }
       .rodi-nav { display: flex; flex-direction: column; gap: 4px; }
       .rodi-navbtn { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; border: none; background: transparent; color: #C9C9C2; font: inherit; font-weight: 500; font-size: 14.5px; cursor: pointer; text-align: left; white-space: nowrap; }
+      .rodi-navbtn svg { flex-shrink: 0; }
       .rodi-navbtn:hover { background: #1A1B18; color: #fff; }
       .rodi-navbtn.active { background: #1E1F1B; color: #fff; font-weight: 600; box-shadow: inset 3px 0 0 #F6BD1B; }
       .rodi-userchip { margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #1A1B18; border: none; cursor: pointer; font: inherit; width: 100%; }
       .rodi-avatar { width: 34px; height: 34px; border-radius: 50%; background: #2A2B26; color: #F6BD1B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
       .rodi-content { flex: 1 1 0; min-width: 0; }
+      @media (min-width: 901px) and (max-width: 1400px) {
+        .rodi-side { flex-basis: 208px; width: 208px; padding: 24px 12px; }
+        .rodi-navbtn { font-size: 14px; gap: 10px; padding: 11px 10px; }
+        .rodi-page { padding-left: 20px !important; padding-right: 20px !important; }
+      }
       .rodi-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 28px 44px 8px; }
       .rodi-gs { width: 100%; max-width: 440px; }
       .rodi-mbrand, .rodi-mchip { display: none; }
@@ -475,7 +483,7 @@ function GlobalStyle() {
         .rodi-print { border: none !important; padding: 0 !important; }
         html, body { background: #fff !important; }
       }
-      @media (max-width: 720px) {
+      @media (max-width: 1200px) {
         .rodi-scrollbar table { min-width: 0; }
         .rodi-scrollbar { overflow-x: visible !important; border: none !important; background: transparent !important; }
         .rodi-scrollbar table, .rodi-scrollbar tbody { display: block; width: 100%; }
@@ -1960,7 +1968,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "payment" },
                 { label: "Fulfillment", key: "fulfillment" }, { label: "Delivery / Pick up", key: null }, { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : h.label === "Status" ? 160 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
               ))}
             </tr>
           </thead>
@@ -2001,10 +2009,10 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px" }}>{o.colour}</td>
                 <td style={{ padding: "8px 10px" }}>{o.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
+                  <span>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
-                <td style={{ padding: "8px 14px 8px 10px", minWidth: 170 }}>
+                <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
                   {o.customer
                     ? <div style={{ whiteSpace: "nowrap" }}>{o.customer}</div>
                     : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
@@ -2146,7 +2154,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Service details", key: null },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : h.label === "Status" ? 160 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
               ))}
             </tr>
           </thead>
@@ -2183,7 +2191,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 14px 8px 10px", fontWeight: 600, whiteSpace: "nowrap", minWidth: 170 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
+                <td style={{ padding: "8px 14px 8px 10px", fontWeight: 600, whiteSpace: "nowrap", minWidth: 120 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
@@ -2191,7 +2199,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                 <td style={{ padding: "8px 10px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{s.mechanic || "—"}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
+                  <span>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
                 <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : "—"}</td>
@@ -2436,7 +2444,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
                 { label: "", key: null },
               ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={h.label === "ETA" ? 150 : h.label === "Customer" ? 190 : h.label === "Status" ? 160 : undefined} />
+                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
               ))}
             </tr>
           </thead>
@@ -2477,10 +2485,10 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.qty}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>{formatAURel(a.eta) || (a.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
+                  <span>{formatAURel(a.eta) || (a.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
-                <td style={{ padding: "8px 14px 8px 10px", minWidth: 170 }}>
+                <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
                   {a.customer
                     ? <div style={{ whiteSpace: "nowrap" }}>{a.customer}</div>
                     : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
