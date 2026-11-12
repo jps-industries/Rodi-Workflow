@@ -825,20 +825,41 @@ function usePersisted(key, initial) {
 const STAMP_RE = /^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/;
 // notes column = optional "JOB | text" line (service details) + "PART | text" lines (parts used) + timestamped log lines.
 // Legacy untimestamped lines count as service details.
+// Drop-off notes: "CHK | CHARGER:Y,SEAT:N" (item came in yes/no) + "CND | GOOD" (condition) + "IN | text" (short drop-off detail).
+const ARRIVAL_ITEMS = ["CHARGER", "BATTERY", "SEAT", "KEY", "LIGHTS", "BASKET / BAG"];
+const ARRIVAL_CONDITIONS = ["GOOD", "FAIR", "DAMAGED"];
 function splitNotes(notes) {
   const jobParts = [], log = [], parts = [];
+  let items = {}, cond = ""; const inParts = [];
   (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).forEach((line) => {
     if (STAMP_RE.test(line)) log.push(line);
     else if (line.startsWith("PART | ")) parts.push(line.slice(7));
+    else if (line.startsWith("CHK | ")) line.slice(6).split(",").map((x) => x.trim()).filter((x) => x && x !== "-").forEach((x) => { const [k, v] = x.split(":"); items[k.trim()] = v === "N" ? "N" : "Y"; });
+    else if (line.startsWith("CND | ")) cond = line.slice(6).trim();
+    else if (line.startsWith("IN | ")) inParts.push(line.slice(5).replace(/⏎/g, "\n"));
     else if (line.startsWith("JOB | ")) jobParts.push(line.slice(6).replace(/⏎/g, "\n"));
     else jobParts.push(line.replace(/⏎/g, "\n"));
   });
-  return { job: jobParts.join("\n"), log, parts };
+  return { job: jobParts.join("\n"), log, parts, arrive: { items, cond, text: inParts.join("\n") } };
 }
-function joinNotes(job, logRaws, parts) {
+function joinNotes(job, logRaws, parts, arrive) {
   const j = (job || "").trim();
-  return [...(j ? ["JOB | " + j.replace(/\n/g, "⏎")] : []), ...(parts || []).map((p) => "PART | " + p), ...logRaws].join("\n");
+  const a = arrive || { items: {}, cond: "", text: "" };
+  const its = Object.keys(a.items || {}).filter((k) => a.items[k]);
+  const t = (a.text || "").trim();
+  return [
+    ...(j ? ["JOB | " + j.replace(/\n/g, "⏎")] : []),
+    ...(its.length ? ["CHK | " + its.map((k) => k + ":" + a.items[k]).join(",")] : []),
+    ...(a.cond ? ["CND | " + a.cond] : []),
+    ...(t ? ["IN | " + t.replace(/\n/g, "⏎")] : []),
+    ...(parts || []).map((p) => "PART | " + p), ...logRaws,
+  ].join("\n");
 }
+function arriveOf(notes) { return splitNotes(notes).arrive; }
+// Items marked "No" (did not come in with the bike).
+function arrivalMissing(notes) { const a = arriveOf(notes); return ARRIVAL_ITEMS.filter((i) => a.items[i] === "N"); }
+function arrivalRecorded(a) { return !!(Object.keys(a.items).length || a.cond || a.text); }
+
 function jobNoteOf(notes) { return splitNotes(notes).job; }
 function partsOf(notes) { return splitNotes(notes).parts; }
 function parseLog(notes) {
@@ -846,11 +867,11 @@ function parseLog(notes) {
 }
 function logWithEdit(notes, idx, text) {
   const t = text.trim().replace(/\n/g, "⏎");
-  const { job, parts } = splitNotes(notes);
-  return joinNotes(job, parseLog(notes).map((e, j) => (j === idx ? `${e.stamp} | ${t}` : e.raw)), parts);
+  const { job, parts, arrive } = splitNotes(notes);
+  return joinNotes(job, parseLog(notes).map((e, j) => (j === idx ? `${e.stamp} | ${t}` : e.raw)), parts, arrive);
 }
-function logWithout(notes, idx) { return joinNotes(jobNoteOf(notes), parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw), partsOf(notes)); }
-function logWithAdd(notes, text) { return joinNotes(jobNoteOf(notes), [...parseLog(notes).map((e) => e.raw), `${nowStamp()} | ${text.trim().replace(/\n/g, "⏎")}`], partsOf(notes)); }
+function logWithout(notes, idx) { return joinNotes(jobNoteOf(notes), parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw), partsOf(notes), arriveOf(notes)); }
+function logWithAdd(notes, text) { return joinNotes(jobNoteOf(notes), [...parseLog(notes).map((e) => e.raw), `${nowStamp()} | ${text.trim().replace(/\n/g, "⏎")}`], partsOf(notes), arriveOf(notes)); }
 
 // List of log entries (newest first). Click an entry (or its pencil) to edit it in place.
 function LogEntries({ entries, onEdit, onDelete, fontSize }) {
@@ -926,10 +947,28 @@ function ServiceLog({ value, onChange }) {
   );
 }
 
+// Compact read-only check-in summary (Workshop card / Services list). Highlights anything that did not come in.
+function ArrivalSummary({ notes }) {
+  const a = arriveOf(notes);
+  if (!arrivalRecorded(a)) return null;
+  const yes = ARRIVAL_ITEMS.filter((i) => a.items[i] === "Y");
+  const missing = arrivalMissing(notes);
+  const bad = missing.length > 0 || a.cond === "DAMAGED";
+  return (
+    <div data-testid="arrival-summary" style={{ fontSize: 12.5, background: bad ? "#FFF1EA" : "#F3F7FB", border: "1px solid " + (bad ? "#F0C2AE" : "#CFDCE9"), borderRadius: 7, padding: "5px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ fontWeight: 700, color: "#33506B", fontSize: 11.5, letterSpacing: "0.04em" }}>DROP-OFF</div>
+      {a.text && <div style={{ whiteSpace: "pre-wrap" }}>{a.text}</div>}
+      {a.cond && <div><strong>Condition:</strong> {a.cond}</div>}
+      {yes.length > 0 && <div><strong>Came with:</strong> {yes.join(", ")}</div>}
+      {missing.length > 0 && <div style={{ color: "#B5532C", fontWeight: 700 }}>NO: {missing.join(", ")}</div>}
+    </div>
+  );
+}
+
 function PartsUsed({ value, onChange }) {
   const [text, setText] = useState("");
-  const { job, log, parts } = splitNotes(value);
-  const add = () => { const t = text.trim().replace(/\n/g, " "); if (!t) return; onChange(joinNotes(job, log, [...parts, t])); setText(""); };
+  const { job, log, parts, arrive } = splitNotes(value);
+  const add = () => { const t = text.trim().replace(/\n/g, " "); if (!t) return; onChange(joinNotes(job, log, [...parts, t], arrive)); setText(""); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }} data-testid="parts-used">
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Parts used <span style={{ color: "#8B9086", fontWeight: 400 }}>— printed on the job card</span></div>
@@ -938,7 +977,7 @@ function PartsUsed({ value, onChange }) {
           {parts.map((pt, i) => (
             <div key={i} data-testid="part-row" style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderBottom: i < parts.length - 1 ? "1px solid #EFEFEA" : "none", fontSize: 14 }}>
               <span style={{ flex: 1, wordBreak: "break-word" }}>{pt}</span>
-              <button type="button" title="Remove part" onClick={() => onChange(joinNotes(job, log, parts.filter((_, j) => j !== i)))}
+              <button type="button" title="Remove part" onClick={() => onChange(joinNotes(job, log, parts.filter((_, j) => j !== i), arrive))}
                 style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}><X size={13} /></button>
             </div>
           ))}
@@ -956,6 +995,48 @@ function PartsUsed({ value, onChange }) {
   );
 }
 
+function ArrivalCheck({ value, onChange }) {
+  // Local text so spaces aren't trimmed while typing.
+  const [text, setText] = useState(arriveOf(value).text);
+  const { job, log, parts, arrive } = splitNotes(value);
+  const write = (patch) => onChange(joinNotes(job, log, parts, { ...arrive, text, ...patch }));
+  const setItem = (item, v) => { const items = { ...arrive.items }; if (items[item] === v) delete items[item]; else items[item] = v; write({ items }); };
+  const setCond = (c) => write({ cond: arrive.cond === c ? "" : c });
+  const missing = arrivalMissing(value);
+  const pill = (on, color, bg) => ({ border: "1.5px solid " + (on ? color : "#D0D3CA"), background: on ? bg : "#fff", color: on ? color : "#565C54", borderRadius: 999, padding: "6px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", minHeight: 36 });
+  const condColor = { GOOD: ["#2F6B47", "#E3F1E8"], FAIR: ["#8A6410", "#FBF0D0"], DAMAGED: ["#B5532C", "#FBE3D8"] };
+  return (
+    <div data-testid="arrival-check" style={{ display: "flex", flexDirection: "column", gap: 10, background: "#F3F7FB", border: "1px solid #CFDCE9", borderRadius: 12, padding: 12 }}>
+      <div style={{ fontSize: 13.5, color: "#33506B", fontWeight: 700 }}>Drop-off notes <span style={{ color: "#6B7C8C", fontWeight: 400 }}>— what the bike came in with</span></div>
+      <textarea rows={2} data-testid="arrive-text" value={text} placeholder="SHORT DETAIL, E.G. DROPPED OFF BY SON, KEY LEFT AT COUNTER, SCRATCH ON LEFT SIDE"
+        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); write({ text: v }); }}
+        style={{ ...inputStyle, resize: "vertical", minHeight: 44 }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 13, color: "#565C54", fontWeight: 600, minWidth: 74 }}>Condition</span>
+        {ARRIVAL_CONDITIONS.map((c) => (
+          <button key={c} type="button" data-testid={"cond-" + c.toLowerCase()} aria-pressed={arrive.cond === c} onClick={() => setCond(c)} className="rodi-btn" style={pill(arrive.cond === c, condColor[c][0], condColor[c][1])}>{c[0] + c.slice(1).toLowerCase()}</button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto auto", columnGap: 8, rowGap: 7, alignItems: "center" }}>
+        {ARRIVAL_ITEMS.map((item) => {
+          const key = item.toLowerCase().replace(/[^a-z]/g, "");
+          const v = arrive.items[item];
+          return (
+            <React.Fragment key={item}>
+              <span style={{ fontSize: 13.5, fontWeight: item === "CHARGER" ? 700 : 500, color: v === "N" ? "#B5532C" : "#191B18" }}>{item.charAt(0) + item.slice(1).toLowerCase()}</span>
+              <button type="button" data-testid={"yes-" + key} aria-pressed={v === "Y"} onClick={() => setItem(item, "Y")} className="rodi-btn" style={{ ...pill(v === "Y", "#2F6B47", "#E3F1E8"), minWidth: 62 }}>Yes</button>
+              <button type="button" data-testid={"no-" + key} aria-pressed={v === "N"} onClick={() => setItem(item, "N")} className="rodi-btn" style={{ ...pill(v === "N", "#B5532C", "#FBE3D8"), minWidth: 62 }}>No</button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <div data-testid="arrive-summary" style={{ fontSize: 12.5, color: missing.length ? "#B5532C" : "#6B7C8C", fontWeight: missing.length ? 700 : 400 }}>
+        {missing.length ? "NO: " + missing.join(", ") : "Tap Yes or No for each item. Tap again to clear."}
+      </div>
+    </div>
+  );
+}
+
 function JobNote({ value, onChange }) {
   // Local text so typed spaces / trailing blanks aren't trimmed while typing (the stored value is trimmed).
   const [text, setText] = useState(splitNotes(value).job);
@@ -963,7 +1044,7 @@ function JobNote({ value, onChange }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 5 }} data-testid="job-note">
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Service details <span style={{ color: "#8B9086", fontWeight: 400 }}>— extra detail about the service (shown on the Services list)</span></div>
       <textarea rows={2} value={text} placeholder="E.G. FULL SERVICE + NEW CHAIN, RIDER WANTS GRIPS CHANGED"
-        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); onChange(joinNotes(v, splitNotes(value).log, splitNotes(value).parts)); }}
+        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); onChange(joinNotes(v, splitNotes(value).log, splitNotes(value).parts, splitNotes(value).arrive)); }}
         style={{ ...inputStyle, resize: "vertical", minHeight: 44 }} />
     </div>
   );
@@ -1001,6 +1082,7 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
       <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
+      <ArrivalCheck value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <JobNote value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <PartsUsed value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <ServiceLog value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
@@ -1144,6 +1226,7 @@ function diffRecords(a, b, table) {
       const x1 = splitNotes(a.notes), y1 = splitNotes(b.notes);
       if (x1.job !== y1.job) changes.push("service details updated");
       if (x1.parts.join("\n") !== y1.parts.join("\n")) changes.push("parts used updated");
+      if (JSON.stringify(x1.arrive) !== JSON.stringify(y1.arrive)) changes.push("drop-off notes updated");
       if (x1.log.join("\n") !== y1.log.join("\n")) changes.push("workshop log updated");
       return;
     }
@@ -1349,6 +1432,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
             style={{ background: "#fff", color: "#33506B", border: "2px solid #33506B", borderRadius: 8, padding: "5px 11px", fontWeight: 700, fontSize: 12.5, textDecoration: "none" }}>Text customer</a>
         )}
       </div>
+      <ArrivalSummary notes={s.notes} />
       {partsOf(s.notes).length > 0 && <div data-testid="workshop-parts" style={{ fontSize: 12.5, color: "#565C54" }}><strong>Parts:</strong> {partsOf(s.notes).join(" · ")}</div>}
       {jobNoteOf(s.notes) && <div data-testid="workshop-job-note" style={{ fontSize: 13, background: "#FFF8E1", border: "1px solid #F0DFA0", borderRadius: 7, padding: "5px 8px", whiteSpace: "pre-wrap" }}>{jobNoteOf(s.notes)}</div>}
       <div style={{ fontSize: 12.5, color: "#565C54", display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -1776,6 +1860,16 @@ function JobCardModal({ job, onClose }) {
           {row("Mechanic", job.mechanic)}
           {row("Booked in", formatAU(job.bookedDate))}
           {row("Pick up date", formatAU(job.pickupDate))}
+          <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>DROP-OFF NOTES</div>
+          <div style={{ border: "1px solid #999", minHeight: 40, padding: 8, marginTop: 4, fontSize: 14, whiteSpace: "pre-wrap" }}>
+            {arrivalRecorded(arriveOf(job.notes)) ? (
+              <>
+                {arriveOf(job.notes).text && <div>{arriveOf(job.notes).text}</div>}
+                {arriveOf(job.notes).cond && <div><strong>Condition:</strong> {arriveOf(job.notes).cond}</div>}
+                <div>{ARRIVAL_ITEMS.map((i) => { const v = arriveOf(job.notes).items[i]; return (v === "Y" ? "YES " : v === "N" ? "NO  " : "—  ") + i; }).join("    ")}</div>
+              </>
+            ) : "—"}
+          </div>
           <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>SERVICE DETAILS</div>
           <div style={{ border: "1px solid #999", minHeight: 40, padding: 8, marginTop: 4, fontSize: 14, whiteSpace: "pre-wrap" }}>{jobNoteOf(job.notes)}</div>
           <div style={{ marginTop: 14, fontWeight: 700, fontSize: 12.5 }}>PARTS USED</div>
@@ -2202,7 +2296,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                   <span>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : "—"}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : (arrivalRecorded(arriveOf(s.notes)) ? null : "—")}{arrivalMissing(s.notes).length > 0 && <div data-testid="list-not-received" style={{ color: "#B5532C", fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>No {arrivalMissing(s.notes).join(", ").toLowerCase()}</div>}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
                     <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
