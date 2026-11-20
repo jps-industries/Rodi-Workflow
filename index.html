@@ -458,6 +458,10 @@ function GlobalStyle() {
         .rodi-side { flex-basis: 208px; width: 208px; padding: 24px 12px; }
         .rodi-navbtn { font-size: 14px; gap: 10px; padding: 11px 10px; }
         .rodi-page { padding-left: 20px !important; padding-right: 20px !important; }
+        .rodi-scrollbar table td { padding-left: 4px !important; padding-right: 4px !important; }
+        .rodi-scrollbar table th { padding-left: 4px !important; padding-right: 4px !important; }
+        .rodi-scrollbar table td:first-child, .rodi-scrollbar table th:first-child { padding-left: 12px !important; }
+        .rodi-scrollbar table td:last-child, .rodi-scrollbar table th:last-child { padding-right: 12px !important; }
       }
       .rodi-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 28px 44px 8px; }
       .rodi-gs { width: 100%; max-width: 440px; }
@@ -528,6 +532,30 @@ function shadeHex(hex, amt) {
   return "#" + [f((n >> 16) & 255), f((n >> 8) & 255), f(n & 255)].map((v) => v.toString(16).padStart(2, "0")).join("");
 }
 function tintOf(hex, alphaHex) { return /^#[0-9a-f]{6}$/i.test(hex || "") ? hex + (alphaHex || "22") : "#ECEAE3"; }
+
+// Brand tags: every brand always gets the same colour, so the eye can pick a brand out of a long list.
+const BRAND_HUES = ["#C2571A", "#2B6CB0", "#2F855A", "#7B4FC4", "#C0386B", "#0E7C86", "#9A6B00", "#4353C4", "#A8452E", "#5A7016", "#8B3FA8", "#1F7A5C"];
+function brandColor(name) {
+  const t = String(name || "").trim().toUpperCase();
+  let h = 0;
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+  return BRAND_HUES[h % BRAND_HUES.length];
+}
+function BrandTag({ name }) {
+  const t = String(name || "").trim();
+  if (!t) return <span>—</span>;
+  const c = brandColor(t);
+  return (
+    <span data-testid="brand-tag" style={{ display: "inline-block", background: c + "1F", color: shadeHex(c, 0.35), borderLeft: "4px solid " + c, borderRadius: 6, padding: "3px 7px 3px 6px", fontWeight: 800, fontSize: 12.5, letterSpacing: "0.02em", lineHeight: 1.25 }}>{t}</span>
+  );
+}
+// Service bikes are free text ("DIRODI GEN 6 ST"): the first word is treated as the brand.
+function BikeLabel({ bike }) {
+  const words = String(bike || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return <span>—</span>;
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><BrandTag name={words[0]} />{words.length > 1 && <span style={{ fontWeight: 600 }}>{words.slice(1).join(" ")}</span>}</span>;
+}
+const CUSTOMER_NAME_STYLE = { fontWeight: 800, fontSize: 13, color: "#16171A" };
 
 function StatusBadge({ label, color }) {
   return (
@@ -671,6 +699,22 @@ function notifyCustomerReady(form) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
   }).catch((e) => console.error("Zapier notify failed", e));
+}
+
+// Service booking texts. The wording lives in the "Rodi Service Booking Texts" Zapier workflow; the app only says
+// which text (confirm / reminder) and supplies name, phone, bike and booked date. The day-before reminder is sent
+// by a daily 9am (Perth) job in the database, not by the app.
+const ZAPIER_SERVICE_TEXT_WEBHOOK = "https://hooks.zapier.com/hooks/catch/23390919/C0YGYovv7e1wNXPLe/";
+// Australian mobile in any common format -> "+614XXXXXXXX", otherwise null.
+function auMobile(v) { const m = String(v || "").replace(/\D/g, "").match(/^(?:61|0)?(4\d{8})$/); return m ? "+61" + m[1] : null; }
+function sendServiceText(kind, s) {
+  const body = new URLSearchParams({ kind, phone: s.phone || "", name: s.customer || "", bike: s.bike || "", date: s.bookedDate || "" }).toString();
+  fetch(ZAPIER_SERVICE_TEXT_WEBHOOK, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  }).catch((e) => console.error("Service text failed", e));
 }
 
 function OrderForm({ initial, onSave, onClose, onCreateService }) {
@@ -846,23 +890,27 @@ const STAMP_RE = /^(\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}) \| (.*)$/;
 // notes column = optional "JOB | text" line (service details) + "PART | text" lines (parts used) + timestamped log lines.
 // Legacy untimestamped lines count as service details.
 // Drop-off notes: "CHK | CHARGER:Y,SEAT:N" (item came in yes/no) + "CND | GOOD" (condition) + "IN | text" (short drop-off detail).
+// Flags: "INV | dd/mm/yyyy" (invoiced on that date) + "NOSMS | Y" (no day-before reminder text for this booking).
 const ARRIVAL_ITEMS = ["CHARGER", "BATTERY", "SEAT", "KEY", "LIGHTS", "BASKET / BAG"];
 const ARRIVAL_CONDITIONS = ["GOOD", "FAIR", "DAMAGED"];
 function splitNotes(notes) {
   const jobParts = [], log = [], parts = [];
-  let items = {}, cond = ""; const inParts = [];
+  let items = {}, cond = "", inv = "", noRemind = false; const inParts = [];
   (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).forEach((line) => {
     if (STAMP_RE.test(line)) log.push(line);
     else if (line.startsWith("PART | ")) parts.push(line.slice(7));
     else if (line.startsWith("CHK | ")) line.slice(6).split(",").map((x) => x.trim()).filter((x) => x && x !== "-").forEach((x) => { const [k, v] = x.split(":"); items[k.trim()] = v === "N" ? "N" : "Y"; });
     else if (line.startsWith("CND | ")) cond = line.slice(6).trim();
+    else if (line.startsWith("INV | ")) inv = line.slice(6).trim() || "YES";
+    else if (line.startsWith("NOSMS | ")) noRemind = true;
     else if (line.startsWith("IN | ")) inParts.push(line.slice(5).replace(/⏎/g, "\n"));
     else if (line.startsWith("JOB | ")) jobParts.push(line.slice(6).replace(/⏎/g, "\n"));
     else jobParts.push(line.replace(/⏎/g, "\n"));
   });
-  return { job: jobParts.join("\n"), log, parts, arrive: { items, cond, text: inParts.join("\n") } };
+  return { job: jobParts.join("\n"), log, parts, arrive: { items, cond, text: inParts.join("\n") }, meta: { inv, noRemind } };
 }
-function joinNotes(job, logRaws, parts, arrive) {
+function joinNotes(job, logRaws, parts, arrive, meta) {
+  const mt = meta || { inv: "", noRemind: false };
   const j = (job || "").trim();
   const a = arrive || { items: {}, cond: "", text: "" };
   const its = Object.keys(a.items || {}).filter((k) => a.items[k]);
@@ -872,10 +920,22 @@ function joinNotes(job, logRaws, parts, arrive) {
     ...(its.length ? ["CHK | " + its.map((k) => k + ":" + a.items[k]).join(",")] : []),
     ...(a.cond ? ["CND | " + a.cond] : []),
     ...(t ? ["IN | " + t.replace(/\n/g, "⏎")] : []),
+    ...(mt.inv ? ["INV | " + mt.inv] : []),
+    ...(mt.noRemind ? ["NOSMS | Y"] : []),
     ...(parts || []).map((p) => "PART | " + p), ...logRaws,
   ].join("\n");
 }
 function arriveOf(notes) { return splitNotes(notes).arrive; }
+function metaOf(notes) { return splitNotes(notes).meta; }
+function invoicedOf(notes) { return splitNotes(notes).meta.inv; }
+// Change only the flags (invoiced / reminder opt-out), keeping everything else in the notes column.
+function withMeta(notes, patch) { const n = splitNotes(notes); return joinNotes(n.job, n.log, n.parts, n.arrive, { ...n.meta, ...patch }); }
+// First log entry whose text starts with the given words (e.g. "CONFIRMATION TEXT SENT"), or undefined.
+function logFind(notes, startsWith) { return parseLog(notes).find((e) => e.text.indexOf(startsWith) === 0); }
+// "20/11/2026 10:05" <-> "2026-11-20T10:05" (the value a datetime-local input uses).
+function stampToInput(stamp) { const m = String(stamp || "").match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/); return m ? `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}` : ""; }
+function inputToStamp(v) { const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : ""; }
+function stampSortKey(line) { const m = String(line).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/); return m ? `${m[3]}${m[2]}${m[1]}${m[4]}${m[5]}` : ""; }
 // Items marked "No" (did not come in with the bike).
 function arrivalMissing(notes) { const a = arriveOf(notes); return ARRIVAL_ITEMS.filter((i) => a.items[i] === "N"); }
 function arrivalRecorded(a) { return !!(Object.keys(a.items).length || a.cond || a.text); }
@@ -885,24 +945,36 @@ function partsOf(notes) { return splitNotes(notes).parts; }
 function parseLog(notes) {
   return splitNotes(notes).log.map((line) => { const m = line.match(STAMP_RE); return { stamp: m[1], text: m[2].replace(/⏎/g, "\n"), raw: line }; });
 }
-function logWithEdit(notes, idx, text) {
+function logWithEdit(notes, idx, text, stamp) {
   const t = text.trim().replace(/\n/g, "⏎");
-  const { job, parts, arrive } = splitNotes(notes);
-  return joinNotes(job, parseLog(notes).map((e, j) => (j === idx ? `${e.stamp} | ${t}` : e.raw)), parts, arrive);
+  const { job, parts, arrive, meta } = splitNotes(notes);
+  const entries = parseLog(notes);
+  const newStamp = stamp && STAMP_RE.test(stamp + " | x") ? stamp : null;
+  let lines = entries.map((e, j) => (j === idx ? `${newStamp || e.stamp} | ${t}` : e.raw));
+  // A changed date moves the entry to its place in time order (ties keep their existing order).
+  if (newStamp && entries[idx] && newStamp !== entries[idx].stamp) {
+    lines = lines.map((l, i) => ({ l, i })).sort((a, b) => { const x = stampSortKey(a.l), y = stampSortKey(b.l); return x < y ? -1 : x > y ? 1 : a.i - b.i; }).map((o) => o.l);
+  }
+  return joinNotes(job, lines, parts, arrive, meta);
 }
-function logWithout(notes, idx) { return joinNotes(jobNoteOf(notes), parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw), partsOf(notes), arriveOf(notes)); }
-function logWithAdd(notes, text) { return joinNotes(jobNoteOf(notes), [...parseLog(notes).map((e) => e.raw), `${nowStamp()} | ${text.trim().replace(/\n/g, "⏎")}`], partsOf(notes), arriveOf(notes)); }
+function logWithout(notes, idx) { return joinNotes(jobNoteOf(notes), parseLog(notes).filter((_, j) => j !== idx).map((e) => e.raw), partsOf(notes), arriveOf(notes), metaOf(notes)); }
+function logWithAdd(notes, text) { return joinNotes(jobNoteOf(notes), [...parseLog(notes).map((e) => e.raw), `${nowStamp()} | ${text.trim().replace(/\n/g, "⏎")}`], partsOf(notes), arriveOf(notes), metaOf(notes)); }
 
 // List of log entries (newest first). Click an entry (or its pencil) to edit it in place.
 function LogEntries({ entries, onEdit, onDelete, fontSize }) {
-  const [editing, setEditing] = useState(null); // { idx, text }
-  const save = () => { if (editing && editing.text.trim()) onEdit(editing.idx, editing.text); setEditing(null); };
+  const [editing, setEditing] = useState(null); // { idx, text, when } — when = datetime-local value
+  const save = () => { if (editing && editing.text.trim()) onEdit(editing.idx, editing.text, inputToStamp(editing.when)); setEditing(null); };
   return entries.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => (
     editing && editing.idx === i ? (
       <div key={"edit" + i} data-testid="log-entry-editor" style={{ padding: "8px 10px", borderBottom: "1px solid #EFEFEA", background: "#FFF8E1" }}>
-        {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#565C54", fontWeight: 600 }}>
+          Date &amp; time
+          <input type="datetime-local" data-testid="log-entry-when" value={editing.when}
+            onChange={(ev) => setEditing({ ...editing, when: ev.target.value })}
+            style={{ ...inputStyle, padding: "5px 8px", fontSize: 13, width: "auto", flex: "0 1 220px", minWidth: 0 }} />
+        </label>
         <textarea autoFocus rows={2} value={editing.text}
-          onChange={(ev) => setEditing({ idx: i, text: ev.target.value.toUpperCase() })}
+          onChange={(ev) => setEditing({ ...editing, text: ev.target.value.toUpperCase() })}
           onKeyDown={(ev) => { if (ev.key === "Escape") setEditing(null); if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save(); } }}
           style={{ ...inputStyle, resize: "vertical", marginTop: 4 }} />
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
@@ -911,13 +983,13 @@ function LogEntries({ entries, onEdit, onDelete, fontSize }) {
         </div>
       </div>
     ) : (
-      <div key={e.raw + i} data-testid="log-entry" title="Click to edit" onClick={() => setEditing({ idx: i, text: e.text })}
+      <div key={e.raw + i} data-testid="log-entry" title="Click to edit the note or its date" onClick={() => setEditing({ idx: i, text: e.text, when: stampToInput(e.stamp) })}
         style={{ display: "flex", gap: 8, padding: "7px 10px", borderBottom: "1px solid #EFEFEA", alignItems: "flex-start", cursor: "pointer" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {e.stamp && <div style={{ fontSize: 11, color: "#8B9086", fontWeight: 600 }}>{e.stamp}</div>}
           <div style={{ fontSize: fontSize || 14, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{e.text}</div>
         </div>
-        <button type="button" title="Edit entry" onClick={(ev) => { ev.stopPropagation(); setEditing({ idx: i, text: e.text }); }}
+        <button type="button" title="Edit entry" onClick={(ev) => { ev.stopPropagation(); setEditing({ idx: i, text: e.text, when: stampToInput(e.stamp) }); }}
           style={{ border: "none", background: "transparent", color: "#33506B", cursor: "pointer", padding: 2 }}><Pencil size={13} /></button>
         <button type="button" title="Delete entry" onClick={(ev) => { ev.stopPropagation(); onDelete(i); }}
           style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}><X size={13} /></button>
@@ -946,7 +1018,7 @@ function ServiceLog({ value, onChange }) {
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Workshop notes log</div>
       <div style={{ border: "1px solid #D8DAD1", borderRadius: 8, background: "#fff", maxHeight: 240, overflowY: "auto" }}>
         {entries.length === 0 && <div style={{ padding: 10, fontSize: 13, color: "#8B9086" }}>No entries yet.</div>}
-        <LogEntries entries={entries} onEdit={(idx, t) => onChange(logWithEdit(value, idx, t))} onDelete={(idx) => onChange(logWithout(value, idx))} />
+        <LogEntries entries={entries} onEdit={(idx, t, when) => onChange(logWithEdit(value, idx, t, when))} onDelete={(idx) => onChange(logWithout(value, idx))} />
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <textarea
@@ -987,8 +1059,8 @@ function ArrivalSummary({ notes }) {
 
 function PartsUsed({ value, onChange }) {
   const [text, setText] = useState("");
-  const { job, log, parts, arrive } = splitNotes(value);
-  const add = () => { const t = text.trim().replace(/\n/g, " "); if (!t) return; onChange(joinNotes(job, log, [...parts, t], arrive)); setText(""); };
+  const { job, log, parts, arrive, meta } = splitNotes(value);
+  const add = () => { const t = text.trim().replace(/\n/g, " "); if (!t) return; onChange(joinNotes(job, log, [...parts, t], arrive, meta)); setText(""); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }} data-testid="parts-used">
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Parts used <span style={{ color: "#8B9086", fontWeight: 400 }}>— printed on the job card</span></div>
@@ -997,7 +1069,7 @@ function PartsUsed({ value, onChange }) {
           {parts.map((pt, i) => (
             <div key={i} data-testid="part-row" style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderBottom: i < parts.length - 1 ? "1px solid #EFEFEA" : "none", fontSize: 14 }}>
               <span style={{ flex: 1, wordBreak: "break-word" }}>{pt}</span>
-              <button type="button" title="Remove part" onClick={() => onChange(joinNotes(job, log, parts.filter((_, j) => j !== i), arrive))}
+              <button type="button" title="Remove part" onClick={() => onChange(joinNotes(job, log, parts.filter((_, j) => j !== i), arrive, meta))}
                 style={{ border: "none", background: "transparent", color: "#C1483A", cursor: "pointer", padding: 2 }}><X size={13} /></button>
             </div>
           ))}
@@ -1018,8 +1090,8 @@ function PartsUsed({ value, onChange }) {
 function ArrivalCheck({ value, onChange }) {
   // Local text so spaces aren't trimmed while typing.
   const [text, setText] = useState(arriveOf(value).text);
-  const { job, log, parts, arrive } = splitNotes(value);
-  const write = (patch) => onChange(joinNotes(job, log, parts, { ...arrive, text, ...patch }));
+  const { job, log, parts, arrive, meta } = splitNotes(value);
+  const write = (patch) => onChange(joinNotes(job, log, parts, { ...arrive, text, ...patch }, meta));
   const setItem = (item, v) => { const items = { ...arrive.items }; if (items[item] === v) delete items[item]; else items[item] = v; write({ items }); };
   const setCond = (c) => write({ cond: arrive.cond === c ? "" : c });
   const missing = arrivalMissing(value);
@@ -1064,19 +1136,34 @@ function JobNote({ value, onChange }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 5 }} data-testid="job-note">
       <div style={{ fontSize: 13, color: "#565C54", fontWeight: 500 }}>Service details <span style={{ color: "#8B9086", fontWeight: 400 }}>— extra detail about the service (shown on the Services list)</span></div>
       <textarea rows={2} value={text} placeholder="E.G. FULL SERVICE + NEW CHAIN, RIDER WANTS GRIPS CHANGED"
-        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); onChange(joinNotes(v, splitNotes(value).log, splitNotes(value).parts, splitNotes(value).arrive)); }}
+        onChange={(e) => { const v = e.target.value.toUpperCase(); setText(v); onChange(joinNotes(v, splitNotes(value).log, splitNotes(value).parts, splitNotes(value).arrive, splitNotes(value).meta)); }}
         style={{ ...inputStyle, resize: "vertical", minHeight: 44 }} />
     </div>
   );
 }
 
-function ServiceForm({ initial, onSave, onClose }) {
+function ServiceForm({ initial, onSave, onClose, isNew }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
+  // Booking confirmation text: ticked by default on a brand-new booking, never on an edit.
+  const [sendConfirm, setSendConfirm] = useState(!!isNew && initial.serviceType !== "PRE-DELIVERY SERVICE");
+  const confirmSent = logFind(form.notes, "CONFIRMATION TEXT SENT");
+  const reminderSent = logFind(form.notes, "REMINDER TEXT SENT");
+  const meta = metaOf(form.notes);
+  const hasMobile = !!auMobile(form.phone);
+  const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(form.bookedDate || "") && !isPastDate(form.bookedDate);
+  const canText = hasMobile && dateOk;
+  const submit = (e) => {
+    e.preventDefault();
+    const willText = sendConfirm && canText;
+    const out = willText ? { ...form, notes: logWithAdd(form.notes, "CONFIRMATION TEXT SENT (" + formatAU(form.bookedDate).toUpperCase() + ")") } : form;
+    Promise.resolve(onSave(out)).then((ok) => { if (ok !== false && willText) sendServiceText("confirm", out); });
+  };
+  const tick = { width: 22, height: 22, cursor: "pointer", flexShrink: 0 };
   return (
     <Drawer title={initial.customer ? "Edit service" : "New service booking"} icon={<Wrench size={17} />} onClose={onClose}
-      onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+      onSubmit={submit}>
       <Field label="Status">
         <select
           style={{
@@ -1102,10 +1189,30 @@ function ServiceForm({ initial, onSave, onClose }) {
         <Field label="Pickup date"><input type="date" style={inputStyle} value={form.pickupDate} onChange={set("pickupDate")} /></Field>
       </div>
       <Field label="Bike mechanic"><input style={inputStyle} value={form.mechanic} onChange={upper("mechanic")} placeholder="JOSH" /></Field>
+      <div data-testid="service-texts" style={{ display: "flex", flexDirection: "column", gap: 8, background: "#F7F5EE", border: "1px solid #E7E4DB", borderRadius: 12, padding: 12 }}>
+        <div style={{ fontSize: 13.5, color: "#191B18", fontWeight: 700 }}>Texts to the customer</div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: canText ? "#191B18" : "#8B9086" }}>
+          <input type="checkbox" data-testid="text-confirm" style={tick} disabled={!canText} checked={sendConfirm && canText} onChange={(e) => setSendConfirm(e.target.checked)} />
+          {confirmSent ? "Text the booking confirmation again when I save" : "Text a booking confirmation when I save"}
+        </label>
+        {confirmSent && <div data-testid="text-confirm-sent" style={{ fontSize: 12.5, color: "#2F6B47", fontWeight: 600, marginLeft: 30 }}>✓ Confirmation sent {confirmSent.stamp}</div>}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "#191B18" }}>
+          <input type="checkbox" data-testid="text-reminder" style={tick} checked={!meta.noRemind} onChange={(e) => setForm((f) => ({ ...f, notes: withMeta(f.notes, { noRemind: !e.target.checked }) }))} />
+          Text a reminder at 9am the day before
+        </label>
+        {reminderSent && <div data-testid="text-reminder-sent" style={{ fontSize: 12.5, color: "#2F6B47", fontWeight: 600, marginLeft: 30 }}>✓ Reminder sent {reminderSent.stamp}</div>}
+        {!canText && <div data-testid="text-hint" style={{ fontSize: 12.5, color: "#B5532C", fontWeight: 600 }}>
+          {!hasMobile ? "No texts will go out: add an Australian mobile number (04…)." : "No confirmation will go out: set a booked date of today or later."}
+        </div>}
+      </div>
       <ArrivalCheck value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <JobNote value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <PartsUsed value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
       <ServiceLog value={form.notes} onChange={(v) => setForm((f) => ({ ...f, notes: v }))} />
+      <label data-testid="invoiced-row" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: meta.inv ? "#2F6B47" : "#191B18", background: meta.inv ? "#E3F1E8" : "#fff", border: "1.5px solid " + (meta.inv ? "#4C9A6A" : "#D8DAD1"), borderRadius: 10, padding: "10px 12px", cursor: "pointer" }}>
+        <input type="checkbox" data-testid="invoiced-check" style={tick} checked={!!meta.inv} onChange={(e) => setForm((f) => ({ ...f, notes: withMeta(f.notes, { inv: e.target.checked ? nowStamp().slice(0, 10) : "" }) }))} />
+        Invoiced{meta.inv && meta.inv !== "YES" ? <span style={{ fontWeight: 500, fontSize: 13 }}> on {meta.inv}</span> : null}
+      </label>
       <PrintJobButton job={form} />
       <button type="submit" className="rodi-btn" style={{
         marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
@@ -1248,6 +1355,8 @@ function diffRecords(a, b, table) {
       if (x1.parts.join("\n") !== y1.parts.join("\n")) changes.push("parts used updated");
       if (JSON.stringify(x1.arrive) !== JSON.stringify(y1.arrive)) changes.push("drop-off notes updated");
       if (x1.log.join("\n") !== y1.log.join("\n")) changes.push("workshop log updated");
+      if (x1.meta.inv !== y1.meta.inv) changes.push(y1.meta.inv ? (x1.meta.inv ? "invoiced date changed" : "marked invoiced") : "invoiced tick removed");
+      if (x1.meta.noRemind !== y1.meta.noRemind) changes.push(y1.meta.noRemind ? "reminder text turned off" : "reminder text turned on");
       return;
     }
     if (k === "notes" && a.notes !== undefined && String(b.notes || "").indexOf("|") > -1 && /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} \|/.test(String(b.notes))) {
@@ -1420,7 +1529,7 @@ function serviceQuickMatch(s, quick) {
 }
 
 // Workshop view: big cards for the jobs on the floor, with the notes log front and centre.
-function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry }) {
+function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced }) {
   const [text, setText] = useState("");
   const log = parseLog(s.notes).slice().reverse();
   const add = () => { const t = text.trim(); if (!t) return; onAppendLog(s.id, t); setText(""); };
@@ -1428,8 +1537,8 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
     <div data-testid="workshop-card" style={{ background: "#fff", border: "1px solid #E7E4DB", borderRadius: 18, boxShadow: "0 1px 2px rgba(20,20,15,0.04)", padding: 14, display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ minWidth: 0, cursor: "pointer" }} onClick={() => onEdit(s)}>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>{s.customer || "—"}</div>
-          <div style={{ fontSize: 13.5, color: "#565C54" }}>{s.bike || "—"}</div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: "#16171A" }}>{s.customer || "—"}</div>
+          <div style={{ fontSize: 13.5, color: "#565C54", marginTop: 3 }}><BikeLabel bike={s.bike} /></div>
         </div>
         <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
       </div>
@@ -1459,10 +1568,13 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
         <span>Mechanic: <strong>{s.mechanic || "—"}</strong></span>
         <span>Booked: <strong>{formatAURel(s.bookedDate) || "—"}</strong></span>
         {s.pickupDate && <span>Pick up: <strong>{formatAURel(s.pickupDate)}</strong></span>}
+        {onToggleInvoiced && <label data-testid="ws-invoiced" style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", fontWeight: 700, color: invoicedOf(s.notes) ? "#2F6B47" : "#565C54" }}>
+          <input type="checkbox" checked={!!invoicedOf(s.notes)} onChange={() => onToggleInvoiced(s.id)} style={{ width: 16, height: 16, cursor: "pointer" }} />Invoiced
+        </label>}
       </div>
       <div style={{ background: "#FAFAF7", border: "1px solid #E3E4DD", borderRadius: 8, maxHeight: 150, overflowY: "auto" }}>
         {log.length === 0 && <div style={{ padding: 8, fontSize: 12.5, color: "#8B9086" }}>No log entries yet.</div>}
-        <LogEntries entries={parseLog(s.notes)} fontSize={13.5} onEdit={(idx, t) => onEditLogEntry(s.id, idx, t)} onDelete={(idx) => onDeleteLogEntry(s.id, idx)} />
+        <LogEntries entries={parseLog(s.notes)} fontSize={13.5} onEdit={(idx, t, when) => onEditLogEntry(s.id, idx, t, when)} onDelete={(idx) => onDeleteLogEntry(s.id, idx)} />
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         <textarea value={text} rows={2} onChange={(e) => setText(e.target.value.toUpperCase())}
@@ -1474,7 +1586,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
     </div>
   );
 }
-function WorkshopView({ services, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry }) {
+function WorkshopView({ services, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced }) {
   const jobs = services.filter((s) => !s.archived && s.status !== "Completed" && (
     s.bookedDate === todayISO() || ["In Progress", "Awaiting Parts", "Ready for Pickup"].indexOf(s.status) > -1
     || (isPastDate(s.bookedDate) && s.status === "Booked")
@@ -1487,7 +1599,7 @@ function WorkshopView({ services, onEdit, onSetStatus, onAppendLog, onEditLogEnt
       </p>
       {sorted.length === 0 && <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing on the workshop floor right now.</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))", gap: 12 }}>
-        {sorted.map((s) => <WorkshopCard key={s.id} s={s} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} />)}
+        {sorted.map((s) => <WorkshopCard key={s.id} s={s} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} onToggleInvoiced={onToggleInvoiced} />)}
       </div>
     </div>
   );
@@ -2118,7 +2230,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{o.brand}</td>
+                <td style={{ padding: "8px 10px" }}><BrandTag name={o.brand} /></td>
                 <td style={{ padding: "8px 10px" }}>{o.type}</td>
                 <td style={{ padding: "8px 10px" }}>{o.colour}</td>
                 <td style={{ padding: "8px 10px" }}>{o.qty}</td>
@@ -2128,7 +2240,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
                 <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
                   {o.customer
-                    ? <div style={{ whiteSpace: "nowrap" }}>{o.customer}</div>
+                    ? <div data-testid="cust-name" style={{ whiteSpace: "nowrap", ...CUSTOMER_NAME_STYLE }}>{o.customer}</div>
                     : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
                   <MissingTag kind="order" rec={o} />
                   <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
@@ -2171,11 +2283,12 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   );
 }
 
-function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, preset }) {
+function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced, preset }) {
   const [search, setSearch] = usePersisted("services.search", "");
   const [quick, setQuick] = useState(preset ? preset.quick : null);
   useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
   const [statusFilter, setStatusFilter] = usePersisted("services.status", "All");
+  const [invFilter, setInvFilter] = usePersisted("services.inv", "All"); // "All" | "no" = not invoiced yet
   const [view, setView] = usePersisted("services.view", "active");
   const [sortKey, setSortKey] = usePersisted("services.sortKey", "status");
   const [sortDir, setSortDir] = usePersisted("services.sortDir", "asc");
@@ -2194,9 +2307,10 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       const matchesStatus = statusFilter === "All" || s.status === statusFilter;
       const q = search.toLowerCase();
       const matchesSearch = !q || [s.customer, s.bike, s.serviceType, s.mechanic].join(" ").toLowerCase().includes(q);
-      return matchesView && matchesStatus && matchesSearch && serviceQuickMatch(s, quick);
+      const matchesInv = invFilter !== "no" || !invoicedOf(s.notes);
+      return matchesView && matchesStatus && matchesInv && matchesSearch && serviceQuickMatch(s, quick);
     });
-  }, [services, search, statusFilter, view, quick]);
+  }, [services, search, statusFilter, invFilter, view, quick]);
 
   return (
     <div>
@@ -2226,7 +2340,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       </div>
 
       {view === "workshop" ? (
-        <WorkshopView services={services} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} />
+        <WorkshopView services={services} onEdit={onEdit} onSetStatus={onSetStatus} onAppendLog={onAppendLog} onEditLogEntry={onEditLogEntry} onDeleteLogEntry={onDeleteLogEntry} onToggleInvoiced={onToggleInvoiced} />
       ) : (<>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {SERVICE_STATUSES.map((s) => (
@@ -2241,6 +2355,15 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
             {s}
           </button>
         ))}
+        <button data-testid="filter-not-invoiced" onClick={() => setInvFilter(invFilter === "no" ? "All" : "no")}
+          className="rodi-btn"
+          style={{
+            border: invFilter === "no" ? "2px solid #B5532C" : "1px solid #D8DAD1",
+            background: invFilter === "no" ? "#FFF1EA" : "#fff", borderRadius: 999, padding: "6px 12px", cursor: "pointer",
+            fontSize: 13, display: "flex", alignItems: "center", gap: 7, fontWeight: invFilter === "no" ? 700 : 500, color: invFilter === "no" ? "#B5532C" : undefined,
+          }}>
+          Not invoiced
+        </button>
         {quick && <QuickFilterChip label={SERVICE_QUICK_LABELS[quick] || quick} onClear={() => setQuick(null)} />}
       </div>
 
@@ -2265,7 +2388,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
               {[
                 { label: "Status", key: "status" }, { label: "Customer", key: "customer" }, { label: "Phone", key: null },
                 { label: "Bike", key: "bike" }, { label: "Service type", key: "serviceType" }, { label: "Mechanic", key: "mechanic" },
-                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Service details", key: null },
+                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Invoiced", key: null }, { label: "Service details", key: null },
                 { label: "", key: null },
               ].map((h) => (
                 <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
@@ -2274,7 +2397,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
+              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
                 {view === "archived" ? "No archived bookings yet." : "No bookings match — add one to get started."}
               </td></tr>
             )}
@@ -2305,17 +2428,23 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 14px 8px 10px", fontWeight: 600, whiteSpace: "nowrap", minWidth: 120 }}>{s.customer || "—"}<MissingTag kind="service" rec={s} /></td>
+                <td style={{ padding: "8px 14px 8px 10px", whiteSpace: "nowrap", minWidth: 120 }}><span data-testid="cust-name" style={CUSTOMER_NAME_STYLE}>{s.customer || "—"}</span><MissingTag kind="service" rec={s} /></td>
                 <td style={{ padding: "8px 10px" }}>
                   {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
                 </td>
-                <td style={{ padding: "8px 10px", display: "flex", alignItems: "center", gap: 6 }}><Bike size={14} color="#565C54" />{s.bike || "—"}</td>
+                <td style={{ padding: "8px 10px" }}><BikeLabel bike={s.bike} /></td>
                 <td style={{ padding: "8px 10px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{s.mechanic || "—"}</td>
                 <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
                   <span>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
                 </td>
                 <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
+                <td style={{ padding: "8px 10px" }} onClick={(e) => e.stopPropagation()}>
+                  <label data-testid="list-invoiced" title={invoicedOf(s.notes) ? "Invoiced " + invoicedOf(s.notes) + " — untick to undo" : "Tick when the invoice has been done"} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", fontWeight: 700, fontSize: 12, color: invoicedOf(s.notes) ? "#2F6B47" : "#8B9086" }}>
+                    <input type="checkbox" checked={!!invoicedOf(s.notes)} onChange={() => onToggleInvoiced(s.id)} style={{ width: 18, height: 18, cursor: "pointer" }} />
+                    {invoicedOf(s.notes) ? "Yes" : "No"}
+                  </label>
+                </td>
                 <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : (arrivalRecorded(arriveOf(s.notes)) ? null : "—")}{arrivalMissing(s.notes).length > 0 && <div data-testid="list-not-received" style={{ color: "#B5532C", fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>No {arrivalMissing(s.notes).join(", ").toLowerCase()}</div>}</td>
                 <td style={{ padding: "8px 10px" }}>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -2594,7 +2723,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                     )}
                   </div>
                 </td>
-                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.brand || "—"}</td>
+                <td style={{ padding: "8px 10px" }}><BrandTag name={a.brand} /></td>
                 <td style={{ padding: "8px 10px" }}>{a.type || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
                 <td style={{ padding: "8px 10px" }}>{a.qty}</td>
@@ -2604,7 +2733,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
                 <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
                 <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
                   {a.customer
-                    ? <div style={{ whiteSpace: "nowrap" }}>{a.customer}</div>
+                    ? <div data-testid="cust-name" style={{ whiteSpace: "nowrap", ...CUSTOMER_NAME_STYLE }}>{a.customer}</div>
                     : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
                   {a.forStock && a.customer && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
                   <MissingTag kind="accessory" rec={a} />
@@ -3671,9 +3800,15 @@ function RodiTracker() {
     patchRecord("services", id, { notes: logWithAdd(t.notes, text) }, "edited", "log entry: " + text.slice(0, 40));
   }, []);
 
-  const editServiceLogEntry = useCallback((id, idx, text) => {
+  const editServiceLogEntry = useCallback((id, idx, text, stamp) => {
     const t = servicesRef.current.find((r) => r.id === id);
-    if (t) patchRecord("services", id, { notes: logWithEdit(t.notes, idx, text) }, "edited", "log entry edited");
+    if (t) patchRecord("services", id, { notes: logWithEdit(t.notes, idx, text, stamp) }, "edited", "log entry edited");
+  }, []);
+  const toggleServiceInvoiced = useCallback((id) => {
+    const t = servicesRef.current.find((r) => r.id === id);
+    if (!t) return;
+    const on = !invoicedOf(t.notes);
+    patchRecord("services", id, { notes: withMeta(t.notes, { inv: on ? nowStamp().slice(0, 10) : "" }) }, "edited", on ? "marked invoiced" : "invoiced tick removed");
   }, []);
   const deleteServiceLogEntry = useCallback((id, idx) => {
     const t = servicesRef.current.find((r) => r.id === id);
@@ -3947,6 +4082,7 @@ function RodiTracker() {
                 onSetStatus={setServiceStatus}
                 onAppendLog={appendServiceLog}
                 onEditLogEntry={editServiceLogEntry}
+                onToggleInvoiced={toggleServiceInvoiced}
                 onDeleteLogEntry={deleteServiceLogEntry}
                 preset={preset && preset.tab === "services" ? preset : null}
               />
@@ -4012,7 +4148,7 @@ function RodiTracker() {
         <DeliveryForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
       )}
       {drawer?.type === "service" && (
-        <ServiceForm initial={drawer.data} onSave={saveService} onClose={() => setDrawer(null)} />
+        <ServiceForm initial={drawer.data} isNew={!services.some((r) => r.id === drawer.data.id)} onSave={saveService} onClose={() => setDrawer(null)} />
       )}
       {drawer?.type === "pricing" && (
         <PricingForm initial={drawer.data} onSave={savePricing} onClose={() => setDrawer(null)} />
