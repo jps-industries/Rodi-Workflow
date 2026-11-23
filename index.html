@@ -3613,7 +3613,6 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     ...activeOrders.filter((o) => orderQuickMatch(o, "pickup")).map((o) => ({ kind: "order", rec: o })),
   ], [activeServices, activeOrders]);
 
-  const chasing = useMemo(() => staleItems(orders, services, accessories), [orders, services, accessories]);
 
   const customerResults = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
@@ -3673,13 +3672,6 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
       <div className="rodi-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div>
           <h3 className="rodi-display" style={{ fontSize: 21, margin: "0 0 12px 0" }}>Needs attention</h3>
-          <AttentionList title="Chasing needed" icon={<AlertOctagon size={16} />} color="#C1483A" items={chasing}
-            renderItem={(it) => (
-              <div key={it.kind + it.rec.id} data-testid="chasing-item" onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
-                <strong>{it.kind === "service" ? `${it.rec.customer || "—"} — ${it.rec.bike || ""}` : `${it.rec.brand} ${it.rec.type}${it.rec.customer ? " — " + it.rec.customer : ""}`}</strong>
-                {" "}<span style={{ color: "#C1483A" }}>{it.reason}</span>
-              </div>
-            )} />
           <AttentionList title="Ready for pick-up" icon={<PhoneCall size={16} />} color="#7C5CBF" items={readyForPickup}
             renderItem={(it) => (
               <div key={it.kind + it.rec.id} onClick={() => onOpen(it.kind, it.rec)} style={{ fontSize: 13.5, padding: "6px 0", borderBottom: "1px solid #EFEFEA", cursor: "pointer" }}>
@@ -3718,7 +3710,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
                 <strong>{s.customer}</strong> — {s.bike} — {s.serviceType || "—"}
               </div>
             )} />
-          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && chasing.length === 0 && (
+          {overdueOrders.length === 0 && overdueServices.length === 0 && overdueAccessories.length === 0 && needsAssembly.length === 0 && servicesToday.length === 0 && readyForPickup.length === 0 && (
             <p style={{ color: "#8B9086", fontSize: 14 }}>Nothing urgent right now — nice.</p>
           )}
         </div>
@@ -4458,10 +4450,10 @@ function RodiTracker() {
   const TAB_SHORT = { dashboard: "Today", orders: "Orders", accessories: "Parts", services: "Workshop", calendar: "Calendar", customers: "Clients", rentals: "Rentals", history: "History", pricing: "Pricing" };
   const tabs = [
     { id: "dashboard", label: "Today", icon: LayoutDashboard },
-    { id: "services", label: "Workshop", icon: Wrench },
     { id: "orders", label: "Orders", icon: Package },
     // Accessories & parts lives inside the Orders tab now (Bikes | Accessories & parts), so it has no nav button of its own.
     { id: "accessories", label: "Accessories & parts", icon: Boxes, hidden: true },
+    { id: "services", label: "Workshop", icon: Wrench },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     // Stock pricing tab is hidden for now. Set SHOW_STOCK_PRICING = true (top of file) to bring it back; data and code are untouched.
     ...(SHOW_STOCK_PRICING ? [{ id: "pricing", label: "Stock pricing", icon: Tag }] : []),
