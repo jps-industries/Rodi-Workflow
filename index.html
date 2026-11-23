@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#121311" />
+<meta name="theme-color" content="#0B0B0C" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="RODI" />
@@ -422,11 +422,11 @@ function downloadICS(orders, services, accessories, calendarNotes) {
 function GlobalStyle() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Inter:wght@400;500;600;700;800&display=swap');
       html, body { overflow-x: hidden; max-width: 100%; }
-      .rodi-root { font-family: 'Hanken Grotesk', system-ui, sans-serif; background: #F4F2ED; color: #16171A; overflow-x: hidden; max-width: 100vw; min-height: 100vh; }
+      .rodi-root { font-family: 'Inter', system-ui, sans-serif; background: #F4F2ED; color: #16171A; overflow-x: hidden; max-width: 100vw; min-height: 100vh; }
       .rodi-root * { box-sizing: border-box; }
-      .rodi-display { font-family: 'Bricolage Grotesque', 'Hanken Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.015em; }
+      .rodi-display { font-family: 'Archivo', 'Inter', sans-serif; font-weight: 800; font-stretch: 112%; letter-spacing: -0.01em; }
       .rodi-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
       .rodi-scrollbar::-webkit-scrollbar-thumb { background: #D8D5CB; border-radius: 4px; }
       .rodi-row:hover { background: #FBF5DA; }
@@ -441,20 +441,20 @@ function GlobalStyle() {
       .rodi-scrollbar table td:last-child, .rodi-scrollbar table th:last-child { padding-right: 14px !important; }
       .rodi-scrollbar table thead tr { background: #fff !important; }
       .rodi-outline { border: 1px solid #D9D6CC !important; }
-      input:focus, select:focus, textarea:focus { outline: 2px solid #F6BD1B; outline-offset: 1px; }
+      input:focus, select:focus, textarea:focus { outline: 2px solid #FFCC0A; outline-offset: 1px; }
       /* ---- app shell ---- */
       .rodi-shell { display: flex; min-height: 100vh; align-items: flex-start; }
-      .rodi-side { flex: 0 0 248px; width: 248px; position: sticky; top: 0; height: 100vh; background: #121311; color: #C9C9C2; padding: 28px 18px; display: flex; flex-direction: column; gap: 28px; overflow-y: auto; }
+      .rodi-side { flex: 0 0 248px; width: 248px; position: sticky; top: 0; height: 100vh; background: #0B0B0C; color: #C9C9C2; padding: 28px 18px; display: flex; flex-direction: column; gap: 28px; overflow-y: auto; }
       .rodi-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
-      .rodi-brand-mark { width: 38px; height: 38px; border-radius: 11px; background: #F6BD1B; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .rodi-brand-mark { width: 38px; height: 38px; border-radius: 11px; background: #FFCC0A; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       .rodi-brand-text { display: flex; flex-direction: column; }
       .rodi-nav { display: flex; flex-direction: column; gap: 4px; }
       .rodi-navbtn { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; border: none; background: transparent; color: #C9C9C2; font: inherit; font-weight: 500; font-size: 14.5px; cursor: pointer; text-align: left; white-space: nowrap; }
       .rodi-navbtn svg { flex-shrink: 0; }
       .rodi-navbtn:hover { background: #1A1B18; color: #fff; }
-      .rodi-navbtn.active { background: #1E1F1B; color: #fff; font-weight: 600; box-shadow: inset 3px 0 0 #F6BD1B; }
+      .rodi-navbtn.active { background: #1E1F1B; color: #fff; font-weight: 600; box-shadow: inset 3px 0 0 #FFCC0A; }
       .rodi-userchip { margin-top: auto; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: #1A1B18; border: none; cursor: pointer; font: inherit; width: 100%; }
-      .rodi-avatar { width: 34px; height: 34px; border-radius: 50%; background: #2A2B26; color: #F6BD1B; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+      .rodi-avatar { width: 34px; height: 34px; border-radius: 50%; background: #2A2B26; color: #FFCC0A; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
       .rodi-content { flex: 1 1 0; min-width: 0; }
       @media (min-width: 901px) and (max-width: 1400px) {
         .rodi-side { flex-basis: 208px; width: 208px; padding: 24px 12px; }
@@ -465,7 +465,44 @@ function GlobalStyle() {
         .rodi-scrollbar table td:first-child, .rodi-scrollbar table th:first-child { padding-left: 12px !important; }
         .rodi-scrollbar table td:last-child, .rodi-scrollbar table th:last-child { padding-right: 12px !important; }
       }
-      .rodi-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 28px 44px 8px; }
+      .rodi-newbtn { display: none; }
+      @media (min-width: 901px) {
+        /* desktop: one black command bar across the top instead of a sidebar */
+        .rodi-shell { flex-direction: column; align-items: stretch; }
+        .rodi-side { flex: none; width: 100%; height: auto; position: sticky; top: 0; z-index: 30; flex-direction: row; align-items: center; gap: 16px; padding: 10px 28px; overflow: visible; }
+        .rodi-brand { padding: 0; }
+        .rodi-nav { flex-direction: row; gap: 4px; background: #1E1E22; border-radius: 13px; padding: 4px; min-width: 0; }
+        .rodi-navbtn { padding: 0 14px; min-height: 42px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #B9BBC2; gap: 8px; }
+        .rodi-navbtn svg { display: none; }
+        .rodi-navbtn:hover { background: #2A2A2F; }
+        .rodi-navbtn.active, .rodi-navbtn.active:hover { background: #fff; color: #0B0B0C; box-shadow: none; }
+        .rodi-newbtn { display: inline-flex; margin-left: auto; align-items: center; gap: 7px; min-height: 44px; padding: 0 18px; border: none; border-radius: 12px; background: #FFCC0A; color: #0B0B0C; font: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer; white-space: nowrap; }
+        .rodi-userchip { margin-top: 0; width: auto; padding: 5px; background: transparent; }
+        .rodi-userchip > span + span { display: none; }
+        .rodi-page { padding-left: 28px !important; padding-right: 28px !important; }
+      }
+      @media (min-width: 901px) and (max-width: 1250px) { .rodi-brand-text { display: none; } .rodi-navbtn { padding: 0 10px; font-size: 13.5px; } .rodi-side { gap: 10px; padding: 10px 16px; } }
+      .rw-btn { min-height: 40px; padding: 0 14px; border-radius: 11px; border: 1.5px solid #0B0B0C; background: #0B0B0C; color: #fff; font: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; }
+      .rw-btn.ghost { background: #fff; color: #0B0B0C; border-color: #D8D7D0; }
+      .rw-btn.accent { background: #FFCC0A; border-color: #FFCC0A; color: #0B0B0C; font-weight: 800; }
+      .rw-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .rw-list { background: #fff; border: 1px solid #E2E1DC; border-radius: 20px; padding: 0 20px; }
+      .rw-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 0; border-top: 1px solid #EEEDE8; cursor: pointer; }
+      .rw-row:first-child { border-top: 0; }
+      .rw-who { flex: 1 1 210px; min-width: 0; }
+      .rw-who b { display: block; font-weight: 800; font-size: 15.5px; color: #0B0B0C; }
+      .rw-who > span { display: block; font-size: 13px; color: #5A5D64; overflow-wrap: anywhere; }
+      .rw-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+      .rw-flag { font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+      .rw-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; align-items: start; }
+      .rw-col { background: #E9E9E4; border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+      .rw-card { background: #fff; border-radius: 14px; padding: 13px; display: flex; flex-direction: column; gap: 9px; cursor: pointer; box-shadow: 0 1px 2px rgba(11,11,12,0.06); }
+      .rw-seg { display: inline-flex; gap: 4px; background: #E9E9E4; border-radius: 13px; padding: 4px; flex-wrap: wrap; }
+      .rw-seg button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-weight: 700; font-size: 13.5px; color: #5A5D64; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+      .rw-seg button.on { background: #0B0B0C; color: #fff; }
+      .rw-seg i { font-style: normal; font-size: 12px; opacity: 0.8; }
+      @media (max-width: 720px) { [data-testid="alloc-row"] { margin-left: 8px !important; padding-left: 12px !important; } }
+      .rodi-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 18px 28px 4px; }
       .rodi-gs { width: 100%; max-width: 440px; }
       .rodi-mbrand, .rodi-mchip { display: none; }
       .rodi-lbl::after { content: none; }
@@ -475,15 +512,16 @@ function GlobalStyle() {
         /* phone: bottom tab bar like a native app */
         .rodi-side { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%; height: auto; flex: none; z-index: 40; flex-direction: row; align-items: stretch; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); gap: 0; overflow: hidden; border-top: 1px solid #2A2B26; }
         .rodi-brand, .rodi-userchip { display: none; }
+        .rodi-navbtn[data-hidden="1"] { display: none; }
         .rodi-nav { flex-direction: row; flex: 1; justify-content: space-around; gap: 0; }
         .rodi-navbtn { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 2px; border-radius: 10px; font-size: 0; box-shadow: none !important; }
         .rodi-navbtn.active { background: #1E1F1B; }
         .rodi-lbl { font-size: 0; }
         .rodi-lbl::after { content: attr(data-short); font-size: 10px; font-weight: 600; letter-spacing: -0.01em; }
         .rodi-topbar { justify-content: flex-start; padding: calc(12px + env(safe-area-inset-top)) 14px 0; }
-        .rodi-mbrand { display: flex; width: 40px; height: 40px; border-radius: 11px; background: #F6BD1B; align-items: center; justify-content: center; flex-shrink: 0; }
+        .rodi-mbrand { display: flex; width: 40px; height: 40px; border-radius: 11px; background: #FFCC0A; align-items: center; justify-content: center; flex-shrink: 0; }
         .rodi-mchip { display: flex; background: transparent; border: none; padding: 0; flex-shrink: 0; cursor: pointer; }
-        .rodi-mchip .rodi-avatar { background: #121311; width: 40px; height: 40px; }
+        .rodi-mchip .rodi-avatar { background: #0B0B0C; width: 40px; height: 40px; }
         .rodi-gs { flex: 1; min-width: 0; max-width: none; }
         .rodi-page { padding: 8px 14px calc(96px + env(safe-area-inset-bottom)) !important; }
         .rodi-two-col { grid-template-columns: minmax(0, 1fr) !important; }
@@ -553,9 +591,14 @@ function BrandTag({ name }) {
 }
 // Service bikes are free text ("DIRODI GEN 6 ST"): the first word is treated as the brand.
 function BikeLabel({ bike }) {
+  const ctx = React.useContext(AppCtx);
   const words = String(bike || "").trim().split(/\s+/).filter(Boolean);
   if (!words.length) return <span>—</span>;
-  return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><BrandTag name={words[0]} />{words.length > 1 && <span style={{ fontWeight: 600 }}>{words.slice(1).join(" ")}</span>}</span>;
+  // A brand can be two words (ARCTIC LEOPARD): use the longest brand already on an order that this bike starts with.
+  const text = words.join(" ").toUpperCase();
+  let n = 1;
+  ((ctx.records && ctx.records.orders) || []).forEach((o) => { const b = String(o.brand || "").trim().toUpperCase(); const c = b.split(/\s+/).length; if (b && c > n && (text === b || text.indexOf(b + " ") === 0)) n = c; });
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><BrandTag name={words.slice(0, n).join(" ")} />{words.length > n && <span style={{ fontWeight: 600 }}>{words.slice(n).join(" ")}</span>}</span>;
 }
 const CUSTOMER_NAME_STYLE = { fontWeight: 800, fontSize: 13, color: "#16171A" };
 
@@ -675,7 +718,7 @@ function Drawer({ title, icon, onClose, children, onSubmit }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: "#191B18", display: "flex", alignItems: "center", justifyContent: "center", color: "#F6BD1B" }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: "#191B18", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFCC0A" }}>
               {icon}
             </div>
             <h2 className="rodi-display" style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>{title}</h2>
@@ -711,7 +754,7 @@ const ZAPIER_SERVICE_TEXT_WEBHOOK = "https://hooks.zapier.com/hooks/catch/233909
 function auMobile(v) { const m = String(v || "").replace(/\D/g, "").match(/^(?:61|0)?(4\d{8})$/); return m ? "+61" + m[1] : null; }
 function sendServiceText(kind, s) {
   const body = new URLSearchParams({ kind, phone: s.phone || "", name: s.customer || "", bike: s.bike || "", date: s.bookedDate || "" }).toString();
-  fetch(ZAPIER_SERVICE_TEXT_WEBHOOK, {
+  fetch(ZAPIER_SERVICE_TEXT_WEBHOOK + "?" + body, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -719,10 +762,28 @@ function sendServiceText(kind, s) {
   }).catch((e) => console.error("Service text failed", e));
 }
 
-function OrderForm({ initial, onSave, onClose, onCreateService }) {
+// On a customer's order: say which stock order their bike is coming from, so it is counted once.
+function StockLink({ form, onChange }) {
+  const orders = React.useContext(AppCtx).records.orders;
+  const stock = orders.filter((o) => !o.customer && !o.archived && o.id !== form.id && (o.id === form.parentId || stockCount(o, orders).free > 0));
+  if (!stock.length && !form.parentId) return null;
+  return (
+    <Field label="Coming from stock order">
+      <select data-testid="stock-link" style={inputStyle} value={form.parentId || ""} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Not part of a stock order</option>
+        {stock.map((o) => { const c = stockCount(o, orders); return <option key={o.id} value={o.id}>{[o.brand, o.type, o.colour].filter(Boolean).join(" ")} · {o.status} · {c.free} of {c.total} free</option>; })}
+      </select>
+    </Field>
+  );
+}
+
+function OrderForm({ initial, onSave, onClose, onCreateService, isNew, onAddModel }) {
   const [form, setForm] = useState(initial);
+  const [extra, setExtra] = useState([]); // more models on the same supplier order (new orders only)
+  const setLine = (i, k, v) => setExtra((xs) => xs.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  const groupSize = React.useContext(AppCtx).records.orders.filter((o) => form.groupId && o.groupId === form.groupId && o.id !== form.id).length;
   // Plain shop stock (no customer) has no payment/fulfillment — hide those fields.
-  const hideSale = form.forStock && !form.customer;
+  const hideSale = !String(form.customer || "").trim();
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
@@ -730,7 +791,8 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (form.notified && !initial.notified) notifyCustomerReady(form);
-        onSave(form);
+        // No customer means it is shop stock: no box to tick.
+        onSave(String(form.customer || "").trim() ? form : { ...form, forStock: true }, extra.filter((x) => String(x.type).trim()));
       }}>
       <Field label="Status">
         <select
@@ -754,6 +816,20 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
         <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
         <Field label="Qty"><input type="number" min="1" style={inputStyle} value={form.qty} onChange={set("qty")} /></Field>
       </div>
+      <div data-testid="more-models" style={{ display: "flex", flexDirection: "column", gap: 8, background: "#F7F5EE", border: "1px solid #E7E4DB", borderRadius: 12, padding: 12 }}>
+        {(groupSize > 0 || (isNew && form.groupId)) && <div style={{ fontSize: 13, color: "#5A5D64" }}>This is one of {groupSize + 1} models on the same order. They share status, ETA and tracking.</div>}
+        {extra.map((x, i) => (
+          <div key={i} data-testid="extra-line" style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1.2fr) 64px 40px", gap: 8, alignItems: "end" }}>
+            <Field label={"Model " + (i + 2)}><input style={inputStyle} value={x.type} onChange={(e) => setLine(i, "type", e.target.value.toUpperCase())} placeholder="TYPE / MODEL" /></Field>
+            <Field label="Colour"><input style={inputStyle} value={x.colour} onChange={(e) => setLine(i, "colour", e.target.value.toUpperCase())} /></Field>
+            <Field label="Qty"><input type="number" min="1" style={inputStyle} value={x.qty} onChange={(e) => setLine(i, "qty", e.target.value)} /></Field>
+            <button type="button" aria-label="Remove this model" className="rodi-btn" onClick={() => setExtra((xs) => xs.filter((_, j) => j !== i))} style={{ height: 40, border: "1px solid #D8DAD1", background: "#fff", borderRadius: 8, cursor: "pointer" }}><X size={14} /></button>
+          </div>
+        ))}
+        {isNew
+          ? <button type="button" data-testid="add-model" className="rodi-btn rw-btn ghost" onClick={() => setExtra((xs) => [...xs, { type: "", colour: "", qty: 1 }])}>+ Add another model to this order</button>
+          : onAddModel && <button type="button" data-testid="add-model-existing" className="rodi-btn rw-btn ghost" onClick={() => onAddModel(form)}>+ Add another model to this order</button>}
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="ETA"><input type="date" style={inputStyle} value={form.eta} onChange={set("eta")} /></Field>
         <Field label="Tracking #"><input style={inputStyle} value={form.tracking} onChange={set("tracking")} placeholder="ZSO93494" /></Field>
@@ -762,14 +838,16 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
         display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "#191B18",
         background: "#EFF3EE", border: "1px solid #D8DAD1", borderRadius: 8, padding: "10px 12px",
       }}>
-        <input type="checkbox" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
-        Shop stock only
+        {String(form.customer || "").trim()
+          ? <><input type="checkbox" data-testid="from-stock" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />This bike is coming out of shop stock</>
+          : <span data-testid="stock-auto">No customer entered, so this saves as <strong>shop stock</strong>. Add a customer below to make it their order.</span>}
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Customer"><CustomerInput value={form.customer} onChange={(v) => setForm((f) => ({ ...f, customer: v }))} onPick={(c) => setForm((f) => ({ ...f, customer: c.name.toUpperCase(), phone: f.phone || c.phone || "" }))} /></Field>
         <Field label="Phone"><input style={inputStyle} value={form.phone} onChange={set("phone")} /></Field>
       </div>
       <CustomerExtras kind="order" form={form} onFillPhone={(ph) => setForm({ ...form, phone: ph })} />
+      {!hideSale && <StockLink form={form} onChange={(parentId) => setForm((f) => ({ ...f, parentId }))} />}
       {!hideSale && (<>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Fulfillment">
@@ -805,7 +883,7 @@ function OrderForm({ initial, onSave, onClose, onCreateService }) {
       </>)}
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
       <button type="submit" className="rodi-btn" style={{
-        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
+        marginTop: 8, background: "#FFCC0A", color: "#191B18", border: "none",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save
@@ -836,7 +914,8 @@ function DeliveryForm({ initial, onSave, onClose }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (form.notified && !initial.notified) notifyCustomerReady(form);
-        onSave(form);
+        // No customer means it is shop stock: no box to tick.
+        onSave(String(form.customer || "").trim() ? form : { ...form, forStock: true });
       }}>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
@@ -868,7 +947,7 @@ function DeliveryForm({ initial, onSave, onClose }) {
       </Field>
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
       <button type="submit" className="rodi-btn" style={{
-        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
+        marginTop: 8, background: "#FFCC0A", color: "#191B18", border: "none",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save delivery
@@ -897,7 +976,7 @@ const ARRIVAL_ITEMS = ["CHARGER", "BATTERY", "SEAT", "KEY", "LIGHTS", "BASKET / 
 const ARRIVAL_CONDITIONS = ["GOOD", "FAIR", "DAMAGED"];
 function splitNotes(notes) {
   const jobParts = [], log = [], parts = [];
-  let items = {}, cond = "", inv = "", noRemind = false; const inParts = [];
+  let items = {}, cond = "", inv = "", noRemind = false, wait = ""; const inParts = [];
   (notes || "").split("\n").map((l) => l.trim()).filter(Boolean).forEach((line) => {
     if (STAMP_RE.test(line)) log.push(line);
     else if (line.startsWith("PART | ")) parts.push(line.slice(7));
@@ -905,11 +984,12 @@ function splitNotes(notes) {
     else if (line.startsWith("CND | ")) cond = line.slice(6).trim();
     else if (line.startsWith("INV | ")) inv = line.slice(6).trim() || "YES";
     else if (line.startsWith("NOSMS | ")) noRemind = true;
+    else if (line.startsWith("WAIT | ")) wait = line.slice(7).trim();
     else if (line.startsWith("IN | ")) inParts.push(line.slice(5).replace(/⏎/g, "\n"));
     else if (line.startsWith("JOB | ")) jobParts.push(line.slice(6).replace(/⏎/g, "\n"));
     else jobParts.push(line.replace(/⏎/g, "\n"));
   });
-  return { job: jobParts.join("\n"), log, parts, arrive: { items, cond, text: inParts.join("\n") }, meta: { inv, noRemind } };
+  return { job: jobParts.join("\n"), log, parts, arrive: { items, cond, text: inParts.join("\n") }, meta: { inv, noRemind, wait } };
 }
 function joinNotes(job, logRaws, parts, arrive, meta) {
   const mt = meta || { inv: "", noRemind: false };
@@ -924,6 +1004,7 @@ function joinNotes(job, logRaws, parts, arrive, meta) {
     ...(t ? ["IN | " + t.replace(/\n/g, "⏎")] : []),
     ...(mt.inv ? ["INV | " + mt.inv] : []),
     ...(mt.noRemind ? ["NOSMS | Y"] : []),
+    ...(mt.wait ? ["WAIT | " + mt.wait] : []), // id of the accessories/parts order this job is waiting on
     ...(parts || []).map((p) => "PART | " + p), ...logRaws,
   ].join("\n");
 }
@@ -1000,7 +1081,7 @@ function LogEntries({ entries, onEdit, onDelete, fontSize }) {
           onKeyDown={(ev) => { if (ev.key === "Escape") setEditing(null); if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save(); } }}
           style={{ ...inputStyle, resize: "vertical", marginTop: 4 }} />
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-          <button type="button" data-testid="log-entry-save" onClick={save} className="rodi-btn" style={{ background: "#F6BD1B", border: "1px solid #D9D6CC", borderRadius: 7, padding: "4px 12px", fontWeight: 700, cursor: "pointer", fontSize: 12.5 }}>Save</button>
+          <button type="button" data-testid="log-entry-save" onClick={save} className="rodi-btn" style={{ background: "#FFCC0A", border: "1px solid #D9D6CC", borderRadius: 7, padding: "4px 12px", fontWeight: 700, cursor: "pointer", fontSize: 12.5 }}>Save</button>
           <button type="button" onClick={() => setEditing(null)} style={{ background: "#fff", border: "1px solid #D8DAD1", borderRadius: 7, padding: "4px 12px", cursor: "pointer", fontSize: 12.5 }}>Cancel</button>
         </div>
       </div>
@@ -1053,7 +1134,7 @@ function ServiceLog({ value, onChange }) {
           style={{ ...inputStyle, flex: 1, resize: "vertical", minHeight: 44 }}
         />
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={add} className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 10,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 10,
           padding: "0 16px", minHeight: 44, cursor: "pointer", fontWeight: 700, fontSize: 13.5,
         }}>Add</button>
       </div>
@@ -1102,7 +1183,7 @@ function PartsUsed({ value, onChange }) {
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
           style={{ ...inputStyle, flex: 1 }} data-testid="part-input" />
         <button type="button" onClick={add} data-testid="part-add" className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8, padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8, padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
         }}>Add</button>
       </div>
     </div>
@@ -1164,7 +1245,7 @@ function JobNote({ value, onChange }) {
   );
 }
 
-function ServiceForm({ initial, onSave, onClose, isNew }) {
+function ServiceForm({ initial, onSave, onClose, isNew, onSaveCheckIn }) {
   const [form, setForm] = useState(initial);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
@@ -1237,11 +1318,14 @@ function ServiceForm({ initial, onSave, onClose, isNew }) {
       </div>
       <PrintJobButton job={form} />
       <button type="submit" className="rodi-btn" style={{
-        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
+        marginTop: 8, background: "#FFCC0A", color: "#191B18", border: "none",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save
       </button>
+      {isNew && onSaveCheckIn && (
+        <button type="button" data-testid="save-checkin" className="rodi-btn rw-btn ghost" style={{ minHeight: 46 }} onClick={() => onSaveCheckIn(form)}>Customer is here now: save and check in</button>
+      )}
     </Drawer>
   );
 }
@@ -1280,7 +1364,7 @@ function PricingForm({ initial, onSave, onClose }) {
       )}
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} placeholder="Supplier, freight, bundle details…" /></Field>
       <button type="submit" className="rodi-btn" style={{
-        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
+        marginTop: 8, background: "#FFCC0A", color: "#191B18", border: "none",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save price
@@ -1295,7 +1379,7 @@ function AccessoryForm({ initial, onSave, onClose }) {
   const upper = (k) => (e) => setForm({ ...form, [k]: e.target.value.toUpperCase() });
   return (
     <Drawer title={initial.brand || initial.type ? "Edit accessory order" : "New accessory order"} icon={<Boxes size={17} />} onClose={onClose}
-      onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+      onSubmit={(e) => { e.preventDefault(); onSave(String(form.customer || "").trim() ? form : { ...form, forStock: true }); }}>
       <Field label="Status">
         <select
           style={{
@@ -1339,12 +1423,13 @@ function AccessoryForm({ initial, onSave, onClose }) {
         display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600, color: "#191B18",
         background: "#EFF3EE", border: "1px solid #D8DAD1", borderRadius: 8, padding: "10px 12px",
       }}>
-        <input type="checkbox" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />
-        For shop stock (not tied to a customer)
+        {String(form.customer || "").trim()
+          ? <><input type="checkbox" style={{ width: 20, height: 20, cursor: "pointer", flexShrink: 0 }} checked={form.forStock} onChange={(e) => setForm({ ...form, forStock: e.target.checked })} />This is coming out of shop stock</>
+          : <span>No customer entered, so this saves as <strong>shop stock</strong>.</span>}
       </label>
       <Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={set("notes")} /></Field>
       <button type="submit" className="rodi-btn" style={{
-        marginTop: 8, background: "#F6BD1B", color: "#191B18", border: "none",
+        marginTop: 8, background: "#FFCC0A", color: "#191B18", border: "none",
         borderRadius: 9, padding: "12px 0", fontWeight: 700, fontSize: 15, cursor: "pointer",
       }}>
         Save order
@@ -1444,7 +1529,7 @@ function Toast({ toast, onClose }) {
       <span>{toast.text}</span>
       {toast.undo && (
         <button type="button" onClick={() => { const u = toast.undo; onClose(); u(); }} style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 6, padding: "5px 12px", fontWeight: 700, cursor: "pointer", fontSize: 13,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 6, padding: "5px 12px", fontWeight: 700, cursor: "pointer", fontSize: 13,
         }}>Undo</button>
       )}
       <button type="button" onClick={onClose} title="Dismiss" style={{ background: "none", border: "none", color: "#C9CBC3", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
@@ -1521,7 +1606,7 @@ function GlobalSearch({ orders, services, accessories, onOpen }) {
 function QuickFilterChip({ label, onClear }) {
   return (
     <button onClick={onClear} className="rodi-btn" data-testid="quick-filter-chip" title="Clear filter" style={{
-      border: "1px solid #D9D6CC", background: "#F6BD1B", borderRadius: 999, padding: "6px 12px", cursor: "pointer",
+      border: "1px solid #D9D6CC", background: "#FFCC0A", borderRadius: 999, padding: "6px 12px", cursor: "pointer",
       fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6,
     }}>
       Showing: {label} <X size={12} />
@@ -1550,6 +1635,538 @@ function serviceQuickMatch(s, quick) {
   return true;
 }
 
+// ===== Workflow layer: every job and order shows one clear next step =====
+function niceFirst(name) { const f = String(name || "").trim().split(/\s+/)[0] || ""; return f ? f.charAt(0).toUpperCase() + f.slice(1).toLowerCase() : "The customer"; }
+// The customer counts as told once the workshop log has a "CUSTOMER TOLD" entry.
+function serviceTold(s) { return !!logFind(s.notes, "CUSTOMER TOLD"); }
+function smsHref(phone, body) { return `sms:${String(phone).replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(body)}`; }
+// Days since the customer was last told (or reminded) that the bike is ready. null if never told.
+function daysSinceTold(s) {
+  let best = null;
+  parseLog(s.notes).forEach((e) => {
+    if (e.text.indexOf("CUSTOMER TOLD") !== 0 && e.text.indexOf("PICKUP REMINDER") !== 0) return;
+    const m = String(e.stamp).match(/^(\d{2})\/(\d{2})\/(\d{4})/); if (!m) return;
+    const d = -daysFromToday(`${m[3]}-${m[2]}-${m[1]}`);
+    if (best === null || d < best) best = d;
+  });
+  return best;
+}
+const PICKUP_NUDGE_DAYS = 3;
+function partFor(s, accessories) { const w = metaOf(s.notes).wait; return w ? (accessories || []).find((a) => a.id === w) || null : null; }
+function partName(a) { return [a.brand, a.type].filter(Boolean).join(" ") || "the part"; }
+// Words of 3+ letters in Title Case, short codes kept (matches how the texting service tidies the bike name).
+function tidyBike(v) { return String(v || "").replace(/[^\p{L}\p{N} .'\/-]/gu, " ").trim().split(/\s+/).filter(Boolean).map((w) => (w.length <= 2 ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(" ").slice(0, 40).trim(); }
+function readyTextFor(kind, s) {
+  // Same first-name rule as the texting service: letters, hyphens and apostrophes only.
+  const clean = (String(s.customer || "").trim().split(/\s+/)[0] || "").replace(/[^\p{L}'-]/gu, "").slice(0, 30);
+  const who = clean ? clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase() : "there";
+  const bike = tidyBike(s.bike) ? "your " + tidyBike(s.bike) : "your bike";
+  return kind === "nudge"
+    ? `Hey ${who}, just a reminder ${bike} is ready for pick up at Rodi Electric. Cheers, Rodi crew.`
+    : `Hey ${who}, ${bike} is ready for pick up from Rodi Electric. Cheers, Rodi crew.`;
+}
+function serviceStep(s, accessories) {
+  if (!s || s.archived) return null;
+  const who = niceFirst(s.customer);
+  if (s.status === "Booked") {
+    const late = isPastDate(s.bookedDate);
+    return { act: "checkin", label: "Check in bike", urgent: late, why: late ? "Was booked for " + formatAU(s.bookedDate) + " and has not been checked in." : s.bookedDate ? "Booked for " + String(formatAURel(s.bookedDate)).toLowerCase() + ". Check it in when it arrives." : "No booked date yet. Check it in when it arrives." };
+  }
+  if (s.status === "In Progress") return { act: "ready", label: "Mark ready", why: "On the bench. Mark it ready when the work is finished.", alt: { act: "parts", label: "Awaiting parts" } };
+  if (s.status === "Awaiting Parts") {
+    const p = partFor(s, accessories);
+    if (p && p.status === "Received") return { act: "partsin", urgent: true, label: "Back on the bench", why: partName(p) + " has arrived. This job can carry on." };
+    return { act: "partsin", label: "Parts arrived", why: p ? "Waiting on " + partName(p) + (p.eta ? ", due " + String(formatAURel(p.eta)).toLowerCase() : "") + "." : "Stuck waiting on parts.", alt: p ? null : { act: "parts", label: "Link a parts order" } };
+  }
+  if (s.status === "Ready for Pickup") {
+    const mobile = !!auMobile(s.phone);
+    if (!serviceTold(s)) return mobile ? { act: "tell", urgent: true, label: "Text customer", why: "Ready, but " + who + " has not been told." } : { act: "told", urgent: true, label: "Mark customer told", why: "Ready, but " + who + " has not been told. No mobile on file, so call them." };
+    const days = daysSinceTold(s);
+    if (days !== null && days >= PICKUP_NUDGE_DAYS) return { act: "pickup", urgent: true, label: "Picked up", why: "Ready for " + days + " days and not collected.", alt: mobile ? { act: "nudge", label: "Send reminder" } : null };
+    return { act: "pickup", label: "Picked up", why: who + " knows it is ready. Hand it over when they come in." };
+  }
+  if (s.status === "Completed" && invState(s.notes) === "no") return { act: "invoice", urgent: true, label: "Mark invoiced", why: "Completed, but no invoice recorded.", alt: { act: "invna", label: "N/A" } };
+  return null;
+}
+// A stock order can have some of its bikes allocated to customers. Each allocation is its own order row that points
+// at the stock order (parentId), so the customer's details live in one place and the stock order is never doubled up.
+function allocationsOf(order, orders) { return (orders || []).filter((o) => o.parentId && o.parentId === order.id); }
+function stockCount(order, orders) {
+  const kids = allocationsOf(order, orders);
+  const used = kids.reduce((t, k) => t + (Number(k.qty) || 1), 0);
+  const total = Number(order.qty) || 1;
+  return { total, used, free: Math.max(0, total - used), kids };
+}
+// kind: "order" (bikes) or "accessory".
+function orderStep(o, kind) {
+  if (!o || o.archived) return null;
+  // An allocated bike travels with its stock order: nothing to do on it until that order has arrived.
+  if (o.parentId && o.status !== "Received") return null;
+  const list = kind === "order" ? ORDER_STATUSES : ACCESSORY_STATUSES;
+  if (o.status !== "Received") {
+    const next = nextStatus(o.status, list);
+    if (!next) return null;
+    const late = isPastDate(o.eta);
+    return { act: "advance", label: "Mark " + next.toLowerCase(), urgent: late, why: late ? "Overdue. Was due " + formatAU(o.eta) + ". Chase the supplier or mark it " + next.toLowerCase() + "." : o.eta ? "Due " + String(formatAURel(o.eta)).toLowerCase() + "." : "No arrival date yet." };
+  }
+  if (kind === "order" && o.assemblyStatus !== "Assembled") return { act: "assembled", label: "Mark assembled", why: "Arrived. Needs assembly." };
+  if (!o.customer) return null; // shop stock stays in the list as inventory
+  const who = niceFirst(o.customer);
+  if (kind === "order" && !o.notified) return { act: "notify", urgent: true, label: o.phone ? "Text customer" : "Mark customer told", why: "Ready, but " + who + " has not been told." };
+  return { act: "archive", label: kind === "order" && o.fulfillment === "Delivery" ? "Delivered" : "Collected", why: kind === "order" && o.fulfillment === "Delivery" ? "Waiting to be delivered to " + who + "." : "Waiting for " + who + " to collect." };
+}
+// Hotel rentals. Old bookings (before today, no stage recorded) go straight to the deposit step.
+function rentalStep(r) {
+  if (!r || r.depositReleasedAt) return null;
+  const d = daysFromToday(r.rentalDate);
+  if (r.stage === "returned" || (!r.stage && d !== null && d < 0)) return r.hasPhone ? { act: "deposit", urgent: true, label: "Deposit released", why: "Bikes are back. Release the deposit in Booqable, then text the guest." } : null;
+  if (r.stage === "out") return { act: "returned", label: "Mark returned", why: "Bikes are out now." + (r.endTime ? " Due back " + r.endTime + "." : "") };
+  if (d === 0) return { act: "out", label: "Bikes handed out", why: "Booked for today" + (r.startTime ? " from " + r.startTime : "") + "." };
+  return null;
+}
+function rentalStage(r) {
+  if (r.depositReleasedAt) return ["Deposit released", "#DFF3E7", "#1E6B45"];
+  const d = daysFromToday(r.rentalDate);
+  if (r.stage === "returned" || (!r.stage && d !== null && d < 0)) return ["Returned", "#FCE5E1", "#9B2C1F"];
+  if (r.stage === "out") return ["Out now", "#FFF0C2", "#7A4B00"];
+  return d === 0 ? ["Today", "#E3EDFA", "#1D4F91"] : ["Upcoming", "#EFEFEA", "#3F4248"];
+}
+function StepButtons({ step, onRun }) {
+  if (!step) return null;
+  return (
+    <span data-testid="step-buttons" style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
+      {step.alt && step.alt.act && <button type="button" className="rodi-btn rw-btn ghost" data-step={step.alt.act} onClick={() => onRun(step.alt.act)}>{step.alt.label}</button>}
+      {step.href
+        ? <a className="rodi-btn rw-btn" data-step={step.act} href={step.href} onClick={() => onRun(step.act)}>{step.label}</a>
+        : <button type="button" className="rodi-btn rw-btn" data-step={step.act} onClick={() => onRun(step.act)}>{step.label}</button>}
+    </span>
+  );
+}
+function SegTabs({ items, value, onPick, testid }) {
+  return (
+    <div className="rw-seg" role="group" data-testid={testid}>
+      {items.map(([id, label, count, tid]) => (
+        <button key={id} type="button" data-testid={tid} className={value === id ? "on" : ""} aria-pressed={value === id} onClick={() => onPick(id)}>{label}{count != null && <i>{count}</i>}</button>
+      ))}
+    </div>
+  );
+}
+function ServiceFlags({ s }) {
+  const ctx = React.useContext(AppCtx);
+  const missing = arrivalMissing(s.notes);
+  const part = s.status === "Awaiting Parts" ? partFor(s, ctx.records.accessories) : null;
+  const waited = s.status === "Ready for Pickup" ? daysSinceTold(s) : null;
+  const flag = (bg, fg, text, tid) => <span key={text} data-testid={tid} className="rw-flag" style={{ background: bg, color: fg }}>{text}</span>;
+  return (
+    <>
+      {missing.length > 0 && flag("#FCE5E1", "#9B2C1F", "No " + missing.join(", ").toLowerCase(), "list-not-received")}
+      {s.status === "Ready for Pickup" && (serviceTold(s) ? (waited !== null && waited >= PICKUP_NUDGE_DAYS ? flag("#FCE5E1", "#9B2C1F", "Waiting " + waited + " days", "flag-waiting") : flag("#DFF3E7", "#1E6B45", "Customer told")) : flag("#FFF0C2", "#7A4B00", "Not told yet"))}
+      {part && (part.status === "Received" ? flag("#DFF3E7", "#1E6B45", "Parts are in", "flag-parts-in") : flag("#EFEFEA", "#3F4248", "Waiting on " + partName(part).toLowerCase(), "flag-waiting-on"))}
+      {logFind(s.notes, "CONFIRMATION TEXT SENT") && s.status === "Booked" && flag("#E3EDFA", "#1D4F91", "Confirmation sent")}
+    </>
+  );
+}
+function JobCardBtn({ job }) {
+  const ctx = React.useContext(AppCtx);
+  if (!ctx.printJob) return null;
+  return <button type="button" className="rodi-btn rw-btn ghost" data-testid="row-job-card" onClick={(e) => { e.stopPropagation(); ctx.printJob(job); }}>Job card</button>;
+}
+// Services as a list: one row per job, the next step on the right. Click a row to open the full job.
+function ServiceRows({ rows, archivedView, onEdit, onStep, onSetStatus, onToggleInvoiced, onToggleArchive, onDelete }) {
+  const acc = React.useContext(AppCtx).records.accessories;
+  return (
+    <section className="rw-list" data-testid="service-list">
+      {rows.length === 0 && <div style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>{archivedView ? "No archived bookings yet." : "No bookings match — add one to get started."}</div>}
+      {rows.map((s) => {
+        const overdue = !archivedView && isPastDate(s.bookedDate) && s.status === "Booked";
+        const note = jobNoteOf(s.notes);
+        return (
+          <div key={s.id} className="rw-row rodi-row" data-testid="service-row" onClick={() => onEdit(s)} style={{ background: overdue ? "#FBEAE8" : undefined, margin: overdue ? "0 -20px" : undefined, padding: overdue ? "14px 20px" : undefined }}>
+            <div className="rw-who">
+              <b data-testid="cust-name">{s.customer || "—"}<MissingTag kind="service" rec={s} /></b>
+              <span>{[s.serviceType, s.phone, s.mechanic && "Mechanic " + s.mechanic].filter(Boolean).join(" · ") || "—"}</span>
+              {note && <span style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{note}</span>}
+            </div>
+            <div className="rw-meta">
+              <BikeLabel bike={s.bike} />
+              <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
+              <span className="rw-flag" style={{ background: overdue ? "#C1483A" : "#EFEFEA", color: overdue ? "#fff" : "#3F4248" }}>{formatAURel(s.bookedDate) || "No date"}{overdue && " ⚠"}</span>
+              {s.pickupDate && <span className="rw-flag" style={{ background: "#EFEFEA", color: "#3F4248" }}>Pick up {formatAURel(s.pickupDate)}</span>}
+              <ServiceFlags s={s} />
+              <span onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#5A5D64" }}>Invoiced <InvoiceSelect testid="list-invoiced" notes={s.notes} onSet={(st) => onToggleInvoiced(s.id, st)} /></span>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
+              {!archivedView && <StepButtons step={serviceStep(s, acc)} onRun={(act) => onStep(s, act)} />}
+              <JobCardBtn job={s} />
+              <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>{s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}</IconBtn>
+              <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+function ServiceBoard({ rows, onEdit, onStep }) {
+  const acc = React.useContext(AppCtx).records.accessories;
+  return (
+    <div className="rw-board" data-testid="service-board">
+      {SERVICE_STATUSES.map((st) => {
+        const jobs = rows.filter((s) => s.status === st);
+        return (
+          <section key={st} className="rw-col" aria-label={st}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 6px 0", fontWeight: 700, fontSize: 13.5 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 999, background: SERVICE_COLORS[st] }} />{st}</span>
+              <span style={{ color: "#5A5D64" }}>{jobs.length}</span>
+            </div>
+            {jobs.length === 0 && <div style={{ fontSize: 13, color: "#5A5D64", padding: "10px 6px 12px" }}>Nothing here.</div>}
+            {jobs.map((s) => (
+              <article key={s.id} className="rw-card" data-testid="board-card" onClick={() => onEdit(s)}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15.5, color: "#0B0B0C" }}>{s.customer || "—"}</div>
+                  <div style={{ marginTop: 5, fontSize: 13.5 }}><BikeLabel bike={s.bike} /></div>
+                  <div style={{ fontSize: 13, color: "#5A5D64", marginTop: 4 }}>{s.serviceType || "—"}</div>
+                </div>
+                <div className="rw-meta">
+                  <span className="rw-flag" style={{ background: "#EFEFEA", color: "#3F4248" }}>{formatAURel(s.bookedDate) || "No date"}</span>
+                  <ServiceFlags s={s} />
+                  {invState(s.notes) !== "no" && <span className="rw-flag" style={{ background: invState(s.notes) === "yes" ? "#DFF3E7" : "#E3EDFA", color: invState(s.notes) === "yes" ? "#1E6B45" : "#1D4F91" }}>{invState(s.notes) === "yes" ? "Invoiced" : "Invoice N/A"}</span>}
+                </div>
+                <StepButtons step={serviceStep(s, acc)} onRun={(act) => onStep(s, act)} />
+              </article>
+            ))}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onSetStatus, onDuplicate, onToggleArchive, onDelete, onAllocate, onAddModel }) {
+  const isOrder = kind === "order";
+  const all = React.useContext(AppCtx).records.orders;
+  const colors = isOrder ? ORDER_COLORS : ACCESSORY_COLORS, statuses = isOrder ? ORDER_STATUSES : ACCESSORY_STATUSES;
+  const lbl = { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#8A8C82", textTransform: "uppercase" };
+  const tag = (color, text) => <span key={text} style={{ fontSize: 10.5, color, fontWeight: 700 }}>{text}</span>;
+  // Allocated bikes sit under their stock order instead of as separate rows.
+  const shown = new Set(rows.map((r) => r.id));
+  const top = rows.filter((o) => !(isOrder && o.parentId && shown.has(o.parentId)));
+  const kidsOf = (o) => (isOrder ? rows.filter((k) => k.parentId === o.id) : []);
+  // Several models bought on the same supplier order share a groupId and are shown together under one heading.
+  const units = [];
+  const seenGroups = new Set();
+  top.forEach((o) => {
+    if (isOrder && o.groupId) {
+      if (seenGroups.has(o.groupId)) return;
+      seenGroups.add(o.groupId);
+      const lines = top.filter((x) => x.groupId === o.groupId);
+      if (lines.length > 1) { units.push({ group: o.groupId, lines }); return; }
+    }
+    units.push({ lines: [o] });
+  });
+  const stageCount = (st) => units.filter((u) => u.lines[0].status === st).length;
+  const actions = (o, child, noStep) => (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
+      {!archivedView && !noStep && <StepButtons step={orderStep(o, kind)} onRun={(act) => onStep(o, act)} />}
+      {!child && onDuplicate && <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>}
+      <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>{o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}</IconBtn>
+      <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(o.id); }} title={child ? "Remove this allocation (the bike goes back to free stock)" : "Delete"} danger><Trash2 size={14} /></IconBtn>
+    </div>
+  );
+  const customerTags = (o) => (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {o.forStock && o.customer && !o.parentId && tag("#2E8B77", "FROM STOCK")}
+      {o.notified && tag("#3A7CA5", "Texted")}
+      {isOrder && o.status === "Received" && (o.assemblyStatus === "Assembled" ? tag("#4C9A6A", "Assembled") : tag("#D98B3D", "For assembly"))}
+    </div>
+  );
+  const payPill = (o) => { const pay = isOrder ? o.payment : o.paymentOwing; return pay ? <span data-testid="pay-pill" className="rw-flag" style={{ background: tintOf(PAYMENT_COLORS[pay], "22"), color: shadeHex(PAYMENT_COLORS[pay] || "#3F4248", 0.35) }}>{pay}</span> : null; };
+  const stageHead = (o, idx) => (
+    <div data-testid="stage-head" style={{ display: "flex", alignItems: "center", gap: 9, padding: idx === 0 ? "16px 0 8px" : "22px 0 8px", borderTop: idx === 0 ? "none" : "1px solid #EEEDE8" }}>
+      <span style={{ width: 10, height: 10, borderRadius: 999, background: colors[o.status] }} />
+      <span className="rodi-display" style={{ fontSize: 17 }}>{o.status}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#5A5D64" }}>{stageCount(o.status)}</span>
+    </div>
+  );
+  const allocRows = (o) => kidsOf(o).map((k) => (
+    <div key={k.id} className="rw-row rodi-row" data-testid="alloc-row" onClick={() => onEdit(k)} style={{ borderTop: "1px dashed #E2E1DC", marginLeft: 22, paddingLeft: 16, borderLeft: "3px solid " + brandColor(o.brand), background: "#FAFAF7" }}>
+      <div className="rw-who" style={{ flex: "2 1 210px" }}>
+        <span style={{ ...lbl, display: "block" }}>Allocated to</span>
+        <b data-testid="cust-name">{k.customer || "—"}</b>
+        <span>{[k.phone, (Number(k.qty) || 1) > 1 && "Qty " + k.qty, k.colour && k.colour !== o.colour && k.colour].filter(Boolean).join(" · ")}</span>
+        <MissingTag kind={kind} rec={k} />
+      </div>
+      <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+        <div style={lbl}>{k.fulfillment || "Pickup"}</div>
+        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{formatAURel(k.fulfillment === "Delivery" ? k.deliveryDate : k.receivedDate) || "No date"}</div>
+      </div>
+      <div className="rw-meta" style={{ gap: 6 }}>
+        {k.status !== o.status && <StatusMenu label={k.status} color={colors[k.status]} statuses={statuses} onPick={(st) => onSetStatus(k.id, st)} />}
+        {payPill(k)}
+        {customerTags(k)}
+      </div>
+      {actions(k, true)}
+    </div>
+  ));
+  // One order row. inGroup = a model line inside a multi-model order (the heading above carries status, ETA and tracking).
+  const orderRow = (o, inGroup, noTopBorder) => {
+    const overdue = !inGroup && !archivedView && isPastDate(o.eta) && o.status !== "Received";
+    const stock = !o.customer;
+    const when = isOrder ? (o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) : "";
+    const sc = isOrder && stock ? stockCount(o, all) : null;
+    return (
+      <React.Fragment key={o.id}>
+        <div className="rw-row rodi-row" data-testid={inGroup ? "line-row" : "order-row"} onClick={() => onEdit(o)} style={{ borderTop: noTopBorder ? "none" : inGroup ? "1px dashed #E2E1DC" : undefined, marginLeft: inGroup ? 12 : overdue ? -20 : undefined, marginRight: overdue ? -20 : undefined, padding: overdue ? "14px 20px" : inGroup ? "11px 0 11px 14px" : undefined, borderLeft: inGroup ? "3px solid #D8D7D0" : undefined, background: overdue ? "#FBEAE8" : undefined }}>
+          <div className="rw-who" style={{ flex: "2 1 230px" }}>
+            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{!inGroup && <BrandTag name={o.brand} />}<span>{o.type || "—"}</span></b>
+            <span>{[o.colour, "Qty " + (o.qty || 1)].filter(Boolean).join(" · ")}</span>
+          </div>
+          <div style={{ flex: "1.4 1 170px", minWidth: 0 }}>
+            <div style={lbl}>{stock ? "Shop stock" : "Customer"}</div>
+            {stock
+              ? <div data-testid="stock-count" style={{ fontWeight: 800, fontSize: 14, color: "#2E8B77" }}>{sc && sc.used > 0 ? sc.free + " of " + sc.total + " free" : "STOCK"}{sc && sc.used > 0 && <span style={{ fontWeight: 600, fontSize: 12.5, color: "#5A5D64" }}> · {sc.used} allocated</span>}</div>
+              : <div data-testid="cust-name" style={{ ...CUSTOMER_NAME_STYLE, fontSize: 14.5 }}>{o.customer}</div>}
+            {!stock && o.phone && <div style={{ fontSize: 12.5, color: "#5A5D64" }}>{o.phone}</div>}
+            <MissingTag kind={kind} rec={o} />
+            {customerTags(o)}
+          </div>
+          {!inGroup && (
+            <div style={{ flex: "1 1 130px", minWidth: 0 }}>
+              <div style={lbl}>ETA</div>
+              <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
+              {o.tracking && <div style={{ fontFamily: "monospace", fontSize: 12.5 }} onClick={(e) => e.stopPropagation()}><TrackingCell value={o.tracking} /></div>}
+            </div>
+          )}
+          {isOrder && !(inGroup && stock) && (
+            <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+              <div style={lbl}>{stock ? "Fulfilment" : (o.fulfillment || "Pickup")}</div>
+              <div style={{ fontWeight: 600, fontSize: 13.5 }}>{stock ? "—" : (formatAURel(when) || "No date")}</div>
+            </div>
+          )}
+          <div className="rw-meta" style={{ flex: "0 1 auto", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
+            {!inGroup && <StatusMenu label={o.status} color={colors[o.status]} statuses={statuses} onPick={(st) => onSetStatus(o.id, st)} />}
+            {!stock && payPill(o)}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
+            {!archivedView && sc && sc.free > 0 && onAllocate && <button type="button" data-testid="allocate-btn" className="rodi-btn rw-btn ghost" onClick={() => onAllocate(o)}>Allocate to customer</button>}
+            {actions(o, false, inGroup && o.status !== "Received")}
+          </div>
+        </div>
+        {allocRows(o)}
+      </React.Fragment>
+    );
+  };
+  const groupBlock = (u, noTopBorder) => {
+    const first = u.lines[0];
+    const overdue = !archivedView && isPastDate(first.eta) && first.status !== "Received";
+    const brands = Array.from(new Set(u.lines.map((l) => String(l.brand || "").trim()).filter(Boolean)));
+    const bikes = u.lines.reduce((t, l) => t + (Number(l.qty) || 1), 0);
+    const used = u.lines.reduce((t, l) => t + (l.customer ? (Number(l.qty) || 1) : stockCount(l, all).used), 0);
+    return (
+      <div key={"g" + u.group} data-testid="order-group" style={{ borderTop: noTopBorder ? "none" : "1px solid #EEEDE8", padding: "12px 0 6px" }}>
+        <div data-testid="group-head" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "12px 14px" }}>
+          <div className="rw-who" style={{ flex: "2 1 230px" }}>
+            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{brands.map((b) => <BrandTag key={b} name={b} />)}<span>{u.lines.length} models on one order</span></b>
+            <span data-testid="group-count">{bikes} bikes{used > 0 ? " · " + (bikes - used) + " free · " + used + " allocated" : ""}</span>
+          </div>
+          <div style={{ flex: "1 1 130px", minWidth: 0 }}>
+            <div style={lbl}>ETA</div>
+            <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(first.eta) || (first.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
+            {first.tracking && <div style={{ fontFamily: "monospace", fontSize: 12.5 }}><TrackingCell value={first.tracking} /></div>}
+          </div>
+          <StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} />
+          <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {!archivedView && first.status !== "Received" && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
+            {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => onAddModel(first)}>+ Add model</button>}
+          </div>
+        </div>
+        {u.lines.map((l) => orderRow(l, true, false))}
+      </div>
+    );
+  };
+  return (
+    <section className="rw-list" data-testid={kind + "-list"}>
+      {rows.length === 0 && <div style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>{archivedView ? "No archived orders yet." : "No orders match — add one to get started."}</div>}
+      {units.map((u, idx) => {
+        const first = u.lines[0];
+        const newStage = groupByStage && (idx === 0 || units[idx - 1].lines[0].status !== first.status);
+        return (
+          <React.Fragment key={u.group ? "g" + u.group : first.id}>
+            {newStage && stageHead(first, idx)}
+            {u.group ? groupBlock(u, newStage) : orderRow(first, false, newStage)}
+          </React.Fragment>
+        );
+      })}
+    </section>
+  );
+}
+function AllocateSheet({ order, free, onSave, onClose }) {
+  const [f, setF] = useState({ customer: "", phone: "", payment: "Not paid", fulfillment: "Pickup" });
+  const ok = !!f.customer.trim();
+  const chip = (on) => ({ minHeight: 42, padding: "0 14px", borderRadius: 999, border: "1.5px solid " + (on ? "#0B0B0C" : "#D8D7D0"), background: on ? "#0B0B0C" : "#fff", color: on ? "#fff" : "#0B0B0C", fontWeight: 700, fontSize: 13.5, cursor: "pointer", font: "inherit" });
+  return (
+    <FlowSheet testid="allocate-sheet" title="Allocate a bike to a customer" sub={<span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexWrap: "wrap", fontWeight: 600 }}><BrandTag name={order.brand} />{order.type}<span style={{ color: "#5A5D64", fontWeight: 500 }}>{free} free in this order</span></span>} onClose={onClose}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+        <Field label="Customer"><CustomerInput value={f.customer} onChange={(v) => setF((x) => ({ ...x, customer: v }))} onPick={(c) => setF((x) => ({ ...x, customer: c.name.toUpperCase(), phone: x.phone || c.phone || "" }))} /></Field>
+        <Field label="Phone"><input data-testid="alloc-phone" style={inputStyle} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#5A5D64", marginBottom: 6 }}>Payment</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{PAYMENT_STATUSES.map((p) => <button key={p} type="button" style={chip(f.payment === p)} onClick={() => setF({ ...f, payment: p })}>{p}</button>)}</div>
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#5A5D64", marginBottom: 6 }}>How will they get it?</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{["Pickup", "Delivery"].map((p) => <button key={p} type="button" style={chip(f.fulfillment === p)} onClick={() => setF({ ...f, fulfillment: p })}>{p}</button>)}</div>
+      </div>
+      <div style={{ fontSize: 13, color: "#5A5D64" }}>The bike stays on this stock order and follows its status, ETA and tracking. You can add the rest of the customer's details afterwards.</div>
+      <button type="button" className="rodi-btn rw-btn accent" data-testid="allocate-save" disabled={!ok} style={{ minHeight: 50, fontSize: 15 }} onClick={() => onSave(f)}>Allocate</button>
+    </FlowSheet>
+  );
+}
+function SortControl({ value, dir, options, onKey, onDir, testid }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5D64" }}>Sort
+      <select data-testid={testid} value={value} onChange={(e) => onKey(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 10px" }}>
+        {options.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+      </select>
+      <button type="button" className="rodi-btn rw-btn ghost" title="Reverse the order" onClick={onDir}>{dir === "asc" ? "A→Z" : "Z→A"}</button>
+    </label>
+  );
+}
+// "Do next" on the Today page: every job and order that is waiting on someone, most urgent first.
+function DoNext({ services, orders, accessories, rentals, onServiceStep, onOrderStep, onRentalStep, onOpen, goTo }) {
+  const items = [];
+  const seenGroups = new Set();
+  services.forEach((s) => {
+    const n = serviceStep(s, accessories); if (!n) return;
+    if (s.status === "Booked" && !n.urgent && s.bookedDate !== todayISO()) return; // future bookings wait their turn
+    items.push({ key: "s" + s.id, kind: "service", rec: s, n, title: s.customer || "—", tag: <BikeLabel bike={s.bike} />, rank: n.urgent ? 0 : s.status === "Booked" ? 1 : s.status === "Ready for Pickup" ? 3 : 4, run: (act) => onServiceStep(s, act) });
+  });
+  [["order", orders, "orders"], ["accessory", accessories, "accessories"]].forEach(([kind, list, table]) => list.forEach((o) => {
+    const n = orderStep(o, kind); if (!n) return;
+    if (o.status !== "Received" && !n.urgent) return; // on its way and not late: nothing to do yet
+    if (o.groupId && o.status !== "Received") { if (seenGroups.has(o.groupId)) return; seenGroups.add(o.groupId); }
+    items.push({ key: kind + o.id, kind, rec: o, n, title: (o.customer || "Shop stock") + (kind === "order" ? " · bike order" : " · parts order"), tag: <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600 }}><BrandTag name={o.brand} />{o.type}</span>, rank: n.urgent ? 0.5 : 2, run: (act) => onOrderStep(table, o, act) });
+  }));
+  (rentals || []).forEach((r) => {
+    const n = rentalStep(r); if (!n) return;
+    items.push({ key: "r" + r.id, kind: "rental", rec: r, n, title: (r.guestName || "Guest") + " · rental", tag: <span className="rw-flag" style={{ background: "#EFEFEA", color: "#3F4248" }}>{r.hotel || "Hotel"}</span>, rank: n.act === "deposit" ? 1.5 : 2.5, run: (act) => onRentalStep(r, act) });
+  });
+  items.sort((a, b) => a.rank - b.rank);
+  return (
+    <section className="rw-list" data-testid="do-next" style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 0 12px" }}>
+        <h3 className="rodi-display" style={{ margin: 0, fontSize: 21 }}>Do next</h3>
+        <span data-testid="do-next-count" style={{ fontSize: 13, fontWeight: 700, background: "#FFCC0A", color: "#0B0B0C", borderRadius: 999, padding: "3px 11px" }}>{items.length} to do</span>
+      </div>
+      {items.map((it) => (
+        <div key={it.key} className="rw-row" data-testid="do-next-row" style={{ borderTop: "1px solid #EEEDE8" }} onClick={() => (it.kind === "rental" ? goTo("rentals") : onOpen(it.kind, it.rec))}>
+          <div className="rw-who"><b>{it.title}</b><span>{it.n.why}</span></div>
+          <div className="rw-meta">{it.tag}</div>
+          <StepButtons step={it.n} onRun={it.run} />
+        </div>
+      ))}
+      {items.length === 0 && (
+        <div style={{ textAlign: "center", padding: "30px 10px", borderTop: "1px solid #EEEDE8" }}>
+          <div className="rodi-display" style={{ fontSize: 19 }}>All clear</div>
+          <div style={{ fontSize: 13.5, color: "#5A5D64", marginTop: 4 }}>Nothing is waiting on you right now.</div>
+        </div>
+      )}
+    </section>
+  );
+}
+function FlowSheet({ title, sub, onClose, children, testid }) {
+  useEffect(() => { const k = (e) => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
+  return (
+    <div className="rodi-sheet-wrap" data-testid={testid} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(11,11,12,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div className="rodi-sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 22, padding: 22, width: 540, maxWidth: "100%", maxHeight: "92vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14, boxShadow: "0 18px 50px rgba(0,0,0,0.25)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <h3 className="rodi-display" style={{ margin: 0, fontSize: 24, lineHeight: 1.1 }}>{title}</h3>
+            {sub && <div style={{ marginTop: 6, fontSize: 13.5, color: "#5A5D64" }}>{sub}</div>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rodi-btn" style={{ width: 44, height: 44, borderRadius: 12, border: "1px solid #D8D7D0", background: "#fff", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><X size={16} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+// Check a booked bike in: record what came with it (the existing drop-off notes), then it moves to In Progress.
+function CheckInSheet({ service, onSave, onClose }) {
+  const [notes, setNotes] = useState(service.notes || "");
+  const answered = !!arriveOf(notes).items.CHARGER;
+  return (
+    <FlowSheet testid="checkin-sheet" title={"Check in " + niceFirst(service.customer) + "'s bike"} sub={<BikeLabel bike={service.bike} />} onClose={onClose}>
+      <ArrivalCheck value={notes} onChange={setNotes} />
+      {!answered && <div data-testid="checkin-hint" style={{ fontSize: 13, color: "#9B2C1F", fontWeight: 600 }}>Answer the charger question first. It is the one that goes missing.</div>}
+      <button type="button" className="rodi-btn rw-btn accent" data-testid="checkin-save" disabled={!answered} style={{ minHeight: 50, fontSize: 15 }} onClick={() => onSave(notes)}>Check in and start</button>
+    </FlowSheet>
+  );
+}
+// Hand a finished bike back: remind what to give back, settle the invoice question, then it is Completed.
+function PickupSheet({ service, onDone, onClose }) {
+  const a = arriveOf(service.notes);
+  const back = ARRIVAL_ITEMS.filter((i) => a.items[i] === "Y" && i !== "SEAT" && i !== "LIGHTS");
+  const cur = invState(service.notes);
+  return (
+    <FlowSheet testid="pickup-sheet" title={"Hand over to " + niceFirst(service.customer)} sub={<BikeLabel bike={service.bike} />} onClose={onClose}>
+      {back.length > 0 && <div style={{ fontSize: 14 }}><strong>Give back:</strong> {back.join(", ").toLowerCase()}.</div>}
+      {a.items.CHARGER === "N" && <div style={{ fontSize: 13.5, color: "#9B2C1F", fontWeight: 600 }}>No charger came in with this bike, so there is none to give back.</div>}
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#5A5D64" }}>Invoice{cur !== "no" ? " (currently " + (cur === "yes" ? "invoiced" : "N/A") + ")" : ""}</div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button type="button" className="rodi-btn rw-btn" data-testid="pickup-yes" style={{ flex: 1 }} onClick={() => onDone("yes")}>Invoiced</button>
+        <button type="button" className="rodi-btn rw-btn ghost" data-testid="pickup-na" style={{ flex: 1 }} onClick={() => onDone("na")}>N/A, warranty</button>
+        <button type="button" className="rodi-btn rw-btn ghost" data-testid="pickup-no" style={{ flex: 1 }} onClick={() => onDone("no")}>Not yet</button>
+      </div>
+      <div style={{ fontSize: 13, color: "#5A5D64" }}>Pick one to finish. "Not yet" keeps it on your Do next list until it is invoiced.</div>
+    </FlowSheet>
+  );
+}
+// Ready / reminder texts for a service job: shows the exact wording and asks before sending.
+function ServiceTextSheet({ service, kind, onSend, onClose }) {
+  return (
+    <FlowSheet testid="service-text-sheet" title={(kind === "nudge" ? "Remind " : "Text ") + niceFirst(service.customer) + "?"} sub={<BikeLabel bike={service.bike} />} onClose={onClose}>
+      <div data-testid="service-text-body" style={{ fontSize: 14, background: "#F7F5EE", border: "1px solid #E7E4DB", borderRadius: 12, padding: 12 }}>{readyTextFor(kind, service)}</div>
+      <div style={{ fontSize: 13, color: "#5A5D64" }}>This sends a real text to {service.phone} straight away.</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="rodi-btn rw-btn accent" data-testid="service-text-send" style={{ flex: 1, minHeight: 48 }} onClick={onSend}>Send text</button>
+        <button type="button" className="rodi-btn rw-btn ghost" style={{ minHeight: 48 }} onClick={onClose}>Cancel</button>
+      </div>
+    </FlowSheet>
+  );
+}
+// "Awaiting parts": say which parts order the job is waiting on, so it can flag itself when that order arrives.
+function PartsSheet({ service, accessories, onPick, onClose }) {
+  const open = accessories.filter((a) => !a.archived).sort((a, b) => (a.status === "Received") - (b.status === "Received"));
+  return (
+    <FlowSheet testid="parts-sheet" title="What is it waiting on?" sub={<span>{niceFirst(service.customer)}'s <BikeLabel bike={service.bike} /></span>} onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {open.map((a) => (
+          <button key={a.id} type="button" data-testid="parts-pick" className="rodi-btn" onClick={() => onPick(a)} style={{ textAlign: "left", background: "#fff", border: "1.5px solid #D8D7D0", borderRadius: 12, padding: "10px 12px", cursor: "pointer", font: "inherit", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexWrap: "wrap", fontWeight: 600 }}><BrandTag name={a.brand} />{a.type}<span style={{ color: "#5A5D64", fontWeight: 500, fontSize: 13 }}>{a.customer ? "for " + a.customer : "shop stock"}</span></span>
+            <StatusBadge label={a.status} color={ACCESSORY_COLORS[a.status]} />
+          </button>
+        ))}
+        {open.length === 0 && <div style={{ fontSize: 13.5, color: "#5A5D64" }}>There are no open parts orders. Add one under Orders, Accessories & parts, then link it here.</div>}
+      </div>
+      <button type="button" className="rodi-btn rw-btn ghost" data-testid="parts-none" style={{ minHeight: 46 }} onClick={() => onPick(null)}>Not ordered yet, or something else</button>
+    </FlowSheet>
+  );
+}
+// Sending the "ready for pick up" text is a real SMS, so it always asks first.
+function NotifySheet({ order, onSend, onClose }) {
+  return (
+    <FlowSheet testid="notify-sheet" title={"Text " + niceFirst(order.customer) + "?"} sub={<span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600 }}><BrandTag name={order.brand} />{order.type}</span>} onClose={onClose}>
+      <div style={{ fontSize: 14, background: "#F7F5EE", border: "1px solid #E7E4DB", borderRadius: 12, padding: 12 }}>Hey {order.customer || "there"}, your bike is ready for pick up! If you have arranged delivery, we will reach out a day/time that suits. Cheers, Rodi crew.</div>
+      <div style={{ fontSize: 13, color: "#5A5D64" }}>This sends a real text to {order.phone} straight away.</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="rodi-btn rw-btn accent" data-testid="notify-send" style={{ flex: 1, minHeight: 48 }} onClick={onSend}>Send text</button>
+        <button type="button" className="rodi-btn rw-btn ghost" style={{ minHeight: 48 }} onClick={onClose}>Cancel</button>
+      </div>
+    </FlowSheet>
+  );
+}
+
 // Workshop view: big cards for the jobs on the floor, with the notes log front and centre.
 function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced }) {
   const [text, setText] = useState("");
@@ -1572,7 +2189,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
               style={{ background: bg, color: fg, border: "1px solid #D9D6CC", borderRadius: 8, padding: "5px 11px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>{label}</button>
           );
           return [
-            s.status === "Booked" && btn("Start", "In Progress", "#F6BD1B", "#191B18"),
+            s.status === "Booked" && btn("Start", "In Progress", "#FFCC0A", "#191B18"),
             s.status !== "Awaiting Parts" && s.status !== "Ready for Pickup" && s.status !== "Completed" && btn("Awaiting parts", "Awaiting Parts", "#fff", "#191B18"),
             s.status !== "Ready for Pickup" && s.status !== "Completed" && btn("Ready for pickup", "Ready for Pickup", "#4C9A6A", "#fff"),
             s.status === "Ready for Pickup" && btn("Completed", "Completed", "#191B18", "#fff"),
@@ -1600,7 +2217,7 @@ function WorkshopCard({ s, onEdit, onSetStatus, onAppendLog, onEditLogEntry, onD
         <textarea value={text} rows={2} onChange={(e) => setText(e.target.value.toUpperCase())}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); add(); } }}
           placeholder="Add log entry — Enter for a new line, then Add" style={{ ...inputStyle, flex: 1, resize: "vertical", minHeight: 44 }} />
-        <button type="button" onClick={add} className="rodi-btn" style={{ background: "#F6BD1B", border: "1px solid #D9D6CC", borderRadius: 8, padding: "0 12px", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Add</button>
+        <button type="button" onClick={add} className="rodi-btn" style={{ background: "#FFCC0A", border: "1px solid #D9D6CC", borderRadius: 8, padding: "0 12px", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>Add</button>
       </div>
       <PrintJobButton job={s} />
     </div>
@@ -1710,7 +2327,7 @@ function staleItems(orders, services, accessories) {
 function missingDetails(kind, r) {
   const m = [];
   if (kind === "order") {
-    if (r.forStock && !r.customer) return m;
+    if (!r.customer) return m;
     if (r.customer && !r.phone) m.push("phone");
     if (r.status === "In Transit" && !r.tracking) m.push("tracking");
     if (r.customer && r.fulfillment === "Delivery" && !r.deliveryDate) m.push("delivery date");
@@ -1720,7 +2337,7 @@ function missingDetails(kind, r) {
     if (!r.serviceType) m.push("service type");
     if (r.status !== "Booked" && r.status !== "Completed" && !r.mechanic) m.push("mechanic");
   } else if (kind === "accessory") {
-    if (r.forStock && !r.customer) return m;
+    if (!r.customer) return m;
     if (r.customer && !r.phone) m.push("phone");
     if (r.status === "In Transit" && !r.tracking) m.push("tracking");
   }
@@ -1853,7 +2470,7 @@ function CustomersTab({ customers, onOpen, onAdd }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
         <h2 className="rodi-display" style={{ fontSize: 34, margin: 0, letterSpacing: "-0.02em" }}>Customers <span style={{ fontSize: 15, color: "#8B9086" }}>({customers.length})</span></h2>
         <button onClick={onAdd} data-testid="add-customer" className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "9px 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}><Plus size={16} /> Add customer</button>
       </div>
@@ -1963,7 +2580,7 @@ function CustomerHistoryModal({ customer, records, profiles, onSaveProfile, onOp
           <Field label="Address"><input data-testid="cust-address" style={inputStyle} value={details.address} onChange={setD("address")} /></Field>
           <Field label="Customer notes"><textarea data-testid="cust-notes" style={{ ...inputStyle, minHeight: 56, resize: "vertical" }} value={details.notes} onChange={setD("notes")} placeholder="Preferences, bike details, anything useful…" /></Field>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button type="submit" data-testid="cust-save" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer", fontSize: 13.5 }}>Save details</button>
+            <button type="submit" data-testid="cust-save" className="rodi-btn" style={{ background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer", fontSize: 13.5 }}>Save details</button>
             {saved && <span data-testid="cust-saved" style={{ fontSize: 13, color: "#4C9A6A", fontWeight: 700 }}>Saved ✓</span>}
           </div>
         </form>
@@ -1994,7 +2611,7 @@ function JobCardModal({ job, onClose }) {
     <div className="rodi-print-overlay" data-testid="job-card" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(25,27,24,0.55)", overflowY: "auto", padding: 16, display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720 }}>
         <div className="rodi-noprint" style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginBottom: 8 }}>
-          <button type="button" onClick={() => window.print()} data-testid="job-card-print" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Print</button>
+          <button type="button" onClick={() => window.print()} data-testid="job-card-print" className="rodi-btn" style={{ background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Print</button>
           <button type="button" onClick={onClose} className="rodi-btn" style={{ background: "#fff", border: "1px solid #D9D6CC", borderRadius: 8, padding: "9px 18px", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Close</button>
         </div>
         <div className="rodi-print" style={{ background: "#fff", color: "#000", padding: 28, border: "2px solid #191B18", borderRadius: 6, fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -2070,7 +2687,7 @@ function NameDialog({ current, onSave, onClose }) {
         <input data-testid="name-input" autoFocus value={name} onChange={(e) => setName(e.target.value.toUpperCase())} placeholder="e.g. JOSH" style={inputStyle} />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button type="button" onClick={onClose} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D8DAD1", background: "#fff", cursor: "pointer", fontSize: 13.5 }}>Cancel</button>
-          <button type="submit" style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D9D6CC", background: "#F6BD1B", cursor: "pointer", fontSize: 13.5, fontWeight: 700 }}>Save</button>
+          <button type="submit" style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D9D6CC", background: "#FFCC0A", cursor: "pointer", fontSize: 13.5, fontWeight: 700 }}>Save</button>
         </div>
       </form>
     </div>
@@ -2094,7 +2711,7 @@ function ConfirmDialog({ text, onConfirm, onCancel }) {
   );
 }
 
-function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus, preset }) {
+function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus, onStep, onAllocate, onAddModel, preset }) {
   const [search, setSearch] = usePersisted("orders.search", "");
   const [quick, setQuick] = useState(preset ? preset.quick : null);
   useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
@@ -2118,7 +2735,7 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
     return orders.filter((o) => {
       const matchesView = view === "archived" ? o.archived : !o.archived;
       const matchesStatus = statusFilter === "All" || o.status === statusFilter;
-      const matchesStock = !stockOnly || o.forStock;
+      const matchesStock = !stockOnly || o.forStock || !o.customer;
       const matchesAssembly = !needsAssembly || (o.assemblyStatus !== "Assembled" && o.status === "Received");
       const q = search.toLowerCase();
       const matchesSearch = !q || [o.brand, o.type, o.customer, o.tracking, o.colour].join(" ").toLowerCase().includes(q);
@@ -2129,7 +2746,11 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   const counts = useMemo(() => {
     const c = {};
     ORDER_STATUSES.forEach((s) => (c[s] = 0));
-    orders.filter((o) => (view === "archived" ? o.archived : !o.archived)).forEach((o) => { c[o.status] = (c[o.status] || 0) + 1; });
+    // Bikes allocated from a stock order sit under it, so they are not counted as separate orders here.
+    const inView = orders.filter((o) => (view === "archived" ? o.archived : !o.archived));
+    const ids = new Set(inView.map((o) => o.id));
+    const seen = new Set();
+    inView.filter((o) => !(o.parentId && ids.has(o.parentId))).forEach((o) => { if (o.groupId) { if (seen.has(o.groupId)) return; seen.add(o.groupId); } c[o.status] = (c[o.status] || 0) + 1; });
     return c;
   }, [orders, view]);
 
@@ -2196,118 +2817,27 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
           <input placeholder="Search brand, model, customer, tracking…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ ...inputStyle, width: "100%", paddingLeft: 32 }} />
         </div>
+        <SortControl testid="order-sort" value={sortKey} dir={sortDir} options={[["status", "Stage"], ["eta", "ETA"], ["brand", "Brand"], ["type", "Type"], ["customer", "Customer"], ["payment", "Payment"], ["fulfillment", "Fulfilment"], ["colour", "Colour"], ["qty", "Qty"]]} onKey={(k) => { setSortKey(k); setSortDir("asc"); }} onDir={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} />
         <button onClick={onAdd} className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "0 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}>
           <Plus size={16} /> Add order
         </button>
       </div>
 
-      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "1px solid #E7E4DB", borderRadius: 18, boxShadow: "0 1px 2px rgba(20,20,15,0.04)", background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {[
-                { label: "Status", key: "status" }, { label: "Brand", key: "brand" }, { label: "Type", key: "type" },
-                { label: "Colour", key: "colour" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
-                { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "payment" },
-                { label: "Fulfillment", key: "fulfillment" }, { label: "Delivery / Pick up", key: null }, { label: "", key: null },
-              ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr><td colSpan={12} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
-                {view === "archived" ? "No archived orders yet." : "No orders match — add one to get started."}
-              </td></tr>
-            )}
-            {sortRows(filtered, sortKey, sortDir, ORDER_STATUSES).map((o) => {
-              const overdue = view === "active" && isPastDate(o.eta) && o.status !== "Received";
-              return (
-              <tr key={o.id} className="rodi-row" onClick={() => onEdit(o)} style={{
-                borderBottom: "1px solid #EFEFEA", cursor: "pointer",
-                background: overdue ? "#FBEAE8" : undefined,
-              }}>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusMenu label={o.status} color={ORDER_COLORS[o.status]} statuses={ORDER_STATUSES} onPick={(st) => onSetStatus(o.id, st)} />
-                    {view === "active" && nextStatus(o.status, ORDER_STATUSES) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(o.id); }}
-                        title={`Advance to ${nextStatus(o.status, ORDER_STATUSES)}`}
-                        className="rodi-btn rodi-advance"
-                        style={{
-                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
-                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer", color: "#33506B", flexShrink: 0,
-                        }}
-                      >
-                        <ChevronRight size={13} />
-                      </button>
-                    )}
-                  </div>
-                </td>
-                <td style={{ padding: "8px 10px" }}><BrandTag name={o.brand} /></td>
-                <td style={{ padding: "8px 10px" }}>{o.type}</td>
-                <td style={{ padding: "8px 10px" }}>{o.colour}</td>
-                <td style={{ padding: "8px 10px" }}>{o.qty}</td>
-                <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
-                </td>
-                <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={o.tracking} /></td>
-                <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
-                  {o.customer
-                    ? <div data-testid="cust-name" style={{ whiteSpace: "nowrap", ...CUSTOMER_NAME_STYLE }}>{o.customer}</div>
-                    : o.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : <div>—</div>}
-                  <MissingTag kind="order" rec={o} />
-                  <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                    {o.forStock && o.customer && <span style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700 }}>STOCK</span>}
-                    {o.notified && <span style={{ fontSize: 10.5, color: "#3A7CA5", fontWeight: 600 }}>Texted</span>}
-                    {o.status === "Received" && (o.assemblyStatus === "Assembled"
-                      ? <span style={{ fontSize: 10.5, color: "#4C9A6A", fontWeight: 600 }}>Assembled</span>
-                      : <span style={{ fontSize: 10.5, color: "#D98B3D", fontWeight: 700 }}>For assembly</span>)}
-                  </div>
-                </td>
-                {(() => {
-                  const stockOnly = o.forStock && !o.customer;
-                  return (
-                    <>
-                      <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 700, color: stockOnly ? undefined : PAYMENT_COLORS[o.payment] }}>
-                        {stockOnly ? "—" : (o.payment || "—")}
-                      </td>
-                      <td style={{ padding: "8px 10px", fontSize: 13 }}>{stockOnly ? "—" : (o.fulfillment || "—")}</td>
-                      <td style={{ padding: "8px 10px", fontSize: 13 }}>
-                        {stockOnly ? "—" : (formatAURel(o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) || "—")}
-                      </td>
-                    </>
-                  );
-                })()}
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>
-                      {o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
-                    </IconBtn>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(o.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
-                  </div>
-                </td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <OrderRows rows={sortRows(filtered, sortKey, sortDir, ORDER_STATUSES)} kind="order" groupByStage={sortKey === "status"} onAllocate={onAllocate} onAddModel={onAddModel} archivedView={view === "archived"} onEdit={onEdit} onStep={onStep} onSetStatus={onSetStatus} onDuplicate={onDuplicate} onToggleArchive={onToggleArchive} onDelete={onDelete} />
     </div>
   );
 }
 
-function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced, preset }) {
+function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArchiveAllCompleted, onAdvanceStatus, onSetStatus, onAppendLog, onEditLogEntry, onDeleteLogEntry, onToggleInvoiced, onStep, preset }) {
   const [search, setSearch] = usePersisted("services.search", "");
   const [quick, setQuick] = useState(preset ? preset.quick : null);
   useEffect(() => { setQuick(preset ? preset.quick : null); }, [preset && preset.key]);
   const [statusFilter, setStatusFilter] = usePersisted("services.status", "All");
+  const [mech, setMech] = usePersisted("services.mech", "All"); // "My jobs": show one mechanic's bikes only
+  const mechanics = useMemo(() => Array.from(new Set(services.filter((x) => !x.archived).map((x) => String(x.mechanic || "").trim().toUpperCase()).filter(Boolean))).sort(), [services]);
   const [invFilter, setInvFilter] = usePersisted("services.inv", "All"); // "All" | "no" = not invoiced yet
   const [view, setView] = usePersisted("services.view", "active");
   const [sortKey, setSortKey] = usePersisted("services.sortKey", "status");
@@ -2328,27 +2858,17 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
       const q = search.toLowerCase();
       const matchesSearch = !q || [s.customer, s.bike, s.serviceType, s.mechanic].join(" ").toLowerCase().includes(q);
       const matchesInv = invFilter !== "no" || !invoicedOf(s.notes);
-      return matchesView && matchesStatus && matchesInv && matchesSearch && serviceQuickMatch(s, quick);
+      const matchesMech = mech === "All" || mechanics.indexOf(mech) === -1 || String(s.mechanic || "").trim().toUpperCase() === mech;
+      return matchesView && matchesStatus && matchesInv && matchesMech && matchesSearch && serviceQuickMatch(s, quick);
     });
-  }, [services, search, statusFilter, invFilter, view, quick]);
+  }, [services, search, statusFilter, invFilter, mech, mechanics, view, quick]);
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ display: "flex", gap: 6, background: "#EFF0EC", padding: 4, borderRadius: 9 }}>
-          <button onClick={() => setView("active")} className="rodi-btn" style={{
-            border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: view === "active" ? "#fff" : "transparent", color: view === "active" ? "#191B18" : "#8B9086",
-          }}>Active</button>
-          <button onClick={() => setView("archived")} className="rodi-btn" style={{
-            border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: view === "archived" ? "#fff" : "transparent", color: view === "archived" ? "#191B18" : "#8B9086",
-          }}>Archived</button>
-          <button onClick={() => setView("workshop")} className="rodi-btn" data-testid="workshop-toggle" style={{
-            border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: view === "workshop" ? "#F6BD1B" : "transparent", color: view === "workshop" ? "#191B18" : "#8B9086",
-          }}>Workshop</button>
-        </div>
+        <SegTabs testid="services-view" value={view} onPick={setView} items={[
+          ["active", "List", null, "view-list"], ["board", "Board", null, "view-board"], ["workshop", "Cards", null, "workshop-toggle"], ["archived", "Archived", archivedCount || null, "view-archived"],
+        ]} />
         {view === "active" && eligibleToArchive > 0 && (
           <button onClick={onArchiveAllCompleted} className="rodi-btn" style={{
             border: "1px solid #D8DAD1", background: "#fff", borderRadius: 8, padding: "7px 12px",
@@ -2393,90 +2913,29 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
           <input placeholder="Search customer, bike, service type, mechanic…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ ...inputStyle, width: "100%", paddingLeft: 32 }} />
         </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5D64" }}>Mechanic
+          <select data-testid="services-mech" value={mechanics.indexOf(mech) > -1 ? mech : "All"} onChange={(e) => setMech(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "8px 10px", fontWeight: mech !== "All" ? 700 : 400 }}>
+            <option value="All">Everyone</option>
+            {mechanics.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#5A5D64" }}>Sort
+          <select data-testid="services-sort" value={sortKey} onChange={(e) => { setSortKey(e.target.value); setSortDir("asc"); }} style={{ ...inputStyle, width: "auto", padding: "8px 10px" }}>
+            {[["status", "Stage"], ["bookedDate", "Booked date"], ["customer", "Customer"], ["bike", "Bike"], ["serviceType", "Service type"], ["mechanic", "Mechanic"], ["pickupDate", "Pickup date"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <button type="button" className="rodi-btn rw-btn ghost" title="Reverse the order" onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}>{sortDir === "asc" ? "A→Z" : "Z→A"}</button>
+        </label>
         <button onClick={onAdd} className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "0 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}>
           <Plus size={16} /> Add booking
         </button>
       </div>
 
-      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "1px solid #E7E4DB", borderRadius: 18, boxShadow: "0 1px 2px rgba(20,20,15,0.04)", background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {[
-                { label: "Status", key: "status" }, { label: "Customer", key: "customer" }, { label: "Phone", key: null },
-                { label: "Bike", key: "bike" }, { label: "Service type", key: "serviceType" }, { label: "Mechanic", key: "mechanic" },
-                { label: "Booked date", key: "bookedDate" }, { label: "Pickup date", key: "pickupDate" }, { label: "Invoiced", key: null }, { label: "Service details", key: null },
-                { label: "", key: null },
-              ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr><td colSpan={11} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
-                {view === "archived" ? "No archived bookings yet." : "No bookings match — add one to get started."}
-              </td></tr>
-            )}
-            {sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES).map((s) => {
-              const overdue = view === "active" && isPastDate(s.bookedDate)
-                && s.status === "Booked";
-              return (
-              <tr key={s.id} className="rodi-row" onClick={() => onEdit(s)} style={{
-                borderBottom: "1px solid #EFEFEA", cursor: "pointer",
-                background: overdue ? "#FBEAE8" : undefined,
-              }}>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
-                    {view === "active" && nextStatus(s.status, SERVICE_STATUSES) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(s.id); }}
-                        title={`Advance to ${nextStatus(s.status, SERVICE_STATUSES)}`}
-                        className="rodi-btn rodi-advance"
-                        style={{
-                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
-                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer", color: "#33506B", flexShrink: 0,
-                        }}
-                      >
-                        <ChevronRight size={13} />
-                      </button>
-                    )}
-                  </div>
-                </td>
-                <td style={{ padding: "8px 14px 8px 10px", whiteSpace: "nowrap", minWidth: 120 }}><span data-testid="cust-name" style={CUSTOMER_NAME_STYLE}>{s.customer || "—"}</span><MissingTag kind="service" rec={s} /></td>
-                <td style={{ padding: "8px 10px" }}>
-                  {s.phone ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><PhoneCall size={12} />{s.phone}</span> : "—"}
-                </td>
-                <td style={{ padding: "8px 10px" }}><BikeLabel bike={s.bike} /></td>
-                <td style={{ padding: "8px 10px", maxWidth: 200 }}>{s.serviceType || "—"}</td>
-                <td style={{ padding: "8px 10px" }}>{s.mechanic || "—"}</td>
-                <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span>{formatAURel(s.bookedDate) || "—"}{overdue && " ⚠"}</span>
-                </td>
-                <td style={{ padding: "8px 10px" }}>{formatAURel(s.pickupDate) || "—"}</td>
-                <td style={{ padding: "8px 10px" }} onClick={(e) => e.stopPropagation()}>
-                  <InvoiceSelect testid="list-invoiced" notes={s.notes} onSet={(st) => onToggleInvoiced(s.id, st)} />
-                </td>
-                <td style={{ padding: "8px 10px", maxWidth: 180, color: "#565C54", fontSize: 13 }}>{jobNoteOf(s.notes) ? <div style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{jobNoteOf(s.notes)}</div> : (arrivalRecorded(arriveOf(s.notes)) ? null : "—")}{arrivalMissing(s.notes).length > 0 && <div data-testid="list-not-received" style={{ color: "#B5532C", fontWeight: 700, fontSize: 11.5, marginTop: 2 }}>No {arrivalMissing(s.notes).join(", ").toLowerCase()}</div>}</td>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>
-                      {s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
-                    </IconBtn>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
-                  </div>
-                </td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {view === "board"
+        ? <ServiceBoard rows={sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES)} onEdit={onEdit} onStep={onStep} />
+        : <ServiceRows rows={sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES)} archivedView={view === "archived"} onEdit={onEdit} onStep={onStep} onSetStatus={onSetStatus} onToggleInvoiced={onToggleInvoiced} onToggleArchive={onToggleArchive} onDelete={onDelete} />}
       </>)}
     </div>
   );
@@ -2579,7 +3038,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
             style={{ ...inputStyle, width: "100%", paddingLeft: 32 }} />
         </div>
         <button onClick={onAdd} className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "0 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}>
           <Plus size={16} /> Add price
@@ -2600,7 +3059,7 @@ function PricingTab({ pricing, onAdd, onEdit, onDelete }) {
   );
 }
 
-function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus }) {
+function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onToggleArchive, onArchiveAllReceived, onAdvanceStatus, onSetStatus, onStep }) {
   const [search, setSearch] = usePersisted("acc.search", "");
   const [statusFilter, setStatusFilter] = usePersisted("acc.status", "All");
   const [stockOnly, setStockOnly] = usePersisted("acc.stock", false);
@@ -2619,7 +3078,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
     return accessories.filter((a) => {
       const matchesView = view === "archived" ? a.archived : !a.archived;
       const matchesStatus = statusFilter === "All" || a.status === statusFilter;
-      const matchesStock = !stockOnly || a.forStock;
+      const matchesStock = !stockOnly || a.forStock || !a.customer;
       const q = search.toLowerCase();
       const matchesSearch = !q || [a.brand, a.type, a.customer, a.tracking].join(" ").toLowerCase().includes(q);
       return matchesView && matchesStatus && matchesStock && matchesSearch;
@@ -2686,93 +3145,16 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
           <input placeholder="Search brand, item, customer, tracking…" value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ ...inputStyle, width: "100%", paddingLeft: 32 }} />
         </div>
+        <SortControl testid="accessory-sort" value={sortKey} dir={sortDir} options={[["status", "Stage"], ["eta", "ETA"], ["brand", "Brand"], ["type", "Item"], ["customer", "Customer"], ["paymentOwing", "Payment"], ["qty", "Qty"]]} onKey={(k) => { setSortKey(k); setSortDir("asc"); }} onDir={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} />
         <button onClick={onAdd} className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "0 16px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 14,
         }}>
           <Plus size={16} /> Add order
         </button>
       </div>
 
-      <div className="rodi-scrollbar" style={{ overflowX: "auto", border: "1px solid #E7E4DB", borderRadius: 18, boxShadow: "0 1px 2px rgba(20,20,15,0.04)", background: "#fff" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {[
-                { label: "Status", key: "status" }, { label: "Brand", key: "brand" },
-                { label: "Item", key: "type" }, { label: "Colour", key: "colour" }, { label: "Qty", key: "qty" }, { label: "ETA", key: "eta" },
-                { label: "Tracking", key: null }, { label: "Customer", key: "customer" }, { label: "Payment", key: "paymentOwing" },
-                { label: "", key: null },
-              ].map((h) => (
-                <SortableHeader key={h.label || "actions"} label={h.label} sortKey={h.key} activeKey={sortKey} dir={sortDir} onSort={onSort} width={undefined} />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>
-                {view === "archived" ? "No archived accessory orders yet." : "No accessory or parts orders yet — add one to get started."}
-              </td></tr>
-            )}
-            {sortRows(filtered, sortKey, sortDir, ACCESSORY_STATUSES).map((a) => {
-              const overdue = view === "active" && isPastDate(a.eta) && a.status !== "Received";
-              return (
-              <tr key={a.id} className="rodi-row" onClick={() => onEdit(a)} style={{
-                borderBottom: "1px solid #EFEFEA", cursor: "pointer",
-                background: overdue ? "#FBEAE8" : undefined,
-              }}>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <StatusMenu label={a.status} color={ACCESSORY_COLORS[a.status]} statuses={ACCESSORY_STATUSES} onPick={(st) => onSetStatus(a.id, st)} />
-                    {view === "active" && nextStatus(a.status, ACCESSORY_STATUSES) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onAdvanceStatus(a.id); }}
-                        title={`Advance to ${nextStatus(a.status, ACCESSORY_STATUSES)}`}
-                        className="rodi-btn rodi-advance"
-                        style={{
-                          border: "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
-                          width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer", color: "#33506B", flexShrink: 0,
-                        }}
-                      >
-                        <ChevronRight size={13} />
-                      </button>
-                    )}
-                  </div>
-                </td>
-                <td style={{ padding: "8px 10px" }}><BrandTag name={a.brand} /></td>
-                <td style={{ padding: "8px 10px" }}>{a.type || "—"}</td>
-                <td style={{ padding: "8px 10px" }}>{a.colour || "—"}</td>
-                <td style={{ padding: "8px 10px" }}>{a.qty}</td>
-                <td style={{ padding: "8px 10px", color: overdue ? "#C1483A" : undefined, fontWeight: overdue ? 700 : 400 }}>
-                  <span>{formatAURel(a.eta) || (a.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</span>
-                </td>
-                <td style={{ padding: "8px 10px", fontFamily: "monospace", fontSize: 13 }}><TrackingCell value={a.tracking} /></td>
-                <td style={{ padding: "8px 14px 8px 10px", minWidth: 120 }}>
-                  {a.customer
-                    ? <div data-testid="cust-name" style={{ whiteSpace: "nowrap", ...CUSTOMER_NAME_STYLE }}>{a.customer}</div>
-                    : a.forStock ? <div style={{ color: "#2E8B77", fontWeight: 800, fontSize: 13 }}>STOCK</div> : "—"}
-                  {a.forStock && a.customer && <div style={{ fontSize: 10.5, color: "#2E8B77", fontWeight: 700, marginTop: 2 }}>STOCK</div>}
-                  <MissingTag kind="accessory" rec={a} />
-                </td>
-                <td style={{ padding: "8px 10px", fontSize: 13, fontWeight: 700, color: a.forStock && !a.customer ? undefined : PAYMENT_COLORS[a.paymentOwing] }}>
-                  {a.forStock && !a.customer ? "—" : (a.paymentOwing || "—")}
-                </td>
-                <td style={{ padding: "8px 10px" }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(a); }} title="Duplicate"><Copy size={14} /></IconBtn>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(a.id); }} title={a.archived ? "Restore" : "Archive"}>
-                      {a.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
-                    </IconBtn>
-                    <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(a.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
-                  </div>
-                </td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <OrderRows rows={sortRows(filtered, sortKey, sortDir, ACCESSORY_STATUSES)} kind="accessory" groupByStage={sortKey === "status"} archivedView={view === "archived"} onEdit={onEdit} onStep={onStep} onSetStatus={onSetStatus} onDuplicate={onDuplicate} onToggleArchive={onToggleArchive} onDelete={onDelete} />
     </div>
   );
 }
@@ -2798,7 +3180,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
     });
     activeServices.forEach((s) => {
       if (!s.bookedDate) return;
-      (map[s.bookedDate] = map[s.bookedDate] || []).push({ kind: "service", title: `${s.customer || "SERVICE"}`, color: "#F6BD1B", ref: s });
+      (map[s.bookedDate] = map[s.bookedDate] || []).push({ kind: "service", title: `${s.customer || "SERVICE"}`, color: "#FFCC0A", ref: s });
     });
     activeAccessories.forEach((a) => {
       if (!a.eta) return;
@@ -2825,7 +3207,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
   }, [allEventsByDate, hiddenKinds]);
   const KIND_FILTERS = [
     { kind: "order", label: "Orders", color: "#33506B" }, { kind: "accessory", label: "Accessories", color: "#7C5CBF" },
-    { kind: "service", label: "Services", color: "#F6BD1B" }, { kind: "delivery", label: "Deliveries", color: "#2E8B77" },
+    { kind: "service", label: "Services", color: "#FFCC0A" }, { kind: "delivery", label: "Deliveries", color: "#2E8B77" },
     { kind: "pickup", label: "Pick ups", color: "#B5651D" }, { kind: "note", label: "Notes", color: "#C2417A" },
   ];
 
@@ -2896,13 +3278,13 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               onClick={() => setSelected(dateStr)}
               className="rodi-cal-cell"
               style={{
-                minHeight: 112, minWidth: 0, border: isToday ? "2px solid #F6BD1B" : "1px solid #E7E4DB",
+                minHeight: 112, minWidth: 0, border: isToday ? "2px solid #FFCC0A" : "1px solid #E7E4DB",
                 borderRadius: 14, background: selected === dateStr ? "#FBF5DA" : "#fff",
                 padding: 9, cursor: "pointer", display: "flex", flexDirection: "column", gap: 5,
                 overflowX: "hidden",
               }}
             >
-              <span className="rodi-cal-num" style={{ alignSelf: "flex-start", minWidth: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", fontSize: 13, fontWeight: 700, background: isToday ? "#F6BD1B" : "transparent", color: "#16171A" }}>{dayNum}</span>
+              <span className="rodi-cal-num" style={{ alignSelf: "flex-start", minWidth: 26, height: 26, borderRadius: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", fontSize: 13, fontWeight: 700, background: isToday ? "#FFCC0A" : "transparent", color: "#16171A" }}>{dayNum}</span>
               {evs.map((ev, idx) => (
                 <span key={idx} className="rodi-cal-chip" style={{
                   display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 600, background: tintOf(ev.color, "22"), color: "#16171A", borderRadius: 7,
@@ -2952,7 +3334,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                   >
                     <input type="date" value={editingNote.date} onChange={(e) => setEditingNote({ ...editingNote, date: e.target.value })} style={{ ...inputStyle, width: 150 }} />
                     <input value={editingNote.text} onChange={(e) => setEditingNote({ ...editingNote, text: e.target.value.toUpperCase() })} style={{ ...inputStyle, flex: 1 }} />
-                    <button type="submit" className="rodi-btn" style={{ background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Save</button>
+                    <button type="submit" className="rodi-btn" style={{ background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Save</button>
                     <button type="button" onClick={() => setEditingNote(null)} style={{ background: "#fff", border: "1px solid #D8DAD1", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 13 }}>Cancel</button>
                   </form>
                 );
@@ -3014,7 +3396,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               onClick={() => onScheduleService(selected)}
               className="rodi-btn"
               style={{
-                background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+                background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
                 padding: "8px 14px", display: "flex", alignItems: "center", gap: 7, cursor: "pointer", fontWeight: 700, fontSize: 13,
               }}
             >
@@ -3038,7 +3420,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               style={{ ...inputStyle, flex: 1 }}
             />
             <button type="submit" className="rodi-btn" style={{
-              background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+              background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
               padding: "0 16px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
             }}>
               Add note
@@ -3111,7 +3493,7 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete, onEdit }) {
           style={{ ...inputStyle, flex: 1 }}
         />
         <button type="submit" className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8,
           padding: "0 14px", cursor: "pointer", fontWeight: 700, fontSize: 13.5,
         }}>
           <Plus size={15} />
@@ -3153,7 +3535,7 @@ function ChecklistWidget({ items, onAdd, onToggle, onDelete, onEdit }) {
   );
 }
 
-function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onEditChecklistItem, onExport, onExportCSV, goTo, onOpen }) {
+function DashboardTab({ orders, services, accessories, checklistItems, onAddChecklistItem, onToggleChecklistItem, onDeleteChecklistItem, onEditChecklistItem, onExport, onExportCSV, goTo, onOpen, onServiceStep, onOrderStep, rentals, onRentalStep }) {
   const [customerQuery, setCustomerQuery] = useState("");
 
   const activeOrders = useMemo(() => orders.filter((o) => !o.archived), [orders]);
@@ -3203,7 +3585,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.14em", color: "#8A8C82", textTransform: "uppercase" }}>{new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</div>
-          <h2 className="rodi-display" style={{ fontSize: 38, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Today at a glance</h2>
+          <h2 className="rodi-display" style={{ fontSize: 38, margin: "6px 0 0", letterSpacing: "-0.02em" }}>What needs doing</h2>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={onExport} className="rodi-btn" style={{
@@ -3221,6 +3603,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
         </div>
       </div>
 
+      <DoNext services={activeServices} orders={activeOrders} accessories={activeAccessories} rentals={rentals} onServiceStep={onServiceStep} onOrderStep={onOrderStep} onRentalStep={onRentalStep} onOpen={onOpen} goTo={goTo} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
         <div onClick={() => goTo("orders", "week")} style={{ cursor: "pointer" }}>
           <StatCard icon={<Package size={18} />} label="Arriving this week" value={ordersThisWeek.length} color="#33506B" />
@@ -3384,7 +3767,7 @@ const rentalMonth = (r) => (r.rentalDate || "").slice(0, 7);
 const fmtRentalDate = (d) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : (d || "—"); };
 const fmtRentalMonth = (ym) => { const m = /^(\d{4})-(\d{2})$/.exec(ym || ""); return m ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(m[2]) - 1] + " " + m[1] : ym; };
 const fmtShortDate = (iso) => { const d = new Date(iso); if (isNaN(d.getTime())) return ""; const p = (n) => String(n).padStart(2, "0"); return `${p(d.getDate())}/${p(d.getMonth() + 1)}`; };
-function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId }) {
+function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, onStage, busyId }) {
   const [hotel, setHotel] = useState("All");
   const [month, setMonth] = useState("");
   const [unpaidOnly, setUnpaidOnly] = useState(false);
@@ -3412,7 +3795,7 @@ function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId
     downloadText(`rodi-rentals-${hotel.toLowerCase()}-${month || "all"}${chosen.length ? "-selected" : ""}-${todayISO()}.csv`, toCSV(rows), "text/csv");
   };
   const chip = (on) => ({
-    border: on ? "2px solid #F6BD1B" : "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
+    border: on ? "2px solid #FFCC0A" : "1px solid #D8DAD1", background: "#fff", borderRadius: 999,
     padding: "6px 12px", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500,
   });
   const stat = (label, value) => (
@@ -3427,7 +3810,7 @@ function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 6 }}>
         <h2 className="rodi-display" style={{ fontSize: 34, margin: 0, letterSpacing: "-0.02em" }}>Hotel rentals <span style={{ fontSize: 15, color: "#8B9086" }}>({list.length})</span></h2>
         <button onClick={exportCsv} disabled={!list.length} data-testid="rentals-export" className="rodi-btn" style={{
-          background: "#F6BD1B", color: "#191B18", border: "none", borderRadius: 8, opacity: list.length ? 1 : 0.5,
+          background: "#FFCC0A", color: "#191B18", border: "none", borderRadius: 8, opacity: list.length ? 1 : 0.5,
           padding: "9px 16px", display: "flex", alignItems: "center", gap: 7, cursor: list.length ? "pointer" : "default", fontWeight: 700, fontSize: 14,
         }}><Download size={16} /> {chosen.length ? `Export selected (${chosen.length})` : "Export CSV"}</button>
       </div>
@@ -3458,7 +3841,7 @@ function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ textAlign: "left", borderBottom: "1px solid #E3E4DD", background: "#FAFAF7" }}>
-              {["Select", "Date", "Hotel", "Guest", "Bikes", "Time", "Length", "Total", "Commission", "Paid", "Deposit", "Pass code", ""].map((h, i) => <SortableHeader key={i} label={h} sortKey={null} />)}
+              {["Select", "Date", "Hotel", "Guest", "Bikes", "Time", "Length", "Total", "Commission", "Paid", "Next step", "Pass code", ""].map((h, i) => <SortableHeader key={i} label={h} sortKey={null} />)}
             </tr>
           </thead>
           <tbody>
@@ -3466,7 +3849,7 @@ function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId
             {list.map((r) => (
               <tr key={r.id} className="rodi-row" data-testid="rental-row" style={{ borderBottom: "1px solid #EFEFEA", background: picked[r.id] ? "#FFF8E1" : undefined }}>
                 <td data-label="Select for export" style={td}>
-                  <input type="checkbox" data-testid="rental-select" checked={!!picked[r.id]} onChange={() => setPicked((p) => ({ ...p, [r.id]: !p[r.id] }))} aria-label={"Select " + (r.guestName || "this booking") + " for export"} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#F6BD1B" }} />
+                  <input type="checkbox" data-testid="rental-select" checked={!!picked[r.id]} onChange={() => setPicked((p) => ({ ...p, [r.id]: !p[r.id] }))} aria-label={"Select " + (r.guestName || "this booking") + " for export"} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#FFCC0A" }} />
                 </td>
                 <td data-label="Date" style={{ ...td, whiteSpace: "nowrap" }}>{fmtRentalDate(r.rentalDate)}</td>
                 <td data-label="Hotel" style={td}>{r.hotel || "—"}</td>
@@ -3479,16 +3862,16 @@ function RentalsTab({ rentals, onTogglePaid, onDelete, onDepositReleased, busyId
                 <td data-label="Paid" style={td}>
                   <input type="checkbox" data-testid="rental-paid" checked={!!r.paid} onChange={() => onTogglePaid(r)} aria-label={"Commission paid for " + (r.guestName || "this booking")} style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#191B18" }} />
                 </td>
-                <td data-label="Deposit" style={{ ...td, whiteSpace: "nowrap" }}>
-                  {r.depositReleasedAt ? (
-                    <span data-testid="rental-deposit-done" title="The guest was texted that their deposit has been released" style={{ color: "#2F7D4F", fontWeight: 600 }}>Texted {fmtShortDate(r.depositReleasedAt)}</span>
-                  ) : r.hasPhone ? (
-                    <button data-testid="rental-deposit-btn" onClick={() => onDepositReleased(r)} disabled={busyId === r.id} className="rodi-btn" title="Release the deposit in Booqable first, then tap to text the guest" style={{
-                      border: "1px solid #191B18", background: "#fff", color: "#191B18", borderRadius: 8, padding: "6px 10px", cursor: busyId === r.id ? "default" : "pointer", fontSize: 12.5, fontWeight: 700, opacity: busyId === r.id ? 0.5 : 1,
-                    }}>{busyId === r.id ? "Sending…" : "Deposit released"}</button>
-                  ) : (
-                    <span title="No phone number on file for this booking" style={{ color: "#8B9086" }}>No phone</span>
-                  )}
+                <td data-label="Next step" style={{ ...td, whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span data-testid="rental-stage" className="rw-flag" style={{ background: rentalStage(r)[1], color: rentalStage(r)[2] }}>{r.depositReleasedAt ? "Texted " + fmtShortDate(r.depositReleasedAt) : rentalStage(r)[0]}</span>
+                    {(() => {
+                      const n = rentalStep(r);
+                      if (!n) return !r.depositReleasedAt && !r.hasPhone && rentalStage(r)[0] === "Returned" ? <span title="No phone number on file for this booking" style={{ color: "#8B9086" }}>No phone</span> : null;
+                      if (n.act === "deposit") return <button data-testid="rental-deposit-btn" onClick={() => onDepositReleased(r)} disabled={busyId === r.id} className="rodi-btn rw-btn" title="Release the deposit in Booqable first, then tap to text the guest">{busyId === r.id ? "Sending…" : "Deposit released"}</button>;
+                      return <StepButtons step={n} onRun={(act) => onStage(r, act)} />;
+                    })()}
+                  </div>
                 </td>
                 <td data-label="Pass code" style={{ ...td, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", whiteSpace: "nowrap" }}>{r.passCode ? "RODI-" + r.passCode : "—"}</td>
                 <td data-label="Remove" style={td}>
@@ -3641,6 +4024,16 @@ function RodiTracker() {
     }
   }, []);
 
+  // Rental stage (handed out / returned). Stored in the rentals table's "stage" column.
+  const setRentalStage = useCallback(async (r, act) => {
+    const stage = act === "out" ? "out" : "returned";
+    try {
+      const saved = await sbPatch("rodi_rentals", r.id, { stage });
+      setRentals((prev) => prev.map((x) => (x.id === r.id ? { ...x, ...saved, stage } : x)));
+    } catch (e) {
+      setSyncError("Couldn't update the rental: " + e.message);
+    }
+  }, []);
   const deleteRental = useCallback(async (r) => {
     if (!window.confirm("Remove this rental from the list? This can't be undone.")) return;
     try {
@@ -3738,13 +4131,37 @@ function RodiTracker() {
       setDrawer(null);
       if (!before) logChange(table, saved, "created", "");
       else { const sum = diffRecords(before, saved, table); if (sum) logChange(table, saved, "edited", sum); }
+      if (table === "orders" && before) {
+        cfg.ref.current.filter((c) => !c.archived && c.id !== saved.id && (c.parentId === saved.id || (before.groupId && c.groupId === before.groupId))).forEach((c) => {
+          const follow = {};
+          ["status", "eta", "tracking"].forEach((k) => { if (saved[k] !== before[k] && c[k] === before[k]) follow[k] = saved[k]; });
+          if (Object.keys(follow).length) patchRecord("orders", c.id, follow, "edited", "follows its stock order");
+        });
+      }
       return true;
     } catch (e) {
       setSyncError(`Couldn't save the ${noun}: ` + e.message);
       return false;
     }
   }, []);
-  const saveOrder = useCallback((form) => saveRecord("orders", form, "order"), []);
+  // An order can list several models. Each model is saved as its own line; the lines share a groupId.
+  const saveOrder = useCallback(async (form, extras) => {
+    const more = Array.isArray(extras) ? extras : [];
+    if (!more.length) return saveRecord("orders", form, "order");
+    const gid = form.groupId || uid();
+    const ok = await saveRecord("orders", { ...form, groupId: gid }, "order");
+    if (!ok) return false;
+    for (const x of more) {
+      await saveRecord("orders", { ...form, id: uid(), groupId: gid, parentId: "", notified: false, type: String(x.type).trim().toUpperCase(), colour: String(x.colour || "").trim().toUpperCase(), qty: Number(x.qty) || 1 }, "order");
+    }
+    return true;
+  }, []);
+  // "+ Add model" on an existing order: make sure it has a group, then open a new line that shares its details.
+  const addModelToOrder = useCallback(async (form) => {
+    const gid = form.groupId || uid();
+    if (!form.groupId) { const ok = await saveRecord("orders", { ...form, groupId: gid }, "order"); if (!ok) return; }
+    setDrawer({ type: "order", data: { ...emptyOrder(), groupId: gid, status: form.status, orderDate: form.orderDate, brand: form.brand, eta: form.eta, tracking: form.tracking, receivedDate: form.receivedDate, forStock: true } });
+  }, []);
   const saveService = useCallback((form) => saveRecord("services", form, "booking"), []);
   const savePricing = useCallback((form) => saveRecord("pricing", form, "price"), []);
   const saveAccessory = useCallback((form) => saveRecord("accessories", form, "accessory order"), []);
@@ -3760,6 +4177,14 @@ function RodiTracker() {
     try {
       await sbUpsert(table, updated);
       logChange(table, updated, action, summary);
+      // Bikes allocated from a stock order follow its status, ETA and tracking (only where they were still in step).
+      if (table === "orders") {
+        cfg.ref.current.filter((c) => !c.archived && c.id !== id && (c.parentId === id || (target.groupId && c.groupId === target.groupId))).forEach((c) => {
+          const follow = {};
+          ["status", "eta", "tracking"].forEach((k) => { if (k in patch && patch[k] !== target[k] && c[k] === target[k]) follow[k] = patch[k]; });
+          if (Object.keys(follow).length) patchRecord("orders", c.id, follow, "edited", "follows its stock order");
+        });
+      }
       return true;
     } catch (e) {
       cfg.set((prev) => prev.map((r) => (r.id === id ? target : r)));
@@ -3792,6 +4217,37 @@ function RodiTracker() {
   const archiveAllReceivedOrders = useCallback(() => bulkArchive("orders", "Received", "received orders"), []);
   const archiveAllCompletedServices = useCallback(() => bulkArchive("services", "Completed", "completed services"), []);
   const archiveAllReceivedAccessories = useCallback(() => bulkArchive("accessories", "Received", "received accessories"), []);
+
+  // ---- workflow steps (the buttons on rows, cards and the Do next list) ----
+  const [flow, setFlow] = useState(null); // { type: "checkin" | "pickup" | "notify", id }
+  // After a one-tap step: say what happened and offer Undo (puts the record back exactly as it was).
+  const stepDone = (table, before, text) => setToast({
+    id: uid(), text,
+    undo: () => patchRecord(table, before.id, { status: before.status, notes: before.notes, archived: before.archived, ...(table === "orders" ? { assemblyStatus: before.assemblyStatus, notified: before.notified } : {}) }, "edited", "undo: " + text),
+  });
+  const runServiceStep = useCallback((s, act) => {
+    const t = servicesRef.current.find((r) => r.id === s.id);
+    if (!t) return;
+    const who = niceFirst(t.customer);
+    if (act === "checkin" || act === "pickup" || act === "tell" || act === "nudge" || act === "parts") { setFlow({ type: act, id: t.id }); return; }
+    if (act === "ready") { setStatus("services", t.id, "Ready for Pickup"); stepDone("services", t, who + "'s bike marked ready."); }
+    else if (act === "partsin") { patchRecord("services", t.id, { status: "In Progress", notes: logWithAdd(withMeta(t.notes, { wait: "" }), "PARTS ARRIVED, BACK ON THE BENCH") }, "edited", "parts arrived"); stepDone("services", t, who + "'s bike is back on the bench."); }
+    else if (act === "told") { patchRecord("services", t.id, { notes: logWithAdd(t.notes, "CUSTOMER TOLD: READY FOR PICKUP") }, "edited", "customer told the bike is ready"); stepDone("services", t, who + " marked as told."); }
+    else if (act === "invoice") { toggleServiceInvoiced(t.id, "yes"); stepDone("services", t, who + "'s job marked invoiced."); }
+    else if (act === "invna") { toggleServiceInvoiced(t.id, "na"); stepDone("services", t, who + "'s invoice set to N/A."); }
+  }, []);
+  const runOrderStep = useCallback((table, o, act) => {
+    const t = tableCfg[table].ref.current.find((r) => r.id === o.id);
+    if (!t) return;
+    const name = [t.brand, t.type].filter(Boolean).join(" ") || "Order";
+    if (act === "advance") { const next = nextStatus(t.status, STATUS_LISTS[table]); advanceStatus(table, t.id); stepDone(table, t, name + " marked " + String(next || "").toLowerCase() + "."); }
+    else if (act === "assembled") { patchRecord("orders", t.id, { assemblyStatus: "Assembled" }, "edited", "marked assembled"); stepDone("orders", t, name + " marked assembled."); }
+    else if (act === "notify") { if (t.phone) setFlow({ type: "notify", id: t.id }); else { patchRecord("orders", t.id, { notified: true }, "edited", "customer told the bike is ready"); stepDone("orders", t, niceFirst(t.customer) + " marked as told."); } }
+    else if (act === "archive") toggleArchive(table, t.id);
+  }, []);
+  const flowService = flow && flow.type !== "notify" && flow.type !== "allocate" ? services.find((r) => r.id === flow.id) : null;
+  const flowStock = flow && flow.type === "allocate" ? orders.find((r) => r.id === flow.id) : null;
+  const flowOrder = flow && flow.type === "notify" ? orders.find((r) => r.id === flow.id) : null;
 
   const STATUS_LISTS = { orders: ORDER_STATUSES, services: SERVICE_STATUSES, accessories: ACCESSORY_STATUSES };
   const setStatus = useCallback((table, id, status) => {
@@ -3868,6 +4324,8 @@ function RodiTracker() {
       await sbDelete(table, id);
       cfg.set((prev) => prev.filter((r) => r.id !== id));
       cfg.ref.current = cfg.ref.current.filter((r) => r.id !== id);
+      // Deleting a stock order leaves its allocated bikes as ordinary customer orders.
+      if (table === "orders") cfg.ref.current.filter((c) => c.parentId === id).forEach((c) => patchRecord("orders", c.id, { parentId: "" }, "edited", "stock order deleted"));
       logChange(table, rec, "deleted", "");
       if (rec) {
         setToast({
@@ -3952,17 +4410,18 @@ function RodiTracker() {
     setDrawer({ type: "service", data: { ...emptyService(), bookedDate: dateStr || todayISO() } });
   }, []);
 
-  const TAB_SHORT = { dashboard: "Home", orders: "Orders", accessories: "Parts", services: "Services", calendar: "Calendar", customers: "Clients", rentals: "Rentals", history: "History", pricing: "Pricing" };
+  const TAB_SHORT = { dashboard: "Today", orders: "Orders", accessories: "Parts", services: "Workshop", calendar: "Calendar", customers: "Clients", rentals: "Rentals", history: "History", pricing: "Pricing" };
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "orders", label: "Inventory & orders", icon: Package },
-    { id: "accessories", label: "Accessories & parts", icon: Boxes },
-    { id: "services", label: "Services", icon: Wrench },
+    { id: "dashboard", label: "Today", icon: LayoutDashboard },
+    { id: "services", label: "Workshop", icon: Wrench },
+    { id: "orders", label: "Orders", icon: Package },
+    // Accessories & parts lives inside the Orders tab now (Bikes | Accessories & parts), so it has no nav button of its own.
+    { id: "accessories", label: "Accessories & parts", icon: Boxes, hidden: true },
     { id: "calendar", label: "Calendar", icon: CalendarDays },
     // Stock pricing tab is hidden for now. Set SHOW_STOCK_PRICING = true (top of file) to bring it back; data and code are untouched.
     ...(SHOW_STOCK_PRICING ? [{ id: "pricing", label: "Stock pricing", icon: Tag }] : []),
     { id: "customers", label: "Customers", icon: Users },
-    { id: "rentals", label: "Hotel rentals", icon: Bike },
+    { id: "rentals", label: "Rentals", icon: Bike },
     { id: "history", label: "History", icon: RotateCcw },
   ];
   // A remembered tab that no longer exists (e.g. hidden Stock pricing) falls back to the dashboard.
@@ -4002,21 +4461,22 @@ function RodiTracker() {
         <div className="rodi-brand">
           <div className="rodi-brand-mark" style={{ background: "#FFCC0A", overflow: "hidden" }}><img src={RODI_LOGO} alt="Rodi" style={{ width: "100%", height: "100%", display: "block" }} /></div>
           <div className="rodi-brand-text">
-            <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: "0.04em", color: "#fff", lineHeight: 1.05 }}>RODI</span>
+            <span style={{ fontFamily: "'Archivo', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: "0.04em", color: "#fff", lineHeight: 1.05 }}>RODI</span>
             <span style={{ fontSize: 10.5, letterSpacing: "0.28em", color: "#8E8F86", fontWeight: 600, lineHeight: 1.1 }}>ELECTRIC</span>
           </div>
         </div>
         <nav className="rodi-nav">
-          {tabs.map((t) => {
+          {tabs.filter((t) => !t.hidden).map((t) => {
             const Icon = t.icon;
-            const active = tab === t.id;
+            const active = tab === t.id || (t.id === "orders" && tab === "accessories");
             return (
               <button key={t.id} onClick={() => navTo(t.id)} className={"rodi-btn rodi-navbtn" + (active ? " active" : "")} data-active={active ? "1" : "0"}>
-                <Icon size={19} color={active ? "#F6BD1B" : "currentColor"} /> <span className="rodi-lbl" data-short={TAB_SHORT[t.id] || t.label}>{t.label}</span>
+                <Icon size={19} color={active ? "#FFCC0A" : "currentColor"} /> <span className="rodi-lbl" data-short={TAB_SHORT[t.id] || t.label}>{t.label}</span>
               </button>
             );
           })}
         </nav>
+        <button type="button" data-testid="new-booking" className="rodi-btn rodi-newbtn" onClick={() => setDrawer({ type: "service", data: emptyService() })}><Plus size={16} /> New booking</button>
         <button onClick={() => setShowName(true)} title="Set your name" data-testid="user-chip" className="rodi-btn rodi-userchip">
           <span className="rodi-avatar">{(userName || "?").trim().charAt(0).toUpperCase() || "?"}</span>
           <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.25, textAlign: "left" }}>
@@ -4064,7 +4524,19 @@ function RodiTracker() {
                 onExportCSV={exportCSV}
                 goTo={goTo}
                 onOpen={openRecordFromCalendar}
+                onServiceStep={runServiceStep}
+                onOrderStep={runOrderStep}
+                rentals={rentals}
+                onRentalStep={(r, act) => (act === "deposit" ? depositReleased(r) : setRentalStage(r, act))}
               />
+            )}
+            {(tab === "orders" || tab === "accessories") && (
+              <div style={{ marginBottom: 14 }}>
+                <SegTabs testid="orders-kind" value={tab} onPick={navTo} items={[
+                  ["orders", "Bikes", new Set(orders.filter((o) => !o.archived && !(o.parentId && orders.some((p) => p.id === o.parentId && !p.archived))).map((o) => o.groupId || o.id)).size],
+                  ["accessories", "Accessories & parts", accessories.filter((a) => !a.archived).length],
+                ]} />
+              </div>
             )}
             {tab === "orders" && (
               <OrdersTab
@@ -4084,6 +4556,9 @@ function RodiTracker() {
                 onArchiveAllReceived={archiveAllReceivedOrders}
                 onAdvanceStatus={advanceOrderStatus}
                 onSetStatus={setOrderStatus}
+                onStep={(o, act) => runOrderStep("orders", o, act)}
+                onAllocate={(o) => setFlow({ type: "allocate", id: o.id })}
+                onAddModel={addModelToOrder}
                 preset={preset && preset.tab === "orders" ? preset : null}
               />
             )}
@@ -4100,6 +4575,7 @@ function RodiTracker() {
                 onAppendLog={appendServiceLog}
                 onEditLogEntry={editServiceLogEntry}
                 onToggleInvoiced={toggleServiceInvoiced}
+                onStep={runServiceStep}
                 onDeleteLogEntry={deleteServiceLogEntry}
                 preset={preset && preset.tab === "services" ? preset : null}
               />
@@ -4118,6 +4594,7 @@ function RodiTracker() {
                 onArchiveAllReceived={archiveAllReceivedAccessories}
                 onAdvanceStatus={advanceAccessoryStatus}
                 onSetStatus={setAccessoryStatus}
+                onStep={(a, act) => runOrderStep("accessories", a, act)}
               />
             )}
             {tab === "pricing" && (
@@ -4135,7 +4612,7 @@ function RodiTracker() {
                 onAdd={() => setHistoryFor({ name: "", phone: "", isNew: true })}
               />
             )}
-            {tab === "rentals" && <RentalsTab rentals={rentals} onTogglePaid={toggleRentalPaid} onDelete={deleteRental} onDepositReleased={depositReleased} busyId={depositBusyId} />}
+            {tab === "rentals" && <RentalsTab rentals={rentals} onTogglePaid={toggleRentalPaid} onDelete={deleteRental} onDepositReleased={depositReleased} onStage={setRentalStage} busyId={depositBusyId} />}
             {tab === "history" && <HistoryTab entries={changeLog} />}
             {tab === "calendar" && (
               <CalendarTab
@@ -4159,13 +4636,14 @@ function RodiTracker() {
       </div>
 
       {drawer?.type === "order" && (
-        <OrderForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} onCreateService={createServiceFromOrder} />
+        <OrderForm initial={drawer.data} isNew={!orders.some((r) => r.id === drawer.data.id)} onAddModel={addModelToOrder} onSave={saveOrder} onClose={() => setDrawer(null)} onCreateService={createServiceFromOrder} />
       )}
       {drawer?.type === "delivery" && (
         <DeliveryForm initial={drawer.data} onSave={saveOrder} onClose={() => setDrawer(null)} />
       )}
       {drawer?.type === "service" && (
-        <ServiceForm initial={drawer.data} isNew={!services.some((r) => r.id === drawer.data.id)} onSave={saveService} onClose={() => setDrawer(null)} />
+        <ServiceForm initial={drawer.data} isNew={!services.some((r) => r.id === drawer.data.id)} onSave={saveService} onClose={() => setDrawer(null)}
+          onSaveCheckIn={async (form) => { const ok = await saveService(form); if (ok) setFlow({ type: "checkin", id: form.id }); }} />
       )}
       {drawer?.type === "pricing" && (
         <PricingForm initial={drawer.data} onSave={savePricing} onClose={() => setDrawer(null)} />
@@ -4197,6 +4675,53 @@ function RodiTracker() {
           onOpen={(kind, rec) => { setHistoryFor(null); openRecordFromCalendar(kind, rec); }} onClose={() => setHistoryFor(null)} />
       )}
       {jobCard && <JobCardModal job={jobCard} onClose={() => setJobCard(null)} />}
+      {flowService && flow.type === "checkin" && (
+        <CheckInSheet service={flowService} onClose={() => setFlow(null)} onSave={(notes) => {
+          setFlow(null);
+          patchRecord("services", flowService.id, { status: "In Progress", notes: logWithAdd(notes, arrivalMissing(notes).length ? "CHECKED IN. NOT RECEIVED: " + arrivalMissing(notes).join(", ") : "CHECKED IN") }, "edited", "checked in");
+          stepDone("services", flowService, niceFirst(flowService.customer) + "'s bike checked in.");
+        }} />
+      )}
+      {flowService && flow.type === "pickup" && (
+        <PickupSheet service={flowService} onClose={() => setFlow(null)} onDone={(inv) => {
+          setFlow(null);
+          const withInv = withMeta(flowService.notes, { inv: invValue(inv, invoicedOf(flowService.notes)) });
+          patchRecord("services", flowService.id, { status: "Completed", notes: logWithAdd(withInv, inv === "yes" ? "PICKED UP. INVOICED" : inv === "na" ? "PICKED UP. NO INVOICE NEEDED" : "PICKED UP. INVOICE STILL TO DO") }, "edited", "picked up");
+          stepDone("services", flowService, niceFirst(flowService.customer) + "'s bike picked up.");
+        }} />
+      )}
+      {flowService && (flow.type === "tell" || flow.type === "nudge") && (
+        <ServiceTextSheet service={flowService} kind={flow.type} onClose={() => setFlow(null)} onSend={() => {
+          const kind = flow.type;
+          setFlow(null);
+          sendServiceText(kind === "nudge" ? "pickup_reminder" : "ready", flowService);
+          patchRecord("services", flowService.id, { notes: logWithAdd(flowService.notes, kind === "nudge" ? "PICKUP REMINDER TEXT SENT" : "CUSTOMER TOLD: READY TEXT SENT") }, "edited", kind === "nudge" ? "pickup reminder text sent" : "ready text sent to customer");
+          setToast({ id: uid(), text: "Text sent to " + niceFirst(flowService.customer) + "." });
+        }} />
+      )}
+      {flowService && flow.type === "parts" && (
+        <PartsSheet service={flowService} accessories={accessories} onClose={() => setFlow(null)} onPick={(a) => {
+          setFlow(null);
+          patchRecord("services", flowService.id, { status: "Awaiting Parts", notes: logWithAdd(withMeta(flowService.notes, { wait: a ? a.id : "" }), a ? "WAITING ON " + partName(a).toUpperCase() : "WAITING ON PARTS") }, "edited", "awaiting parts");
+          stepDone("services", flowService, niceFirst(flowService.customer) + "'s bike is awaiting parts.");
+        }} />
+      )}
+      {flowStock && (
+        <AllocateSheet order={flowStock} free={stockCount(flowStock, orders).free} onClose={() => setFlow(null)} onSave={async (f) => {
+          setFlow(null);
+          const child = { ...emptyOrder(), parentId: flowStock.id, status: flowStock.status, orderDate: flowStock.orderDate, brand: flowStock.brand, type: flowStock.type, colour: flowStock.colour, qty: 1, eta: flowStock.eta, tracking: flowStock.tracking, receivedDate: flowStock.receivedDate, assemblyStatus: flowStock.assemblyStatus, forStock: true, customer: f.customer.trim().toUpperCase(), phone: f.phone.trim(), payment: f.payment, fulfillment: f.fulfillment };
+          const ok = await saveRecord("orders", child, "order");
+          if (ok) { const left = stockCount(flowStock, [...tableCfg.orders.ref.current.filter((r) => r.id !== child.id), child]).free; setToast({ id: uid(), text: "Allocated to " + niceFirst(child.customer) + ". " + left + " of " + (Number(flowStock.qty) || 1) + " still free.", undo: () => deleteRecord("orders", child.id) }); }
+        }} />
+      )}
+      {flowOrder && (
+        <NotifySheet order={flowOrder} onClose={() => setFlow(null)} onSend={() => {
+          setFlow(null);
+          notifyCustomerReady(flowOrder);
+          patchRecord("orders", flowOrder.id, { notified: true }, "edited", "ready text sent to customer");
+          setToast({ id: uid(), text: "Text sent to " + niceFirst(flowOrder.customer) + "." });
+        }} />
+      )}
     </div>
     </AppCtx.Provider>
   );
