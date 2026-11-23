@@ -500,9 +500,21 @@ function GlobalStyle() {
       .rw-o5 { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
       .rw-o6 { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto; justify-content: flex-end; }
       .rw-sub1 { padding-left: 16px; }
+      .rw-s1 { flex: 1 1 170px; min-width: 0; }
+      .rw-s2 { flex: 1 1 190px; min-width: 0; }
+      .rw-s3 { flex: 2 1 240px; min-width: 0; }
+      .rw-s4 { flex: 0 1 130px; min-width: 0; }
+      .rw-s5 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+      .rw-s5 .rw-flag { white-space: normal; }
+      .rw-s6 { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; justify-content: flex-end; }
+      .rw-s6a { display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
       .rw-orow[data-testid=group-head] { display: flex; }
       @media (min-width: 1100px) {
         .rw-orow, .rw-orow[data-testid=group-head] { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.7fr) minmax(0, 1.1fr) minmax(0, 1fr) 128px 292px; column-gap: 14px; align-items: center; }
+        .rw-srow { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.35fr) minmax(0, 1.9fr) 124px 150px 316px; column-gap: 14px; align-items: start; }
+        .rw-s1 { grid-column: 1; } .rw-s2 { grid-column: 2; } .rw-s3 { grid-column: 3; } .rw-s4 { grid-column: 4; }
+        .rw-s5 { grid-column: 5; flex-direction: column; align-items: flex-start; flex-wrap: nowrap; }
+        .rw-s6 { grid-column: 6; margin-left: 0; flex-direction: column; align-items: flex-end; flex-wrap: nowrap; }
         .rw-o1 { grid-column: 1; } .rw-o2 { grid-column: 2; } .rw-o3 { grid-column: 3; } .rw-o4 { grid-column: 4; } .rw-o5 { grid-column: 5; } .rw-o6 { grid-column: 6; margin-left: 0; }
       }
       .rw-flag { font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
@@ -593,12 +605,12 @@ function brandColor(name) {
   for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
   return BRAND_HUES[h % BRAND_HUES.length];
 }
-function BrandTag({ name }) {
+function BrandTag({ name, big }) {
   const t = String(name || "").trim();
   if (!t) return <span>—</span>;
   const c = brandColor(t);
   return (
-    <span data-testid="brand-tag" style={{ display: "inline-block", background: c + "1F", color: shadeHex(c, 0.35), borderLeft: "4px solid " + c, borderRadius: 6, padding: "3px 7px 3px 6px", fontWeight: 800, fontSize: 12.5, letterSpacing: "0.02em", lineHeight: 1.25 }}>{t}</span>
+    <span data-testid="brand-tag" style={{ display: "inline-block", background: c + "1F", color: shadeHex(c, 0.35), borderLeft: "4px solid " + c, borderRadius: 6, padding: big ? "5px 11px 5px 9px" : "3px 7px 3px 6px", fontWeight: 800, fontSize: big ? 17 : 12.5, letterSpacing: "0.02em", lineHeight: 1.25 }}>{t}</span>
   );
 }
 // Service bikes are free text ("DIRODI GEN 6 ST"): the first word is treated as the brand.
@@ -1763,7 +1775,7 @@ function SegTabs({ items, value, onPick, testid }) {
     </div>
   );
 }
-function ServiceFlags({ s }) {
+function ServiceFlags({ s, hideMissing }) {
   const ctx = React.useContext(AppCtx);
   const missing = arrivalMissing(s.notes);
   const part = s.status === "Awaiting Parts" ? partFor(s, ctx.records.accessories) : null;
@@ -1771,7 +1783,7 @@ function ServiceFlags({ s }) {
   const flag = (bg, fg, text, tid) => <span key={text} data-testid={tid} className="rw-flag" style={{ background: bg, color: fg }}>{text}</span>;
   return (
     <>
-      {missing.length > 0 && flag("#FCE5E1", "#9B2C1F", "No " + missing.join(", ").toLowerCase(), "list-not-received")}
+      {!hideMissing && missing.length > 0 && flag("#FCE5E1", "#9B2C1F", "No " + missing.join(", ").toLowerCase(), "list-not-received")}
       {s.status === "Ready for Pickup" && (serviceTold(s) ? (waited !== null && waited >= PICKUP_NUDGE_DAYS ? flag("#FCE5E1", "#9B2C1F", "Waiting " + waited + " days", "flag-waiting") : flag("#DFF3E7", "#1E6B45", "Customer told")) : flag("#FFF0C2", "#7A4B00", "Not told yet"))}
       {part && (part.status === "Received" ? flag("#DFF3E7", "#1E6B45", "Parts are in", "flag-parts-in") : flag("#EFEFEA", "#3F4248", "Waiting on " + partName(part).toLowerCase(), "flag-waiting-on"))}
       {logFind(s.notes, "CONFIRMATION TEXT SENT") && s.status === "Booked" && flag("#E3EDFA", "#1D4F91", "Confirmation sent")}
@@ -1783,37 +1795,65 @@ function JobCardBtn({ job }) {
   if (!ctx.printJob) return null;
   return <button type="button" className="rodi-btn rw-btn ghost" data-testid="row-job-card" onClick={(e) => { e.stopPropagation(); ctx.printJob(job); }}>Job card</button>;
 }
-// Services as a list: one row per job, the next step on the right. Click a row to open the full job.
-function ServiceRows({ rows, archivedView, onEdit, onStep, onSetStatus, onToggleInvoiced, onToggleArchive, onDelete }) {
+// Full-width coloured band that starts each status section in a list sorted by stage.
+function StageBand({ label, color, count, first }) {
+  return (
+    <div data-testid="stage-head" style={{ display: "flex", alignItems: "center", gap: 10, margin: first ? "0 -20px" : "14px -20px 0", padding: "15px 20px 15px 14px", background: tintOf(color, "40"), borderLeft: "7px solid " + color, borderTop: first ? "none" : "1px solid #E2E1DC", borderBottom: "1px solid #E2E1DC", borderRadius: first ? "19px 19px 0 0" : 0 }}>
+      <span className="rodi-display" style={{ fontSize: 22, lineHeight: 1.1, letterSpacing: "0.04em", textTransform: "uppercase", color: shadeHex(color || "#3F4248", 0.55) }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", background: shadeHex(color || "#3F4248", 0.25), borderRadius: 999, padding: "2px 10px" }}>{count}</span>
+    </div>
+  );
+}
+// Services as a list: one row per job in fixed columns, the next step on the right. Click a row to open the full job.
+function ServiceRows({ rows, archivedView, groupByStage, onEdit, onStep, onSetStatus, onToggleInvoiced, onToggleArchive, onDelete }) {
   const acc = React.useContext(AppCtx).records.accessories;
+  const lbl = { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#8A8C82", textTransform: "uppercase" };
   return (
     <section className="rw-list" data-testid="service-list">
       {rows.length === 0 && <div style={{ padding: 28, textAlign: "center", color: "#8B9086", fontSize: 14 }}>{archivedView ? "No archived bookings yet." : "No bookings match — add one to get started."}</div>}
-      {rows.map((s) => {
+      {rows.map((s, idx) => {
         const overdue = !archivedView && isPastDate(s.bookedDate) && s.status === "Booked";
         const note = jobNoteOf(s.notes);
+        const newStage = groupByStage && (idx === 0 || rows[idx - 1].status !== s.status);
         return (
-          <div key={s.id} className="rw-row rodi-row" data-testid="service-row" onClick={() => onEdit(s)} style={{ background: overdue ? "#FBEAE8" : undefined, margin: overdue ? "0 -20px" : undefined, padding: overdue ? "14px 20px" : undefined }}>
-            <div className="rw-who">
-              <b data-testid="cust-name">{s.customer || "—"}<MissingTag kind="service" rec={s} /></b>
-              <span>{[s.serviceType, s.phone, s.mechanic && "Mechanic " + s.mechanic].filter(Boolean).join(" · ") || "—"}</span>
-              {note && <span style={{ whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{note}</span>}
+          <React.Fragment key={s.id}>
+            {newStage && <StageBand label={s.status} color={SERVICE_COLORS[s.status]} count={rows.filter((r) => r.status === s.status).length} first={idx === 0} />}
+            <div className="rw-row rw-srow rodi-row" data-testid="service-row" onClick={() => onEdit(s)} style={{ borderTop: newStage ? "none" : undefined, background: overdue ? "#FBEAE8" : undefined, margin: overdue ? "0 -20px" : undefined, padding: overdue ? "14px 20px" : undefined }}>
+              <div className="rw-s1">
+                <div style={lbl}>Customer</div>
+                <div data-testid="cust-name" style={{ ...CUSTOMER_NAME_STYLE, fontSize: 15 }}>{s.customer || "—"}</div>
+                {s.phone && <div style={{ fontSize: 12.5, color: "#5A5D64" }}>{s.phone}</div>}
+              </div>
+              <div className="rw-s2">
+                <div style={lbl}>Bike</div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}><BikeLabel bike={s.bike} /></div>
+              </div>
+              <div className="rw-s3">
+                <div style={lbl}>Job{s.mechanic ? " · " + s.mechanic : ""}</div>
+                <div style={{ fontWeight: 600, fontSize: 13.5, overflowWrap: "anywhere" }}>{s.serviceType || "—"}</div>
+                {note && note.trim().toUpperCase() !== String(s.serviceType || "").trim().toUpperCase() && <div style={{ fontSize: 12.5, color: "#5A5D64", whiteSpace: "pre-wrap", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>{note}</div>}
+                <MissingTag kind="service" rec={s} />
+              </div>
+              <div className="rw-s4">
+                <div style={lbl}>Booked</div>
+                <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(s.bookedDate) || "No date"}{overdue && " ⚠"}</div>
+                {s.pickupDate && <div style={{ fontSize: 12.5, color: "#5A5D64" }}>Pick up {formatAURel(s.pickupDate)}</div>}
+                <span onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#5A5D64", marginTop: 6 }}>Invoiced <InvoiceSelect testid="list-invoiced" notes={s.notes} onSet={(st) => onToggleInvoiced(s.id, st)} /></span>
+              </div>
+              <div className="rw-s5">
+                <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
+                <ServiceFlags s={s} hideMissing />
+              </div>
+              <div className="rw-s6" onClick={(e) => e.stopPropagation()}>
+                {!archivedView && <div className="rw-s6a"><StepButtons step={serviceStep(s, acc)} onRun={(act) => onStep(s, act)} /></div>}
+                <div className="rw-s6a">
+                  <JobCardBtn job={s} />
+                  <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>{s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}</IconBtn>
+                  <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
+                </div>
+              </div>
             </div>
-            <div className="rw-meta">
-              <BikeLabel bike={s.bike} />
-              <StatusMenu label={s.status} color={SERVICE_COLORS[s.status]} statuses={SERVICE_STATUSES} onPick={(st) => onSetStatus(s.id, st)} />
-              <span className="rw-flag" style={{ background: overdue ? "#C1483A" : "#EFEFEA", color: overdue ? "#fff" : "#3F4248" }}>{formatAURel(s.bookedDate) || "No date"}{overdue && " ⚠"}</span>
-              {s.pickupDate && <span className="rw-flag" style={{ background: "#EFEFEA", color: "#3F4248" }}>Pick up {formatAURel(s.pickupDate)}</span>}
-              <ServiceFlags s={s} />
-              <span onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#5A5D64" }}>Invoiced <InvoiceSelect testid="list-invoiced" notes={s.notes} onSet={(st) => onToggleInvoiced(s.id, st)} /></span>
-            </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
-              {!archivedView && <StepButtons step={serviceStep(s, acc)} onRun={(act) => onStep(s, act)} />}
-              <JobCardBtn job={s} />
-              <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(s.id); }} title={s.archived ? "Restore" : "Archive"}>{s.archived ? <RotateCcw size={14} /> : <Archive size={14} />}</IconBtn>
-              <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} title="Delete" danger><Trash2 size={14} /></IconBtn>
-            </div>
-          </div>
+          </React.Fragment>
         );
       })}
     </section>
@@ -1892,12 +1932,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     </div>
   );
   const payPill = (o) => { const pay = isOrder ? o.payment : o.paymentOwing; return pay ? <span data-testid="pay-pill" className="rw-flag" style={{ background: tintOf(PAYMENT_COLORS[pay], "22"), color: shadeHex(PAYMENT_COLORS[pay] || "#3F4248", 0.35) }}>{pay}</span> : null; };
-  const stageHead = (o, idx) => (
-    <div data-testid="stage-head" style={{ display: "flex", alignItems: "center", gap: 10, margin: idx === 0 ? "0 -20px" : "14px -20px 0", padding: "11px 20px 11px 15px", background: tintOf(colors[o.status], "30"), borderLeft: "5px solid " + colors[o.status], borderTop: idx === 0 ? "none" : "1px solid #E2E1DC", borderBottom: "1px solid #E2E1DC", borderRadius: idx === 0 ? "19px 19px 0 0" : 0 }}>
-      <span className="rodi-display" style={{ fontSize: 17, letterSpacing: "0.04em", textTransform: "uppercase", color: shadeHex(colors[o.status] || "#3F4248", 0.5) }}>{o.status}</span>
-      <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", background: shadeHex(colors[o.status] || "#3F4248", 0.25), borderRadius: 999, padding: "2px 10px" }}>{stageCount(o.status)}</span>
-    </div>
-  );
+  const stageHead = (o, idx) => <StageBand label={o.status} color={colors[o.status]} count={stageCount(o.status)} first={idx === 0} />;
   const allocRows = (o) => kidsOf(o).map((k) => (
     <div key={k.id} className="rw-row rw-orow rodi-row" data-testid="alloc-row" onClick={() => onEdit(k)} style={{ borderTop: "1px dashed #E2E1DC", boxShadow: "inset 4px 0 0 " + brandColor(o.brand), background: "#FAFAF7", margin: "0 -20px", padding: "11px 20px" }}>
       <div className="rw-o1 rw-sub1" style={{ ...lbl, color: "#5A5D64" }}>↳ Allocated from this stock</div>
@@ -1973,10 +2008,10 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     const used = u.lines.reduce((t, l) => t + (l.customer ? (Number(l.qty) || 1) : stockCount(l, all).used), 0);
     return (
       <div key={"g" + u.group} data-testid="order-group" style={{ borderTop: noTopBorder ? "none" : "1px solid #EEEDE8", padding: "12px 0 6px" }}>
-        <div data-testid="group-head" className="rw-orow" style={{ display: undefined, flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "12px 14px", margin: "0 -14px" }}>
+        <div data-testid="group-head" className="rw-orow" style={{ display: undefined, flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "16px 14px", margin: "0 -14px", background: overdue ? "#FBEAE8" : "#ECEBE5", border: "1.5px solid #CFCEC6" }}>
           <div className="rw-who rw-o1">
-            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{brands.map((b) => <BrandTag key={b} name={b} />)}<span>{u.lines.length} models on one order</span></b>
-            <span data-testid="group-count">{bikes} bikes{used > 0 ? " · " + (bikes - used) + " free · " + used + " allocated" : ""}</span>
+            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{brands.map((b) => <BrandTag key={b} name={b} big />)}<span className="rodi-display" style={{ fontSize: 21, lineHeight: 1.15 }}>{u.lines.length} models on one order</span></b>
+            <span data-testid="group-count" style={{ fontSize: 14.5, fontWeight: 600, color: "#3F4248", marginTop: 4 }}>{bikes} bikes{used > 0 ? " · " + (bikes - used) + " free · " + used + " allocated" : ""}</span>
           </div>
           <div className="rw-o3">
             <div style={lbl}>ETA</div>
@@ -2945,7 +2980,7 @@ function ServicesTab({ services, onAdd, onEdit, onDelete, onToggleArchive, onArc
 
       {view === "board"
         ? <ServiceBoard rows={sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES)} onEdit={onEdit} onStep={onStep} />
-        : <ServiceRows rows={sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES)} archivedView={view === "archived"} onEdit={onEdit} onStep={onStep} onSetStatus={onSetStatus} onToggleInvoiced={onToggleInvoiced} onToggleArchive={onToggleArchive} onDelete={onDelete} />}
+        : <ServiceRows groupByStage={sortKey === "status"} rows={sortRows(filtered, sortKey, sortDir, SERVICE_STATUSES)} archivedView={view === "archived"} onEdit={onEdit} onStep={onStep} onSetStatus={onSetStatus} onToggleInvoiced={onToggleInvoiced} onToggleArchive={onToggleArchive} onDelete={onDelete} />}
       </>)}
     </div>
   );
