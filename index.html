@@ -493,6 +493,18 @@ function GlobalStyle() {
       .rw-who b { display: block; font-weight: 800; font-size: 15.5px; color: #0B0B0C; }
       .rw-who > span { display: block; font-size: 13px; color: #5A5D64; overflow-wrap: anywhere; }
       .rw-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+      .rw-o1 { flex: 2 1 230px; min-width: 0; }
+      .rw-o2 { flex: 1.4 1 170px; min-width: 0; }
+      .rw-o3 { flex: 1 1 130px; min-width: 0; }
+      .rw-o4 { flex: 1 1 120px; min-width: 0; }
+      .rw-o5 { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+      .rw-o6 { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto; justify-content: flex-end; }
+      .rw-sub1 { padding-left: 16px; }
+      .rw-orow[data-testid=group-head] { display: flex; }
+      @media (min-width: 1100px) {
+        .rw-orow, .rw-orow[data-testid=group-head] { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.7fr) minmax(0, 1.1fr) minmax(0, 1fr) 128px 292px; column-gap: 14px; align-items: center; }
+        .rw-o1 { grid-column: 1; } .rw-o2 { grid-column: 2; } .rw-o3 { grid-column: 3; } .rw-o4 { grid-column: 4; } .rw-o5 { grid-column: 5; } .rw-o6 { grid-column: 6; margin-left: 0; }
+      }
       .rw-flag { font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
       .rw-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; align-items: start; }
       .rw-col { background: #E9E9E4; border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
@@ -1865,7 +1877,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
   });
   const stageCount = (st) => units.filter((u) => u.lines[0].status === st).length;
   const actions = (o, child, noStep) => (
-    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
+    <div className="rw-o6" onClick={(e) => e.stopPropagation()}>
       {!archivedView && !noStep && <StepButtons step={orderStep(o, kind)} onRun={(act) => onStep(o, act)} />}
       {!child && onDuplicate && <IconBtn onClick={(e) => { e.stopPropagation(); onDuplicate(o); }} title="Duplicate"><Copy size={14} /></IconBtn>}
       <IconBtn onClick={(e) => { e.stopPropagation(); onToggleArchive(o.id); }} title={o.archived ? "Restore" : "Archive"}>{o.archived ? <RotateCcw size={14} /> : <Archive size={14} />}</IconBtn>
@@ -1881,25 +1893,25 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
   );
   const payPill = (o) => { const pay = isOrder ? o.payment : o.paymentOwing; return pay ? <span data-testid="pay-pill" className="rw-flag" style={{ background: tintOf(PAYMENT_COLORS[pay], "22"), color: shadeHex(PAYMENT_COLORS[pay] || "#3F4248", 0.35) }}>{pay}</span> : null; };
   const stageHead = (o, idx) => (
-    <div data-testid="stage-head" style={{ display: "flex", alignItems: "center", gap: 9, padding: idx === 0 ? "16px 0 8px" : "22px 0 8px", borderTop: idx === 0 ? "none" : "1px solid #EEEDE8" }}>
-      <span style={{ width: 10, height: 10, borderRadius: 999, background: colors[o.status] }} />
-      <span className="rodi-display" style={{ fontSize: 17 }}>{o.status}</span>
-      <span style={{ fontSize: 13, fontWeight: 700, color: "#5A5D64" }}>{stageCount(o.status)}</span>
+    <div data-testid="stage-head" style={{ display: "flex", alignItems: "center", gap: 10, margin: idx === 0 ? "0 -20px" : "14px -20px 0", padding: "11px 20px 11px 15px", background: tintOf(colors[o.status], "30"), borderLeft: "5px solid " + colors[o.status], borderTop: idx === 0 ? "none" : "1px solid #E2E1DC", borderBottom: "1px solid #E2E1DC", borderRadius: idx === 0 ? "19px 19px 0 0" : 0 }}>
+      <span className="rodi-display" style={{ fontSize: 17, letterSpacing: "0.04em", textTransform: "uppercase", color: shadeHex(colors[o.status] || "#3F4248", 0.5) }}>{o.status}</span>
+      <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", background: shadeHex(colors[o.status] || "#3F4248", 0.25), borderRadius: 999, padding: "2px 10px" }}>{stageCount(o.status)}</span>
     </div>
   );
   const allocRows = (o) => kidsOf(o).map((k) => (
-    <div key={k.id} className="rw-row rodi-row" data-testid="alloc-row" onClick={() => onEdit(k)} style={{ borderTop: "1px dashed #E2E1DC", marginLeft: 22, paddingLeft: 16, borderLeft: "3px solid " + brandColor(o.brand), background: "#FAFAF7" }}>
-      <div className="rw-who" style={{ flex: "2 1 210px" }}>
-        <span style={{ ...lbl, display: "block" }}>Allocated to</span>
-        <b data-testid="cust-name">{k.customer || "—"}</b>
-        <span>{[k.phone, (Number(k.qty) || 1) > 1 && "Qty " + k.qty, k.colour && k.colour !== o.colour && k.colour].filter(Boolean).join(" · ")}</span>
+    <div key={k.id} className="rw-row rw-orow rodi-row" data-testid="alloc-row" onClick={() => onEdit(k)} style={{ borderTop: "1px dashed #E2E1DC", boxShadow: "inset 4px 0 0 " + brandColor(o.brand), background: "#FAFAF7", margin: "0 -20px", padding: "11px 20px" }}>
+      <div className="rw-o1 rw-sub1" style={{ ...lbl, color: "#5A5D64" }}>↳ Allocated from this stock</div>
+      <div className="rw-o2">
+        <div style={lbl}>Customer</div>
+        <div data-testid="cust-name" style={{ ...CUSTOMER_NAME_STYLE, fontSize: 14.5 }}>{k.customer || "—"}</div>
+        <div style={{ fontSize: 12.5, color: "#5A5D64" }}>{[k.phone, (Number(k.qty) || 1) > 1 && "Qty " + k.qty, k.colour && k.colour !== o.colour && k.colour].filter(Boolean).join(" · ")}</div>
         <MissingTag kind={kind} rec={k} />
       </div>
-      <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+      <div className="rw-o4">
         <div style={lbl}>{k.fulfillment || "Pickup"}</div>
         <div style={{ fontWeight: 600, fontSize: 13.5 }}>{formatAURel(k.fulfillment === "Delivery" ? k.deliveryDate : k.receivedDate) || "No date"}</div>
       </div>
-      <div className="rw-meta" style={{ gap: 6 }}>
+      <div className="rw-o5">
         {k.status !== o.status && <StatusMenu label={k.status} color={colors[k.status]} statuses={statuses} onPick={(st) => onSetStatus(k.id, st)} />}
         {payPill(k)}
         {customerTags(k)}
@@ -1915,12 +1927,12 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     const sc = isOrder && stock ? stockCount(o, all) : null;
     return (
       <React.Fragment key={o.id}>
-        <div className="rw-row rodi-row" data-testid={inGroup ? "line-row" : "order-row"} onClick={() => onEdit(o)} style={{ borderTop: noTopBorder ? "none" : inGroup ? "1px dashed #E2E1DC" : undefined, marginLeft: inGroup ? 12 : overdue ? -20 : undefined, marginRight: overdue ? -20 : undefined, padding: overdue ? "14px 20px" : inGroup ? "11px 0 11px 14px" : undefined, borderLeft: inGroup ? "3px solid #D8D7D0" : undefined, background: overdue ? "#FBEAE8" : undefined }}>
-          <div className="rw-who" style={{ flex: "2 1 230px" }}>
+        <div className="rw-row rw-orow rodi-row" data-testid={inGroup ? "line-row" : "order-row"} onClick={() => onEdit(o)} style={{ borderTop: noTopBorder ? "none" : inGroup ? "1px dashed #E2E1DC" : undefined, marginLeft: overdue ? -20 : undefined, marginRight: overdue ? -20 : undefined, padding: overdue ? "14px 20px" : inGroup ? "11px 0" : undefined, boxShadow: inGroup ? "inset 3px 0 0 #D8D7D0" : undefined, background: overdue ? "#FBEAE8" : undefined }}>
+          <div className={"rw-who rw-o1" + (inGroup ? " rw-sub1" : "")}>
             <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{!inGroup && <BrandTag name={o.brand} />}<span>{o.type || "—"}</span></b>
             <span>{[o.colour, "Qty " + (o.qty || 1)].filter(Boolean).join(" · ")}</span>
           </div>
-          <div style={{ flex: "1.4 1 170px", minWidth: 0 }}>
+          <div className="rw-o2">
             <div style={lbl}>{stock ? "Shop stock" : "Customer"}</div>
             {stock
               ? <div data-testid="stock-count" style={{ fontWeight: 800, fontSize: 14, color: "#2E8B77" }}>{sc && sc.used > 0 ? sc.free + " of " + sc.total + " free" : "STOCK"}{sc && sc.used > 0 && <span style={{ fontWeight: 600, fontSize: 12.5, color: "#5A5D64" }}> · {sc.used} allocated</span>}</div>
@@ -1928,28 +1940,26 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
             {!stock && o.phone && <div style={{ fontSize: 12.5, color: "#5A5D64" }}>{o.phone}</div>}
             <MissingTag kind={kind} rec={o} />
             {customerTags(o)}
+            {!archivedView && sc && sc.free > 0 && onAllocate && <button type="button" data-testid="allocate-btn" className="rodi-btn" onClick={(e) => { e.stopPropagation(); onAllocate(o); }} style={{ marginTop: 5, minHeight: 30, padding: "0 11px", borderRadius: 999, border: "1.5px solid #2E8B77", background: "#fff", color: "#1F6B5B", cursor: "pointer", font: "inherit", fontWeight: 700, fontSize: 12.5 }}>+ Allocate to customer</button>}
           </div>
           {!inGroup && (
-            <div style={{ flex: "1 1 130px", minWidth: 0 }}>
+            <div className="rw-o3">
               <div style={lbl}>ETA</div>
               <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(o.eta) || (o.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
               {o.tracking && <div style={{ fontFamily: "monospace", fontSize: 12.5 }} onClick={(e) => e.stopPropagation()}><TrackingCell value={o.tracking} /></div>}
             </div>
           )}
           {isOrder && !(inGroup && stock) && (
-            <div style={{ flex: "1 1 120px", minWidth: 0 }}>
+ <div className="rw-o4">
               <div style={lbl}>{stock ? "Fulfilment" : (o.fulfillment || "Pickup")}</div>
               <div style={{ fontWeight: 600, fontSize: 13.5 }}>{stock ? "—" : (formatAURel(when) || "No date")}</div>
             </div>
           )}
-          <div className="rw-meta" style={{ flex: "0 1 auto", flexDirection: "column", alignItems: "flex-start", gap: 5 }}>
+          <div className="rw-o5">
             {!inGroup && <StatusMenu label={o.status} color={colors[o.status]} statuses={statuses} onPick={(st) => onSetStatus(o.id, st)} />}
             {!stock && payPill(o)}
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
-            {!archivedView && sc && sc.free > 0 && onAllocate && <button type="button" data-testid="allocate-btn" className="rodi-btn rw-btn ghost" onClick={() => onAllocate(o)}>Allocate to customer</button>}
-            {actions(o, false, inGroup && o.status !== "Received")}
-          </div>
+          {actions(o, false, inGroup && o.status !== "Received")}
         </div>
         {allocRows(o)}
       </React.Fragment>
@@ -1963,18 +1973,18 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     const used = u.lines.reduce((t, l) => t + (l.customer ? (Number(l.qty) || 1) : stockCount(l, all).used), 0);
     return (
       <div key={"g" + u.group} data-testid="order-group" style={{ borderTop: noTopBorder ? "none" : "1px solid #EEEDE8", padding: "12px 0 6px" }}>
-        <div data-testid="group-head" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "12px 14px" }}>
-          <div className="rw-who" style={{ flex: "2 1 230px" }}>
+        <div data-testid="group-head" className="rw-orow" style={{ display: undefined, flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "12px 14px", margin: "0 -14px" }}>
+          <div className="rw-who rw-o1">
             <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{brands.map((b) => <BrandTag key={b} name={b} />)}<span>{u.lines.length} models on one order</span></b>
             <span data-testid="group-count">{bikes} bikes{used > 0 ? " · " + (bikes - used) + " free · " + used + " allocated" : ""}</span>
           </div>
-          <div style={{ flex: "1 1 130px", minWidth: 0 }}>
+          <div className="rw-o3">
             <div style={lbl}>ETA</div>
             <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(first.eta) || (first.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
             {first.tracking && <div style={{ fontFamily: "monospace", fontSize: 12.5 }}><TrackingCell value={first.tracking} /></div>}
           </div>
-          <StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} />
-          <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div className="rw-o5"><StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} /></div>
+          <div className="rw-o6">
             {!archivedView && first.status !== "Received" && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
             {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => onAddModel(first)}>+ Add model</button>}
           </div>
