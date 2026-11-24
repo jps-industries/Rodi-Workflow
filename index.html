@@ -2088,6 +2088,24 @@ function SortControl({ value, dir, options, onKey, onDir, testid }) {
 function DoNext({ services, orders, accessories, rentals, onServiceStep, onOrderStep, onRentalStep, onOpen, goTo }) {
   const items = [];
   const seenGroups = new Set();
+  const [openBundles, setOpenBundles] = useState({});
+  // Bikes on the same order (several models, or customers' bikes allocated from one stock order) share one line that drops down.
+  const orderById = {};
+  orders.forEach((o) => { orderById[o.id] = o; });
+  const brandsOf = (lines) => Array.from(new Set(lines.map((l) => String(l.brand || "").trim()).filter(Boolean)));
+  const bundleOf = (kind, o) => {
+    if (kind === "accessory") {
+      if (o.status === "Received") return null; // each customer collecting is its own job
+      const same = accessories.filter((a) => !a.archived && a.status !== "Received" && a.eta === o.eta && String(a.brand || "").trim().toUpperCase() === String(o.brand || "").trim().toUpperCase() && String(a.tracking || "").trim() === String(o.tracking || "").trim());
+      return { key: "a|" + o.eta + "|" + String(o.brand || "").trim().toUpperCase() + "|" + String(o.tracking || "").trim(), title: (o.brand || "Parts") + " · parts order", brands: brandsOf(same) };
+    }
+    const host = o.parentId && orderById[o.parentId] ? orderById[o.parentId] : o;
+    if (host.groupId) {
+      const lines = orders.filter((l) => l.groupId === host.groupId && !l.parentId);
+      return { key: "g" + host.groupId, title: lines.length + " models on one order", brands: brandsOf(lines) };
+    }
+    return { key: "o" + host.id, title: (`${host.brand || ""} ${host.type || ""}`.trim() || "Bike order") + (host.customer ? "" : " · stock order"), brands: brandsOf([host]) };
+  };
   services.forEach((s) => {
     const n = serviceStep(s, accessories); if (!n) return;
     if (s.status === "Booked" && !n.urgent && s.bookedDate !== todayISO()) return; // future bookings wait their turn
@@ -2096,27 +2114,62 @@ function DoNext({ services, orders, accessories, rentals, onServiceStep, onOrder
   [["order", orders, "orders"], ["accessory", accessories, "accessories"]].forEach(([kind, list, table]) => list.forEach((o) => {
     const n = orderStep(o, kind); if (!n) return;
     if (o.status !== "Received" && !n.urgent) return; // on its way and not late: nothing to do yet
-    if (o.groupId && o.status !== "Received") { if (seenGroups.has(o.groupId)) return; seenGroups.add(o.groupId); }
-    items.push({ key: kind + o.id, kind, rec: o, n, title: (o.customer || "Shop stock") + (kind === "order" ? " · bike order" : " · parts order"), tag: <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600 }}><BrandTag name={o.brand} />{o.type}</span>, rank: n.urgent ? 0.5 : 2, run: (act) => onOrderStep(table, o, act) });
+    const whole = kind === "order" && o.groupId && o.status !== "Received"; // one step moves the whole order
+    if (whole) { if (seenGroups.has(o.groupId)) return; seenGroups.add(o.groupId); }
+    const bundle = bundleOf(kind, o);
+    if (whole) {
+      items.push({ key: kind + o.id, kind, rec: o, n, title: bundle.title + " · bike order", tag: <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>{bundle.brands.map((b) => <BrandTag key={b} name={b} />)}</span>, rank: n.urgent ? 0.5 : 2, run: (act) => onOrderStep(table, o, act) });
+      return;
+    }
+    items.push({ key: kind + o.id, kind, rec: o, n, bundle, title: (o.customer || "Shop stock") + (kind === "order" ? " · bike order" : " · parts order"), tag: <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600 }}><BrandTag name={o.brand} />{o.type}</span>, rank: n.urgent ? 0.5 : 2, run: (act) => onOrderStep(table, o, act) });
   }));
   (rentals || []).forEach((r) => {
     const n = rentalStep(r); if (!n) return;
     items.push({ key: "r" + r.id, kind: "rental", rec: r, n, title: (r.guestName || "Guest") + " · rental", tag: <span className="rw-flag" style={{ background: "#EFEFEA", color: "#3F4248" }}>{r.hotel || "Hotel"}</span>, rank: n.act === "deposit" ? 1.5 : 2.5, run: (act) => onRentalStep(r, act) });
   });
   items.sort((a, b) => a.rank - b.rank);
+  // Fold lines that share an order into one drop-down line, placed where its most urgent bike would sit.
+  const rowsOut = [];
+  const bundleRows = {};
+  items.forEach((it) => {
+    const k = it.bundle && it.bundle.key;
+    if (!k || items.filter((x) => x.bundle && x.bundle.key === k).length < 2) { rowsOut.push(it); return; }
+    if (!bundleRows[k]) { bundleRows[k] = { key: "b" + k, bundleKey: k, info: it.bundle, kind: it.kind, children: [] }; rowsOut.push(bundleRows[k]); }
+    bundleRows[k].children.push(it);
+  });
+  const plainRow = (it, child) => (
+    <div key={it.key} className="rw-row" data-testid={child ? "do-next-child" : "do-next-row"} style={{ borderTop: child ? "1px dashed #E2E1DC" : "1px solid #EEEDE8", paddingLeft: child ? 16 : undefined, boxShadow: child ? "inset 3px 0 0 #D8D7D0" : undefined }} onClick={() => (it.kind === "rental" ? goTo("rentals") : onOpen(it.kind, it.rec))}>
+      <div className="rw-who"><b>{it.title}</b><span>{it.n.why}</span></div>
+      <div className="rw-meta">{it.tag}</div>
+      <StepButtons step={it.n} onRun={it.run} />
+    </div>
+  );
   return (
     <section className="rw-list" data-testid="do-next" style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 0 12px" }}>
         <h3 className="rodi-display" style={{ margin: 0, fontSize: 21 }}>Do next</h3>
         <span data-testid="do-next-count" style={{ fontSize: 13, fontWeight: 700, background: "#FFCC0A", color: "#0B0B0C", borderRadius: 999, padding: "3px 11px" }}>{items.length} to do</span>
       </div>
-      {items.map((it) => (
-        <div key={it.key} className="rw-row" data-testid="do-next-row" style={{ borderTop: "1px solid #EEEDE8" }} onClick={() => (it.kind === "rental" ? goTo("rentals") : onOpen(it.kind, it.rec))}>
-          <div className="rw-who"><b>{it.title}</b><span>{it.n.why}</span></div>
-          <div className="rw-meta">{it.tag}</div>
-          <StepButtons step={it.n} onRun={it.run} />
-        </div>
-      ))}
+      {rowsOut.map((it) => {
+        if (!it.children) return plainRow(it, false);
+        const open = !!openBundles[it.bundleKey];
+        const toggle = () => setOpenBundles((p) => ({ ...p, [it.bundleKey]: !p[it.bundleKey] }));
+        const steps = Array.from(new Set(it.children.map((c) => c.n.label)));
+        const noun = it.kind === "accessory" ? "items" : "bikes";
+        return (
+          <React.Fragment key={it.key}>
+            <div className="rw-row rodi-row" data-testid="do-next-bundle" role="button" tabIndex={0} aria-expanded={open} onClick={toggle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }} style={{ borderTop: "1px solid #EEEDE8", cursor: "pointer" }}>
+              <div className="rw-who">
+                <b style={{ display: "flex", alignItems: "center", gap: 6 }}><span aria-hidden="true" style={{ display: "inline-flex", transition: "transform .15s", transform: open ? "rotate(90deg)" : "none" }}><ChevronRight size={17} /></span>{it.info.title}</b>
+                <span>{it.children.length} {noun} need a step: {steps.join(", ")}.</span>
+              </div>
+              <div className="rw-meta">{it.info.brands.map((b) => <BrandTag key={b} name={b} />)}</div>
+              <span className="rodi-btn rw-btn ghost" data-testid="do-next-toggle" style={{ display: "inline-flex", alignItems: "center" }}>{open ? "Hide" : "Show " + it.children.length}</span>
+            </div>
+            {open && it.children.map((c) => plainRow(c, true))}
+          </React.Fragment>
+        );
+      })}
       {items.length === 0 && (
         <div style={{ textAlign: "center", padding: "30px 10px", borderTop: "1px solid #EEEDE8" }}>
           <div className="rodi-display" style={{ fontSize: 19 }}>All clear</div>
