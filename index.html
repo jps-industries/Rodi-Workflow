@@ -1896,6 +1896,9 @@ function ServiceBoard({ rows, onEdit, onStep }) {
 function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onSetStatus, onDuplicate, onToggleArchive, onDelete, onAllocate, onAddModel }) {
   const isOrder = kind === "order";
   const all = React.useContext(AppCtx).records.orders;
+  // Multi-model orders start collapsed to their heading; click the heading to show or hide the models. Remembered per device.
+  const [openGroups, setOpenGroups] = usePersisted("orders.openGroups", {});
+  const toggleGroup = (g, force) => setOpenGroups((prev) => { const next = { ...(prev || {}) }; if (force === true || (force !== false && !next[g])) next[g] = true; else delete next[g]; return next; });
   const colors = isOrder ? ORDER_COLORS : ACCESSORY_COLORS, statuses = isOrder ? ORDER_STATUSES : ACCESSORY_STATUSES;
   const lbl = { fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#8A8C82", textTransform: "uppercase" };
   const tag = (color, text) => <span key={text} style={{ fontSize: 10.5, color, fontWeight: 700 }}>{text}</span>;
@@ -2006,25 +2009,29 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     const brands = Array.from(new Set(u.lines.map((l) => String(l.brand || "").trim()).filter(Boolean)));
     const bikes = u.lines.reduce((t, l) => t + (Number(l.qty) || 1), 0);
     const used = u.lines.reduce((t, l) => t + (l.customer ? (Number(l.qty) || 1) : stockCount(l, all).used), 0);
+    const open = !!(openGroups && openGroups[u.group]);
+    const models = u.lines.map((l) => (l.type || "—") + ((Number(l.qty) || 1) > 1 ? " ×" + l.qty : "")).join(" · ");
     return (
       <div key={"g" + u.group} data-testid="order-group" style={{ borderTop: noTopBorder ? "none" : "1px solid #EEEDE8", padding: "12px 0 6px" }}>
-        <div data-testid="group-head" className="rw-orow" style={{ display: undefined, flexWrap: "wrap", alignItems: "center", gap: "10px 14px", background: overdue ? "#FBEAE8" : "#F4F4F0", borderRadius: 14, padding: "16px 14px", margin: "0 -14px", background: overdue ? "#FBEAE8" : "#ECEBE5", border: "1.5px solid #CFCEC6" }}>
+        <div data-testid="group-head" className="rw-orow rodi-row" role="button" tabIndex={0} aria-expanded={open} title={open ? "Hide the models" : "Show the models"} onClick={() => toggleGroup(u.group)} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggleGroup(u.group); } }} style={{ cursor: "pointer", display: undefined, flexWrap: "wrap", alignItems: "center", gap: "10px 14px", borderRadius: 14, padding: "16px 14px", margin: "0 -14px", background: overdue ? "#FBEAE8" : "#ECEBE5", border: "1.5px solid #CFCEC6" }}>
           <div className="rw-who rw-o1">
-            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>{brands.map((b) => <BrandTag key={b} name={b} big />)}<span className="rodi-display" style={{ fontSize: 21, lineHeight: 1.15 }}>{u.lines.length} models on one order</span></b>
+            <b style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><span aria-hidden="true" style={{ display: "inline-flex", transition: "transform .15s", transform: open ? "rotate(90deg)" : "none" }}><ChevronRight size={20} /></span>{brands.map((b) => <BrandTag key={b} name={b} big />)}<span className="rodi-display" style={{ fontSize: 21, lineHeight: 1.15 }}>{u.lines.length} models on one order</span></b>
             <span data-testid="group-count" style={{ fontSize: 14.5, fontWeight: 600, color: "#3F4248", marginTop: 4 }}>{bikes} bikes{used > 0 ? " · " + (bikes - used) + " free · " + used + " allocated" : ""}</span>
+            {!open && <span data-testid="group-models" style={{ fontSize: 13, color: "#5A5D64", overflowWrap: "anywhere" }}>{models}</span>}
+            <button type="button" data-testid="group-toggle" onClick={(e) => { e.stopPropagation(); toggleGroup(u.group); }} style={{ alignSelf: "flex-start", marginTop: 4, padding: "4px 0", border: "none", background: "none", font: "inherit", fontSize: 13, fontWeight: 700, color: "#0B0B0C", textDecoration: "underline", cursor: "pointer" }}>{open ? "Hide models" : "Show " + u.lines.length + " models"}</button>
           </div>
           <div className="rw-o3">
             <div style={lbl}>ETA</div>
             <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(first.eta) || (first.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
-            {first.tracking && <div style={{ fontFamily: "monospace", fontSize: 12.5 }}><TrackingCell value={first.tracking} /></div>}
+            {first.tracking && <div onClick={(e) => e.stopPropagation()} style={{ fontFamily: "monospace", fontSize: 12.5 }}><TrackingCell value={first.tracking} /></div>}
           </div>
-          <div className="rw-o5"><StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} /></div>
-          <div className="rw-o6">
+          <div className="rw-o5" onClick={(e) => e.stopPropagation()}><StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} /></div>
+          <div className="rw-o6" onClick={(e) => e.stopPropagation()}>
             {!archivedView && first.status !== "Received" && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
-            {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => onAddModel(first)}>+ Add model</button>}
+            {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => { toggleGroup(u.group, true); onAddModel(first); }}>+ Add model</button>}
           </div>
         </div>
-        {u.lines.map((l) => orderRow(l, true, false))}
+        {open && u.lines.map((l) => orderRow(l, true, false))}
       </div>
     );
   };
