@@ -3226,17 +3226,53 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
   const [hiddenKinds, setHiddenKinds] = useState({});
   const allEventsByDate = useMemo(() => {
     const map = {};
+    // One calendar entry per order arriving, not per bike: models on the same order share an entry,
+    // and a bike allocated from a stock order rides on that stock order's entry.
+    const qtyOf = (r) => Number(r.qty) || 1;
+    const orderById = {};
+    activeOrders.forEach((o) => { orderById[o.id] = o; });
+    const orderBundles = {};
     activeOrders.forEach((o) => {
       if (!o.eta) return;
-      (map[o.eta] = map[o.eta] || []).push({ kind: "order", title: `${o.brand} ${o.type}`.trim(), color: "#33506B", ref: o });
+      const parent = o.parentId ? orderById[o.parentId] : null;
+      const host = parent && parent.eta === o.eta ? parent : o;
+      const key = o.eta + "|" + (host.groupId ? "g" + host.groupId : "o" + host.id);
+      const b = orderBundles[key] || (orderBundles[key] = { date: o.eta, lines: [], allocs: [] });
+      (host === o ? b.lines : b.allocs).push(o);
+    });
+    Object.values(orderBundles).forEach((b) => {
+      const first = b.lines[0] || b.allocs[0];
+      const names = b.allocs.map((k) => k.customer).filter(Boolean);
+      let title, detail;
+      if (b.lines.length > 1) {
+        const brands = Array.from(new Set(b.lines.map((l) => String(l.brand || "").trim()).filter(Boolean))).join(" + ");
+        title = `${brands || "ORDER"} · ${b.lines.length} models (${b.lines.reduce((t, l) => t + qtyOf(l), 0)} bikes)`;
+        detail = names.length ? "allocated: " + names.join(", ") : "";
+      } else {
+        title = `${first.brand} ${first.type}`.trim() + (qtyOf(first) > 1 ? ` ×${qtyOf(first)}` : "");
+        detail = first.customer ? `for ${first.customer}` : names.length ? "shop stock · allocated: " + names.join(", ") : "shop stock";
+      }
+      (map[b.date] = map[b.date] || []).push({ kind: "order", title, detail, color: "#33506B", ref: first, items: b.lines.length > 1 ? b.lines : null });
     });
     activeServices.forEach((s) => {
       if (!s.bookedDate) return;
       (map[s.bookedDate] = map[s.bookedDate] || []).push({ kind: "service", title: `${s.customer || "SERVICE"}`, color: "#FFCC0A", ref: s });
     });
+    // Parts from the same supplier due the same day (and on the same tracking) are one delivery, so one entry.
+    const partBundles = {};
     activeAccessories.forEach((a) => {
       if (!a.eta) return;
-      (map[a.eta] = map[a.eta] || []).push({ kind: "accessory", title: `${a.brand || "Order"}: ${a.type || "item"}`, color: "#7C5CBF", ref: a });
+      const key = a.eta + "|" + String(a.brand || "").trim().toUpperCase() + "|" + String(a.tracking || "").trim();
+      (partBundles[key] || (partBundles[key] = { date: a.eta, lines: [] })).lines.push(a);
+    });
+    Object.values(partBundles).forEach((b) => {
+      const a = b.lines[0];
+      const many = b.lines.length > 1;
+      (map[b.date] = map[b.date] || []).push({
+        kind: "accessory", color: "#7C5CBF", ref: a, items: many ? b.lines : null,
+        title: many ? `${a.brand || "Order"}: ${b.lines.length} items` : `${a.brand || "Order"}: ${a.type || "item"}`,
+        detail: many ? "" : `qty ${a.qty || "—"} for ${a.customer || "—"}`,
+      });
     });
     activeOrders.forEach((o) => {
       if (o.fulfillment !== "Delivery" || !o.deliveryDate) return;
@@ -3394,7 +3430,7 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
               const clickable = ev.kind === "order" || ev.kind === "service" || ev.kind === "accessory" || ev.kind === "delivery" || ev.kind === "pickup";
               const KIND = { order: ["ORDER ARRIVING", "#33506B"], service: ["SERVICE", "#C99A0A"], accessory: ["ACCESSORY ARRIVING", "#7C5CBF"], delivery: ["DELIVERY", "#2E8B77"], pickup: ["PICK UP", "#B5651D"], note: ["NOTE", "#C2417A"] };
               const [kindLabel, kindColor] = KIND[ev.kind] || ["EVENT", "#565C54"];
-              const detail = ev.kind === "order" ? `for ${ev.ref.customer || "—"}`
+              const detail = ev.detail != null ? ev.detail
                 : ev.kind === "service" ? ev.ref.serviceType || ""
                 : ev.kind === "note" ? "click to edit"
                 : ev.kind === "delivery" || ev.kind === "pickup" ? `${ev.ref.brand || ""} ${ev.ref.type || ""}`.trim()
@@ -3419,6 +3455,16 @@ function CalendarTab({ orders, services, accessories, calendarNotes, onAddNote, 
                       onClick={(e) => { if (ev.kind === "note") { e.stopPropagation(); setEditingNote({ id: ev.ref.id, date: ev.ref.date, text: ev.ref.text }); } }}
                     >{ev.title}</div>
                     {detail && <div style={{ color: "#565C54", fontSize: 12.5 }}>{detail}</div>}
+                    {ev.items && (
+                      <div style={{ marginTop: 5, display: "flex", flexDirection: "column", gap: 2 }}>
+                        {ev.items.map((it) => (
+                          <button key={it.id} type="button" data-testid="day-event-item" onClick={(e) => { e.stopPropagation(); onOpenRecord(ev.kind, it); }}
+                            style={{ textAlign: "left", background: "none", border: "none", padding: "3px 0", font: "inherit", fontSize: 12.5, color: "#3F4248", cursor: "pointer", textDecoration: "underline" }}>
+                            {(it.type || "item") + ((Number(it.qty) || 1) > 1 ? " ×" + it.qty : "") + (it.customer ? " — " + it.customer : "")}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {ev.kind === "note" && (
                     <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
