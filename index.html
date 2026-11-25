@@ -155,7 +155,10 @@ const Zap = ({ size = 16, color = "currentColor" }) => <svg width={size} height=
 const STORAGE_KEY = "rodi-tracker-data";
 
 
-const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
+const ORDER_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received", "Shop floor"];
+// "Shop floor" = a bike that was already in the shop and never came in on an order. For every step after
+// arrival (assembly, telling the customer, hand-over) it behaves exactly like "Received".
+function isHere(status) { return status === "Received" || status === "Shop floor"; }
 const SERVICE_STATUSES = ["Booked", "In Progress", "Awaiting Parts", "Ready for Pickup", "Completed"];
 const ACCESSORY_STATUSES = ["Pre-ordered", "Ordered", "In Transit", "Received"];
 const PAYMENT_STATUSES = ["Not paid", "Deposit only", "Full Payment"];
@@ -173,6 +176,7 @@ const ORDER_COLORS = {
   "Ordered": "#D98B3D",
   "In Transit": "#3A7CA5",
   "Received": "#4C9A6A",
+  "Shop floor": "#2E8B77",
 };
 const SERVICE_COLORS = {
   "Booked": "#3A7CA5",
@@ -776,8 +780,13 @@ function notifyCustomerReady(form) {
 const ZAPIER_SERVICE_TEXT_WEBHOOK = "https://hooks.zapier.com/hooks/catch/23390919/C0YGYovv7e1wNXPLe/";
 // Australian mobile in any common format -> "+614XXXXXXXX", otherwise null.
 function auMobile(v) { const m = String(v || "").replace(/\D/g, "").match(/^(?:61|0)?(4\d{8})$/); return m ? "+61" + m[1] : null; }
-function sendServiceText(kind, s) {
-  const body = new URLSearchParams({ kind, phone: s.phone || "", name: s.customer || "", bike: s.bike || "", date: s.bookedDate || "" }).toString();
+const CUSTOM_TEXT_MAX = 320; // two SMS lengths; the texting service cuts at the same point
+// One line, no characters the notes format uses, no longer than the limit.
+function tidyCustomText(v) { return String(v || "").replace(/[\r\n\t]+/g, " ").replace(/\|/g, "/").replace(/ {2,}/g, " ").trim().slice(0, CUSTOM_TEXT_MAX); }
+function sendServiceText(kind, s, message) {
+  const fields = { kind, phone: s.phone || "", name: s.customer || "", bike: s.bike || "", date: s.bookedDate || "" };
+  if (kind === "custom") fields.message = tidyCustomText(message);
+  const body = new URLSearchParams(fields).toString();
   fetch(ZAPIER_SERVICE_TEXT_WEBHOOK + "?" + body, {
     method: "POST",
     mode: "no-cors",
@@ -941,6 +950,9 @@ function DeliveryForm({ initial, onSave, onClose }) {
         // No customer means it is shop stock: no box to tick.
         onSave(String(form.customer || "").trim() ? form : { ...form, forStock: true });
       }}>
+      <div data-testid="delivery-source" style={{ fontSize: 13.5, background: "#E4F2EE", border: "1px solid #BFE0D7", color: "#1F6B5B", borderRadius: 10, padding: "9px 12px", fontWeight: 600 }}>
+        Shop floor stock. For a bike that came in on an order, open that order and set it to Delivery instead.
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
         <Field label="Brand"><input style={inputStyle} value={form.brand} onChange={upper("brand")} placeholder="DIRODI" /></Field>
         <Field label="Colour"><input style={inputStyle} value={form.colour} onChange={upper("colour")} placeholder="BLACK" /></Field>
@@ -1643,11 +1655,11 @@ const SERVICE_QUICK_LABELS = { today: "Services today", week: "Services this wee
 function inNext7(dateStr) { const d = daysFromToday(dateStr); return d !== null && d >= 0 && d <= 7; }
 function orderQuickMatch(o, quick) {
   if (!quick) return true;
-  if (quick === "overdue") return isPastDate(o.eta) && o.status !== "Received";
+  if (quick === "overdue") return isPastDate(o.eta) && !isHere(o.status);
   if (quick === "week") return inNext7(o.eta);
-  if (quick === "assembly") return o.status === "Received" && o.assemblyStatus !== "Assembled";
+  if (quick === "assembly") return isHere(o.status) && o.assemblyStatus !== "Assembled";
   if (quick === "deliveries") return o.fulfillment === "Delivery" && inNext7(o.deliveryDate);
-  if (quick === "pickup") return o.status === "Received" && o.fulfillment === "Pickup" && !!o.customer && o.assemblyStatus === "Assembled";
+  if (quick === "pickup") return isHere(o.status) && o.fulfillment === "Pickup" && !!o.customer && o.assemblyStatus === "Assembled";
   return true;
 }
 function serviceQuickMatch(s, quick) {
@@ -1699,7 +1711,7 @@ function serviceStep(s, accessories) {
   if (s.status === "In Progress") return { act: "ready", label: "Mark ready", why: "On the bench. Mark it ready when the work is finished.", alt: { act: "parts", label: "Awaiting parts" } };
   if (s.status === "Awaiting Parts") {
     const p = partFor(s, accessories);
-    if (p && p.status === "Received") return { act: "partsin", urgent: true, label: "Back on the bench", why: partName(p) + " has arrived. This job can carry on." };
+    if (p && isHere(p.status)) return { act: "partsin", urgent: true, label: "Back on the bench", why: partName(p) + " has arrived. This job can carry on." };
     return { act: "partsin", label: "Parts arrived", why: p ? "Waiting on " + partName(p) + (p.eta ? ", due " + String(formatAURel(p.eta)).toLowerCase() : "") + "." : "Stuck waiting on parts.", alt: p ? null : { act: "parts", label: "Link a parts order" } };
   }
   if (s.status === "Ready for Pickup") {
@@ -1725,9 +1737,9 @@ function stockCount(order, orders) {
 function orderStep(o, kind) {
   if (!o || o.archived) return null;
   // An allocated bike travels with its stock order: nothing to do on it until that order has arrived.
-  if (o.parentId && o.status !== "Received") return null;
+  if (o.parentId && !isHere(o.status)) return null;
   const list = kind === "order" ? ORDER_STATUSES : ACCESSORY_STATUSES;
-  if (o.status !== "Received") {
+  if (!isHere(o.status)) {
     const next = nextStatus(o.status, list);
     if (!next) return null;
     const late = isPastDate(o.eta);
@@ -1785,7 +1797,7 @@ function ServiceFlags({ s, hideMissing }) {
     <>
       {!hideMissing && missing.length > 0 && flag("#FCE5E1", "#9B2C1F", "No " + missing.join(", ").toLowerCase(), "list-not-received")}
       {s.status === "Ready for Pickup" && (serviceTold(s) ? (waited !== null && waited >= PICKUP_NUDGE_DAYS ? flag("#FCE5E1", "#9B2C1F", "Waiting " + waited + " days", "flag-waiting") : flag("#DFF3E7", "#1E6B45", "Customer told")) : flag("#FFF0C2", "#7A4B00", "Not told yet"))}
-      {part && (part.status === "Received" ? flag("#DFF3E7", "#1E6B45", "Parts are in", "flag-parts-in") : flag("#EFEFEA", "#3F4248", "Waiting on " + partName(part).toLowerCase(), "flag-waiting-on"))}
+      {part && (isHere(part.status) ? flag("#DFF3E7", "#1E6B45", "Parts are in", "flag-parts-in") : flag("#EFEFEA", "#3F4248", "Waiting on " + partName(part).toLowerCase(), "flag-waiting-on"))}
       {logFind(s.notes, "CONFIRMATION TEXT SENT") && s.status === "Booked" && flag("#E3EDFA", "#1D4F91", "Confirmation sent")}
     </>
   );
@@ -1793,7 +1805,7 @@ function ServiceFlags({ s, hideMissing }) {
 function JobCardBtn({ job }) {
   const ctx = React.useContext(AppCtx);
   if (!ctx.printJob) return null;
-  return <button type="button" className="rodi-btn rw-btn ghost" data-testid="row-job-card" onClick={(e) => { e.stopPropagation(); ctx.printJob(job); }}>Job card</button>;
+  return <React.Fragment>{ctx.textJob && !job.archived && <button type="button" className="rodi-btn rw-btn ghost" data-testid="row-text" title="Text this customer" onClick={(e) => { e.stopPropagation(); ctx.textJob(job); }}>Text</button>}<button type="button" className="rodi-btn rw-btn ghost" data-testid="row-job-card" onClick={(e) => { e.stopPropagation(); ctx.printJob(job); }}>Job card</button></React.Fragment>;
 }
 // Full-width coloured band that starts each status section in a list sorted by stage.
 function StageBand({ label, color, count, first }) {
@@ -1931,7 +1943,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {o.forStock && o.customer && !o.parentId && tag("#2E8B77", "FROM STOCK")}
       {o.notified && tag("#3A7CA5", "Texted")}
-      {isOrder && o.status === "Received" && (o.assemblyStatus === "Assembled" ? tag("#4C9A6A", "Assembled") : tag("#D98B3D", "For assembly"))}
+      {isOrder && isHere(o.status) && (o.assemblyStatus === "Assembled" ? tag("#4C9A6A", "Assembled") : tag("#D98B3D", "For assembly"))}
     </div>
   );
   const payPill = (o) => { const pay = isOrder ? o.payment : o.paymentOwing; return pay ? <span data-testid="pay-pill" className="rw-flag" style={{ background: tintOf(PAYMENT_COLORS[pay], "22"), color: shadeHex(PAYMENT_COLORS[pay] || "#3F4248", 0.35) }}>{pay}</span> : null; };
@@ -1959,7 +1971,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
   ));
   // One order row. inGroup = a model line inside a multi-model order (the heading above carries status, ETA and tracking).
   const orderRow = (o, inGroup, noTopBorder) => {
-    const overdue = !inGroup && !archivedView && isPastDate(o.eta) && o.status !== "Received";
+    const overdue = !inGroup && !archivedView && isPastDate(o.eta) && !isHere(o.status);
     const stock = !o.customer;
     const when = isOrder ? (o.fulfillment === "Delivery" ? o.deliveryDate : o.receivedDate) : "";
     const sc = isOrder && stock ? stockCount(o, all) : null;
@@ -1997,7 +2009,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
             {!inGroup && <StatusMenu label={o.status} color={colors[o.status]} statuses={statuses} onPick={(st) => onSetStatus(o.id, st)} />}
             {!stock && payPill(o)}
           </div>
-          {actions(o, false, inGroup && o.status !== "Received")}
+          {actions(o, false, inGroup && !isHere(o.status))}
         </div>
         {allocRows(o)}
       </React.Fragment>
@@ -2005,7 +2017,7 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
   };
   const groupBlock = (u, noTopBorder) => {
     const first = u.lines[0];
-    const overdue = !archivedView && isPastDate(first.eta) && first.status !== "Received";
+    const overdue = !archivedView && isPastDate(first.eta) && !isHere(first.status);
     const brands = Array.from(new Set(u.lines.map((l) => String(l.brand || "").trim()).filter(Boolean)));
     const bikes = u.lines.reduce((t, l) => t + (Number(l.qty) || 1), 0);
     const used = u.lines.reduce((t, l) => t + (l.customer ? (Number(l.qty) || 1) : stockCount(l, all).used), 0);
@@ -2027,7 +2039,8 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
           </div>
           <div className="rw-o5" onClick={(e) => e.stopPropagation()}><StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} /></div>
           <div className="rw-o6" onClick={(e) => e.stopPropagation()}>
-            {!archivedView && first.status !== "Received" && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
+            {!archivedView && !isHere(first.status) && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
+            <button type="button" data-testid="group-edit" className="rodi-btn rw-btn ghost" title="Edit this order: ETA, tracking, status" onClick={() => onEdit(first)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Pencil size={14} /> Edit / tracking</button>
             {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => { toggleGroup(u.group, true); onAddModel(first); }}>+ Add model</button>}
           </div>
         </div>
@@ -2095,8 +2108,8 @@ function DoNext({ services, orders, accessories, rentals, onServiceStep, onOrder
   const brandsOf = (lines) => Array.from(new Set(lines.map((l) => String(l.brand || "").trim()).filter(Boolean)));
   const bundleOf = (kind, o) => {
     if (kind === "accessory") {
-      if (o.status === "Received") return null; // each customer collecting is its own job
-      const same = accessories.filter((a) => !a.archived && a.status !== "Received" && a.eta === o.eta && String(a.brand || "").trim().toUpperCase() === String(o.brand || "").trim().toUpperCase() && String(a.tracking || "").trim() === String(o.tracking || "").trim());
+      if (isHere(o.status)) return null; // each customer collecting is its own job
+      const same = accessories.filter((a) => !a.archived && !isHere(a.status) && a.eta === o.eta && String(a.brand || "").trim().toUpperCase() === String(o.brand || "").trim().toUpperCase() && String(a.tracking || "").trim() === String(o.tracking || "").trim());
       return { key: "a|" + o.eta + "|" + String(o.brand || "").trim().toUpperCase() + "|" + String(o.tracking || "").trim(), title: (o.brand || "Parts") + " · parts order", brands: brandsOf(same) };
     }
     const host = o.parentId && orderById[o.parentId] ? orderById[o.parentId] : o;
@@ -2113,8 +2126,8 @@ function DoNext({ services, orders, accessories, rentals, onServiceStep, onOrder
   });
   [["order", orders, "orders"], ["accessory", accessories, "accessories"]].forEach(([kind, list, table]) => list.forEach((o) => {
     const n = orderStep(o, kind); if (!n) return;
-    if (o.status !== "Received" && !n.urgent) return; // on its way and not late: nothing to do yet
-    const whole = kind === "order" && o.groupId && o.status !== "Received"; // one step moves the whole order
+    if (!isHere(o.status) && !n.urgent) return; // on its way and not late: nothing to do yet
+    const whole = kind === "order" && o.groupId && !isHere(o.status); // one step moves the whole order
     if (whole) { if (seenGroups.has(o.groupId)) return; seenGroups.add(o.groupId); }
     const bundle = bundleOf(kind, o);
     if (whole) {
@@ -2240,9 +2253,43 @@ function ServiceTextSheet({ service, kind, onSend, onClose }) {
     </FlowSheet>
   );
 }
+// Write your own text to a job's customer. Sent from the shop number and recorded in the job's log.
+const CUSTOM_TEXT_STARTERS = [
+  ["Parts arrived", "the parts for {bike} have arrived and we're back on it."],
+  ["Waiting on parts", "just an update, we're still waiting on parts for {bike}. We'll let you know as soon as they land."],
+  ["Quote", "we've had a look at {bike}. Give us a call on the shop number when you get a sec to go over the quote."],
+  ["Call us", "can you give us a call at the shop about {bike} when you get a chance?"],
+];
+function CustomTextSheet({ service, onSend, onClose }) {
+  const who = niceFirst(service.customer);
+  const bike = tidyBike(service.bike) ? "your " + tidyBike(service.bike) : "your bike";
+  const [msg, setMsg] = useState("Hey " + who + ", ");
+  const to = auMobile(service.phone);
+  const clean = tidyCustomText(msg);
+  const empty = clean.length < 3 || clean === ("Hey " + who + ",");
+  return (
+    <FlowSheet testid="custom-text-sheet" title={"Text " + who} sub={<BikeLabel bike={service.bike} />} onClose={onClose}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {CUSTOM_TEXT_STARTERS.map(([label, text]) => (
+          <button key={label} type="button" data-testid="custom-text-starter" className="rodi-btn" onClick={() => setMsg("Hey " + who + ", " + text.replace("{bike}", bike) + " Cheers, Rodi crew.")} style={{ minHeight: 34, padding: "0 12px", borderRadius: 999, border: "1.5px solid #D8D7D0", background: "#fff", font: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{label}</button>
+        ))}
+      </div>
+      <textarea data-testid="custom-text-input" autoFocus value={msg} maxLength={CUSTOM_TEXT_MAX} onChange={(e) => setMsg(e.target.value)} rows={5} style={{ ...inputStyle, resize: "vertical", fontSize: 15, lineHeight: 1.4 }} />
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12.5, color: "#5A5D64" }}>
+        <span>{to ? "Sends a real text to " + service.phone + " straight away, from the shop number." : ""}</span>
+        <span data-testid="custom-text-count" style={{ whiteSpace: "nowrap" }}>{clean.length}/{CUSTOM_TEXT_MAX}</span>
+      </div>
+      {!to && <div data-testid="custom-text-nophone" style={{ fontSize: 13, color: "#9B2C1F", fontWeight: 600 }}>{service.phone ? service.phone + " is not an Australian mobile number, so it can't be texted." : "No phone number on this job. Add one to the booking first."}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="rodi-btn rw-btn accent" data-testid="custom-text-send" disabled={!to || empty} style={{ flex: 1, minHeight: 48, opacity: !to || empty ? 0.5 : 1 }} onClick={() => onSend(clean)}>Send text</button>
+        <button type="button" className="rodi-btn rw-btn ghost" style={{ minHeight: 48 }} onClick={onClose}>Cancel</button>
+      </div>
+    </FlowSheet>
+  );
+}
 // "Awaiting parts": say which parts order the job is waiting on, so it can flag itself when that order arrives.
 function PartsSheet({ service, accessories, onPick, onClose }) {
-  const open = accessories.filter((a) => !a.archived).sort((a, b) => (a.status === "Received") - (b.status === "Received"));
+  const open = accessories.filter((a) => !a.archived).sort((a, b) => (isHere(a.status)) - (isHere(b.status)));
   return (
     <FlowSheet testid="parts-sheet" title="What is it waiting on?" sub={<span>{niceFirst(service.customer)}'s <BikeLabel bike={service.bike} /></span>} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -2393,7 +2440,7 @@ function HistoryTab({ entries }) {
 }
 
 // ---- Shared context: lets deep components (forms, cards) open the history / job-card popups ----
-const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, profiles: [], viewCustomer: null, printJob: null });
+const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, profiles: [], viewCustomer: null, printJob: null, textJob: null });
 
 const STALE = { partsDays: 5, progressDays: 7, readyDays: 7, overdueDays: 7, uncollectedDays: 3 };
 function ageDays(dateStr) { const n = daysFromToday(dateStr); return n === null ? null : -n; }
@@ -2412,7 +2459,7 @@ function staleItems(orders, services, accessories) {
   });
   orders.forEach((o) => {
     if (o.archived) return;
-    if (o.status !== "Received") {
+    if (!isHere(o.status)) {
       const d = ageDays(o.eta);
       if (d !== null && d >= STALE.overdueDays) out.push({ kind: "order", rec: o, days: d, reason: `ETA ${d} days overdue` });
     } else if (o.fulfillment === "Pickup" && o.customer && o.assemblyStatus === "Assembled") {
@@ -2421,7 +2468,7 @@ function staleItems(orders, services, accessories) {
     }
   });
   accessories.forEach((a) => {
-    if (a.archived || a.status === "Received") return;
+    if (a.archived || isHere(a.status)) return;
     const d = ageDays(a.eta);
     if (d !== null && d >= STALE.overdueDays) out.push({ kind: "accessory", rec: a, days: d, reason: `ETA ${d} days overdue` });
   });
@@ -2834,14 +2881,14 @@ function OrdersTab({ orders, onAdd, onEdit, onDelete, onDuplicate, onToggleArchi
   };
 
   const archivedCount = useMemo(() => orders.filter((o) => o.archived).length, [orders]);
-  const eligibleToArchive = useMemo(() => orders.filter((o) => !o.archived && o.status === "Received").length, [orders]);
+  const eligibleToArchive = useMemo(() => orders.filter((o) => !o.archived && isHere(o.status)).length, [orders]);
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       const matchesView = view === "archived" ? o.archived : !o.archived;
       const matchesStatus = statusFilter === "All" || o.status === statusFilter;
       const matchesStock = !stockOnly || o.forStock || !o.customer;
-      const matchesAssembly = !needsAssembly || (o.assemblyStatus !== "Assembled" && o.status === "Received");
+      const matchesAssembly = !needsAssembly || (o.assemblyStatus !== "Assembled" && isHere(o.status));
       const q = search.toLowerCase();
       const matchesSearch = !q || [o.brand, o.type, o.customer, o.tracking, o.colour].join(" ").toLowerCase().includes(q);
       return matchesView && matchesStatus && matchesStock && matchesAssembly && matchesSearch && orderQuickMatch(o, quick);
@@ -3177,7 +3224,7 @@ function AccessoriesTab({ accessories, onAdd, onEdit, onDelete, onDuplicate, onT
   };
 
   const archivedCount = useMemo(() => accessories.filter((a) => a.archived).length, [accessories]);
-  const eligibleToArchive = useMemo(() => accessories.filter((a) => !a.archived && a.status === "Received").length, [accessories]);
+  const eligibleToArchive = useMemo(() => accessories.filter((a) => !a.archived && isHere(a.status)).length, [accessories]);
 
   const filtered = useMemo(() => {
     return accessories.filter((a) => {
@@ -3697,7 +3744,7 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
     const d = daysFromToday(o.eta);
     return d !== null && d >= 0 && d <= 7;
   }), [activeOrders]);
-  const overdueOrders = useMemo(() => activeOrders.filter((o) => isPastDate(o.eta) && o.status !== "Received"), [activeOrders]);
+  const overdueOrders = useMemo(() => activeOrders.filter((o) => isPastDate(o.eta) && !isHere(o.status)), [activeOrders]);
   const servicesToday = useMemo(() => activeServices.filter((s) => s.bookedDate === todayISO()), [activeServices]);
   const servicesThisWeek = useMemo(() => activeServices.filter((s) => {
     const d = daysFromToday(s.bookedDate);
@@ -3706,8 +3753,8 @@ function DashboardTab({ orders, services, accessories, checklistItems, onAddChec
   const overdueServices = useMemo(() => activeServices.filter((s) =>
     isPastDate(s.bookedDate) && s.status === "Booked"
   ), [activeServices]);
-  const needsAssembly = useMemo(() => activeOrders.filter((o) => o.status === "Received" && o.assemblyStatus !== "Assembled"), [activeOrders]);
-  const overdueAccessories = useMemo(() => activeAccessories.filter((a) => isPastDate(a.eta) && a.status !== "Received"), [activeAccessories]);
+  const needsAssembly = useMemo(() => activeOrders.filter((o) => isHere(o.status) && o.assemblyStatus !== "Assembled"), [activeOrders]);
+  const overdueAccessories = useMemo(() => activeAccessories.filter((a) => isPastDate(a.eta) && !isHere(a.status)), [activeAccessories]);
   const deliveriesThisWeek = useMemo(() => activeOrders.filter((o) => {
     if (o.fulfillment !== "Delivery") return false;
     const d = daysFromToday(o.deliveryDate);
@@ -4546,7 +4593,7 @@ function RodiTracker() {
       // already physically in the shop — default "Shop stock only" on and the status to
       // "Received" (the bike isn't "Pre-ordered", it's sitting there ready to go out).
       // The customer's name is unaffected by "Shop stock only" — that just adds a STOCK tag.
-      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "", forStock: true, status: "Received" },
+      data: { ...emptyOrder(), fulfillment: "Delivery", deliveryDate: dateStr || "", forStock: true, status: "Shop floor" },
     });
   }, []);
   const scheduleServiceFromCalendar = useCallback((dateStr) => {
@@ -4593,7 +4640,7 @@ function RodiTracker() {
     });
   }, [orders, services, accessories, pricing]);
 
-  const ctxValue = { records: { orders, services, accessories }, profiles: customers, viewCustomer: setHistoryFor, printJob: setJobCard };
+  const ctxValue = { records: { orders, services, accessories }, profiles: customers, viewCustomer: setHistoryFor, printJob: setJobCard, textJob: (job) => setFlow({ type: "text", id: job.id }) };
 
   return (
     <AppCtx.Provider value={ctxValue}>
@@ -4839,6 +4886,14 @@ function RodiTracker() {
           setFlow(null);
           sendServiceText(kind === "nudge" ? "pickup_reminder" : "ready", flowService);
           patchRecord("services", flowService.id, { notes: logWithAdd(flowService.notes, kind === "nudge" ? "PICKUP REMINDER TEXT SENT" : "CUSTOMER TOLD: READY TEXT SENT") }, "edited", kind === "nudge" ? "pickup reminder text sent" : "ready text sent to customer");
+          setToast({ id: uid(), text: "Text sent to " + niceFirst(flowService.customer) + "." });
+        }} />
+      )}
+      {flowService && flow.type === "text" && (
+        <CustomTextSheet service={flowService} onClose={() => setFlow(null)} onSend={(message) => {
+          setFlow(null);
+          sendServiceText("custom", flowService, message);
+          patchRecord("services", flowService.id, { notes: logWithAdd(flowService.notes, "TEXT SENT: " + message) }, "edited", "text sent to customer");
           setToast({ id: uid(), text: "Text sent to " + niceFirst(flowService.customer) + "." });
         }} />
       )}
