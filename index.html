@@ -1908,6 +1908,7 @@ function ServiceBoard({ rows, onEdit, onStep }) {
 function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onSetStatus, onDuplicate, onToggleArchive, onDelete, onAllocate, onAddModel }) {
   const isOrder = kind === "order";
   const all = React.useContext(AppCtx).records.orders;
+  const trackOrder = React.useContext(AppCtx).trackOrder;
   // Multi-model orders start collapsed to their heading; click the heading to show or hide the models. Remembered per device.
   const [openGroups, setOpenGroups] = usePersisted("orders.openGroups", {});
   const toggleGroup = (g, force) => setOpenGroups((prev) => { const next = { ...(prev || {}) }; if (force === true || (force !== false && !next[g])) next[g] = true; else delete next[g]; return next; });
@@ -2032,15 +2033,15 @@ function OrderRows({ rows, kind, archivedView, groupByStage, onEdit, onStep, onS
             {!open && <span data-testid="group-models" style={{ fontSize: 13, color: "#5A5D64", overflowWrap: "anywhere" }}>{models}</span>}
             <button type="button" data-testid="group-toggle" onClick={(e) => { e.stopPropagation(); toggleGroup(u.group); }} style={{ alignSelf: "flex-start", marginTop: 4, padding: "4px 0", border: "none", background: "none", font: "inherit", fontSize: 13, fontWeight: 700, color: "#0B0B0C", textDecoration: "underline", cursor: "pointer" }}>{open ? "Hide models" : "Show " + u.lines.length + " models"}</button>
           </div>
-          <div className="rw-o3">
+          <div className="rw-o3" data-testid="group-eta" title={trackOrder && !archivedView ? "Edit tracking and ETA" : undefined} onClick={(e) => { if (trackOrder && !archivedView) { e.stopPropagation(); trackOrder(isOrder ? "orders" : "accessories", first); } }} style={{ cursor: trackOrder && !archivedView ? "pointer" : undefined }}>
             <div style={lbl}>ETA</div>
             <div style={{ fontWeight: overdue ? 700 : 600, fontSize: 13.5, color: overdue ? "#C1483A" : undefined }}>{formatAURel(first.eta) || (first.tracking ? <EtaMissing /> : "—")}{overdue && " ⚠"}</div>
             {first.tracking && <div onClick={(e) => e.stopPropagation()} style={{ fontFamily: "monospace", fontSize: 12.5 }}><TrackingCell value={first.tracking} /></div>}
+            {!first.tracking && trackOrder && !archivedView && <div data-testid="group-add-tracking" style={{ fontSize: 12.5, fontWeight: 700, textDecoration: "underline", color: "#33506B" }}>+ Add tracking</div>}
           </div>
           <div className="rw-o5" onClick={(e) => e.stopPropagation()}><StatusMenu label={first.status} color={colors[first.status]} statuses={statuses} onPick={(st) => onSetStatus(first.id, st)} /></div>
           <div className="rw-o6" onClick={(e) => e.stopPropagation()}>
             {!archivedView && !isHere(first.status) && <StepButtons step={orderStep(first, kind)} onRun={(act) => onStep(first, act)} />}
-            <button type="button" data-testid="group-edit" className="rodi-btn rw-btn ghost" title="Edit this order: ETA, tracking, status" onClick={() => onEdit(first)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Pencil size={14} /> Edit / tracking</button>
             {!archivedView && onAddModel && <button type="button" data-testid="group-add-model" className="rodi-btn rw-btn ghost" onClick={() => { toggleGroup(u.group, true); onAddModel(first); }}>+ Add model</button>}
           </div>
         </div>
@@ -2305,6 +2306,24 @@ function PartsSheet({ service, accessories, onPick, onClose }) {
     </FlowSheet>
   );
 }
+// Pops up when an order is marked In Transit: the moment the tracking number and ETA become known.
+function TrackingSheet({ record, onSave, onClose }) {
+  const [tracking, setTracking] = useState(record.tracking || "");
+  const [eta, setEta] = useState(record.eta || "");
+  const shared = !!record.groupId;
+  return (
+    <FlowSheet testid="tracking-sheet" title="Tracking and ETA" sub={<span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, flexWrap: "wrap" }}><BrandTag name={record.brand} />{shared ? "every model on this order" : record.type}</span>} onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onSave({ tracking: tracking.trim(), eta }); }} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <Field label="Tracking #"><input data-testid="tracking-input" autoFocus style={inputStyle} value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="ZSO93494" /></Field>
+        <Field label="ETA"><input data-testid="tracking-eta" type="date" style={inputStyle} value={eta} onChange={(e) => setEta(e.target.value)} /></Field>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="submit" className="rodi-btn rw-btn accent" data-testid="tracking-save" style={{ flex: 1, minHeight: 48 }}>Save</button>
+          <button type="button" className="rodi-btn rw-btn ghost" data-testid="tracking-skip" style={{ minHeight: 48 }} onClick={onClose}>Skip for now</button>
+        </div>
+      </form>
+    </FlowSheet>
+  );
+}
 // Sending the "ready for pick up" text is a real SMS, so it always asks first.
 function NotifySheet({ order, onSend, onClose }) {
   return (
@@ -2440,7 +2459,7 @@ function HistoryTab({ entries }) {
 }
 
 // ---- Shared context: lets deep components (forms, cards) open the history / job-card popups ----
-const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, profiles: [], viewCustomer: null, printJob: null, textJob: null });
+const AppCtx = React.createContext({ records: { orders: [], services: [], accessories: [] }, profiles: [], viewCustomer: null, printJob: null, textJob: null, trackOrder: null });
 
 const STALE = { partsDays: 5, progressDays: 7, readyDays: 7, overdueDays: 7, uncollectedDays: 3 };
 function ageDays(dateStr) { const n = daysFromToday(dateStr); return n === null ? null : -n; }
@@ -4435,7 +4454,8 @@ function RodiTracker() {
     else if (act === "notify") { if (t.phone) setFlow({ type: "notify", id: t.id }); else { patchRecord("orders", t.id, { notified: true }, "edited", "customer told the bike is ready"); stepDone("orders", t, niceFirst(t.customer) + " marked as told."); } }
     else if (act === "archive") toggleArchive(table, t.id);
   }, []);
-  const flowService = flow && flow.type !== "notify" && flow.type !== "allocate" ? services.find((r) => r.id === flow.id) : null;
+  const flowTrack = flow && flow.type === "tracking" ? (flow.table === "accessories" ? accessories : orders).find((r) => r.id === flow.id) : null;
+  const flowService = flow && flow.type !== "notify" && flow.type !== "allocate" && flow.type !== "tracking" ? services.find((r) => r.id === flow.id) : null;
   const flowStock = flow && flow.type === "allocate" ? orders.find((r) => r.id === flow.id) : null;
   const flowOrder = flow && flow.type === "notify" ? orders.find((r) => r.id === flow.id) : null;
 
@@ -4444,6 +4464,8 @@ function RodiTracker() {
     const t = tableCfg[table].ref.current.find((r) => r.id === id);
     if (!t || t.status === status) return;
     patchRecord(table, id, { status }, "edited", `status: ${t.status} → ${status}`);
+    // On its way now, so ask for the tracking number and ETA while they are in hand.
+    if (table !== "services" && status === "In Transit") setFlow({ type: "tracking", table, id });
   }, []);
   const advanceStatus = useCallback((table, id) => {
     const t = tableCfg[table].ref.current.find((r) => r.id === id);
@@ -4640,7 +4662,7 @@ function RodiTracker() {
     });
   }, [orders, services, accessories, pricing]);
 
-  const ctxValue = { records: { orders, services, accessories }, profiles: customers, viewCustomer: setHistoryFor, printJob: setJobCard, textJob: (job) => setFlow({ type: "text", id: job.id }) };
+  const ctxValue = { records: { orders, services, accessories }, profiles: customers, viewCustomer: setHistoryFor, printJob: setJobCard, textJob: (job) => setFlow({ type: "text", id: job.id }), trackOrder: (table, o) => setFlow({ type: "tracking", table, id: o.id }) };
 
   return (
     <AppCtx.Provider value={ctxValue}>
@@ -4910,6 +4932,15 @@ function RodiTracker() {
           const child = { ...emptyOrder(), parentId: flowStock.id, status: flowStock.status, orderDate: flowStock.orderDate, brand: flowStock.brand, type: flowStock.type, colour: flowStock.colour, qty: 1, eta: flowStock.eta, tracking: flowStock.tracking, receivedDate: flowStock.receivedDate, assemblyStatus: flowStock.assemblyStatus, forStock: true, customer: f.customer.trim().toUpperCase(), phone: f.phone.trim(), payment: f.payment, fulfillment: f.fulfillment };
           const ok = await saveRecord("orders", child, "order");
           if (ok) { const left = stockCount(flowStock, [...tableCfg.orders.ref.current.filter((r) => r.id !== child.id), child]).free; setToast({ id: uid(), text: "Allocated to " + niceFirst(child.customer) + ". " + left + " of " + (Number(flowStock.qty) || 1) + " still free.", undo: () => deleteRecord("orders", child.id) }); }
+        }} />
+      )}
+      {flowTrack && (
+        <TrackingSheet record={flowTrack} onClose={() => setFlow(null)} onSave={(v) => {
+          const table = flow.table;
+          setFlow(null);
+          if (v.tracking === (flowTrack.tracking || "") && v.eta === (flowTrack.eta || "")) return;
+          patchRecord(table, flowTrack.id, { tracking: v.tracking, eta: v.eta }, "edited", "tracking and ETA updated");
+          setToast({ id: uid(), text: "Tracking saved." });
         }} />
       )}
       {flowOrder && (
